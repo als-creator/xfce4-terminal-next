@@ -1,0 +1,858 @@
+# Dutch translation of Terminal.
+# Copyright (c) 2004 os-cillation
+# This file is distributed under the same license as the Terminal package.
+# Benedikt Meurer <benny@xfce.org>, 2004.
+msgid ""
+msgstr ""
+"Project-Id-Version: Terminal 0.1.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2004-10-01 20:47+0200\n"
+"Last-Translator: Jasper Huijsmans <jasper@xfce.org>\n"
+"Language-Team: os-cillation <info@os-cillation.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: terminal/main.c:73
+#, c-format
+msgid ""
+"Usage: Terminal [OPTION...]\n"
+"\n"
+"GTK+\n"
+"  --display=DISPLAY       X display to use\n"
+"\n"
+"Terminal\n"
+"  -e, --command=STRING    Execute the argument to this option\n"
+"                          inside the terminal.\n"
+"  -x, --execute           Execute the remainder of the command\n"
+"                          line inside the terminal.\n"
+"  --tab                   Open a new tab in the last-opened\n"
+"                          window.\n"
+"  --geometry=GEOMETRY     X geometry specification (see \"X\"\n"
+"                          manual page).\n"
+"  --disable-server        Do not register with the D-BUS session\n"
+"                          message bus.\n"
+"  --title=TITLE           Set the terminal's title.\n"
+"  --working-directory=DIR Set the terminal's working directory.\n"
+"  --help                  Print this help message and exit\n"
+"  --version               Print version information and exit\n"
+"\n"
+msgstr ""
+
+#: terminal/main.c:112 terminal/terminal-preferences.c:1001
+#: terminal/terminal-shortcut-editor.c:113
+msgid "Terminal"
+msgstr "Terminal"
+
+#: terminal/main.c:125
+#, c-format
+msgid ""
+"%s (Xfce %s)\n"
+"\n"
+"Copyright (c) 2003-2004\n"
+"        os-cillation e.K. All rights reserved.\n"
+"\n"
+"Written by Benedikt Meurer <benny@xfce.org>.\n"
+"\n"
+"Please report bugs to <%s>.\n"
+msgstr ""
+
+#: terminal/main.c:161
+#, c-format
+msgid "Unable to start terminal server: %s\n"
+msgstr "Kan terminal server niet starten: %s\n"
+
+#: terminal/main.c:169
+#, c-format
+msgid "Unable to launch terminal: %s\n"
+msgstr "Kan terminal niet starten: %s\n"
+
+#: terminal/terminal-preferences.c:324 terminal/terminal-preferences.c:325
+msgid "Open Tab"
+msgstr "Nieuw tabblad"
+
+#: terminal/terminal-preferences.c:335 terminal/terminal-preferences.c:336
+msgid "Open Terminal"
+msgstr "Terminal openen"
+
+#: terminal/terminal-preferences.c:346 terminal/terminal-preferences.c:347
+msgid "Close Tab"
+msgstr "Tabblad sluiten"
+
+#: terminal/terminal-preferences.c:357 terminal/terminal-preferences.c:358
+msgid "Close Window"
+msgstr "Venster sluiten"
+
+#: terminal/terminal-preferences.c:368 terminal/terminal-preferences.c:369
+msgid "Copy"
+msgstr "Kopiëren"
+
+#: terminal/terminal-preferences.c:379 terminal/terminal-preferences.c:380
+msgid "Paste"
+msgstr "Plakken"
+
+#: terminal/terminal-preferences.c:390 terminal/terminal-preferences.c:391
+#: terminal/terminal-window.c:155
+msgid "Preferences"
+msgstr "Voorkeuren"
+
+#: terminal/terminal-preferences.c:401 terminal/terminal-preferences.c:402
+msgid "Show menubar"
+msgstr "Menubalk tonen"
+
+#: terminal/terminal-preferences.c:412 terminal/terminal-preferences.c:413
+msgid "Show borders"
+msgstr "Randen tonen"
+
+#: terminal/terminal-preferences.c:423 terminal/terminal-preferences.c:424
+msgid "Fullscreen"
+msgstr "Volledig scherm"
+
+#: terminal/terminal-preferences.c:434 terminal/terminal-preferences.c:435
+msgid "Previous Tab"
+msgstr "Vorige tabblad"
+
+#: terminal/terminal-preferences.c:445 terminal/terminal-preferences.c:446
+msgid "Next Tab"
+msgstr "Volgende tabblad"
+
+#: terminal/terminal-preferences.c:456 terminal/terminal-preferences.c:457
+#: terminal/terminal-window.c:892
+msgid "Set Title"
+msgstr "Titel instellen"
+
+#: terminal/terminal-preferences.c:467 terminal/terminal-preferences.c:468
+msgid "Reset"
+msgstr "Herinitialiseren"
+
+#: terminal/terminal-preferences.c:478 terminal/terminal-preferences.c:479
+msgid "Reset and Clear"
+msgstr "Herinitialiseren en wissen"
+
+#: terminal/terminal-preferences.c:489 terminal/terminal-preferences.c:490
+msgid "Contents"
+msgstr "Inhoud"
+
+#: terminal/terminal-preferences.c:500 terminal/terminal-preferences.c:501
+msgid "Background mode"
+msgstr "Achtergrondmodus"
+
+#: terminal/terminal-preferences.c:512 terminal/terminal-preferences.c:513
+msgid "Background image file"
+msgstr "Achtergrondplaatje"
+
+#: terminal/terminal-preferences.c:528 terminal/terminal-preferences.c:529
+msgid "Background darkness"
+msgstr "Helderheid achtergrond"
+
+#: terminal/terminal-preferences.c:539 terminal/terminal-preferences.c:540
+msgid "Backspace binding"
+msgstr "Backspace stuurcode"
+
+#: terminal/terminal-preferences.c:551 terminal/terminal-preferences.c:552
+msgid "Delete binding"
+msgstr "Delete stuurcode"
+
+#: terminal/terminal-preferences.c:563
+msgid "Foreground color"
+msgstr "Voorgrondkleur"
+
+#: terminal/terminal-preferences.c:564
+msgid "Terminal foreground color"
+msgstr "Voorgrondkleur voor terminal"
+
+#: terminal/terminal-preferences.c:574
+msgid "Background color"
+msgstr "Achtergrondkleur"
+
+#: terminal/terminal-preferences.c:575
+msgid "Terminal background color"
+msgstr "Achtergrondkleur voor terminal"
+
+#: terminal/terminal-preferences.c:585 terminal/terminal-preferences.c:586
+msgid "Palette entry 1"
+msgstr "Palet-item 1"
+
+#: terminal/terminal-preferences.c:596 terminal/terminal-preferences.c:597
+msgid "Palette entry 2"
+msgstr "Palet-item 2"
+
+#: terminal/terminal-preferences.c:607 terminal/terminal-preferences.c:608
+msgid "Palette entry 3"
+msgstr "Palet-item 3"
+
+#: terminal/terminal-preferences.c:618 terminal/terminal-preferences.c:619
+msgid "Palette entry 4"
+msgstr "Palet-item 4"
+
+#: terminal/terminal-preferences.c:629 terminal/terminal-preferences.c:630
+msgid "Palette entry 5"
+msgstr "Palet-item 5"
+
+#: terminal/terminal-preferences.c:640 terminal/terminal-preferences.c:641
+msgid "Palette entry 6"
+msgstr "Palet-item 6"
+
+#: terminal/terminal-preferences.c:651 terminal/terminal-preferences.c:652
+msgid "Palette entry 7"
+msgstr "Palet-item 7"
+
+#: terminal/terminal-preferences.c:662 terminal/terminal-preferences.c:663
+msgid "Palette entry 8"
+msgstr "Palet-item 8"
+
+#: terminal/terminal-preferences.c:673 terminal/terminal-preferences.c:674
+msgid "Palette entry 9"
+msgstr "Palet-item 9"
+
+#: terminal/terminal-preferences.c:684 terminal/terminal-preferences.c:685
+msgid "Palette entry 10"
+msgstr "Palet-item 10"
+
+#: terminal/terminal-preferences.c:695 terminal/terminal-preferences.c:696
+msgid "Palette entry 11"
+msgstr "Palet-item 11"
+
+#: terminal/terminal-preferences.c:706 terminal/terminal-preferences.c:707
+msgid "Palette entry 12"
+msgstr "Palet-item 12"
+
+#: terminal/terminal-preferences.c:717 terminal/terminal-preferences.c:718
+msgid "Palette entry 13"
+msgstr "Palet-item 13"
+
+#: terminal/terminal-preferences.c:728 terminal/terminal-preferences.c:729
+msgid "Palette entry 14"
+msgstr "Palet-item 14"
+
+#: terminal/terminal-preferences.c:739 terminal/terminal-preferences.c:740
+msgid "Palette entry 15"
+msgstr "Palet-item 15"
+
+#: terminal/terminal-preferences.c:750 terminal/terminal-preferences.c:751
+msgid "Palette entry 16"
+msgstr "Palet-item 16"
+
+#: terminal/terminal-preferences.c:761
+msgid "Update records"
+msgstr "Records instellen"
+
+#: terminal/terminal-preferences.c:762
+msgid "Update wtmp/utmp/lastlog records"
+msgstr "Wtmp/utmp/lastlog records instellen"
+
+#: terminal/terminal-preferences.c:772 terminal/terminal-preferences.c:773
+msgid "Run shell as login shell"
+msgstr "Login shell gebruiken"
+
+#: terminal/terminal-preferences.c:783
+msgid "Font name"
+msgstr "Lettertype"
+
+#: terminal/terminal-preferences.c:784
+msgid "Terminal font name"
+msgstr "Lettertype voor terminal"
+
+#: terminal/terminal-preferences.c:794 terminal/terminal-preferences.c:795
+msgid "Terminal bell"
+msgstr "Terminal bel"
+
+#: terminal/terminal-preferences.c:805 terminal/terminal-preferences.c:806
+msgid "Show window borders by default"
+msgstr "Standaard vensterranden tonen"
+
+#: terminal/terminal-preferences.c:816 terminal/terminal-preferences.c:817
+msgid "Cursor blinks"
+msgstr "Cursor knippert"
+
+#: terminal/terminal-preferences.c:827 terminal/terminal-preferences.c:828
+msgid "Show menubar by default"
+msgstr "Standaard menubalk tonen"
+
+#: terminal/terminal-preferences.c:838
+msgid "Scrollbar setting"
+msgstr "Schuifbalk instelling"
+
+#: terminal/terminal-preferences.c:839
+msgid "Whether and where to display a scrollbar"
+msgstr "Schuifbalk weergave"
+
+#: terminal/terminal-preferences.c:850
+msgid "Scrollback lines"
+msgstr "Aantal regels in scrollback"
+
+#: terminal/terminal-preferences.c:851
+msgid "Number of lines to keep in history"
+msgstr "Aantal regels in geschiedenis"
+
+#: terminal/terminal-preferences.c:861 terminal/terminal-preferences.c:862
+msgid "Scroll on output"
+msgstr "Scrollen bij uitvoer"
+
+#: terminal/terminal-preferences.c:872 terminal/terminal-preferences.c:873
+msgid "Scroll on keystroke"
+msgstr "Scrollen bij toetsaanslag"
+
+#: terminal/terminal-preferences.c:885 terminal/terminal-preferences.c:886
+msgid "Disable menu shortcut key"
+msgstr "Menu niet met toetsenbord activeren"
+
+#: terminal/terminal-preferences.c:896
+msgid "Initial title"
+msgstr "Begintitel"
+
+#: terminal/terminal-preferences.c:897
+msgid "Initial Terminal title"
+msgstr "Begintitel voor terminal"
+
+#: terminal/terminal-preferences.c:907
+msgid "Title mode"
+msgstr "Titelmodus"
+
+#: terminal/terminal-preferences.c:908
+msgid "Dynamic-title mode"
+msgstr "Dynamische titles"
+
+#: terminal/terminal-preferences.c:919 terminal/terminal-preferences.c:920
+msgid "Term"
+msgstr "Term"
+
+#: terminal/terminal-preferences.c:930
+msgid "Word chars"
+msgstr "Woordkarakters"
+
+#: terminal/terminal-preferences.c:931
+msgid "Word characters"
+msgstr "Woordkarakters"
+
+#: terminal/terminal-preferences.c:947 terminal/terminal-preferences.c:948
+#: terminal/terminal-preferences.c:949 terminal/terminal-preferences.c:953
+#: terminal/terminal-preferences.c:954 terminal/terminal-preferences.c:955
+#: terminal/terminal-preferences.c:1306 terminal/terminal-preferences.c:1317
+#: terminal/terminal-preferences.c:1328 terminal/terminal-preferences.c:1339
+#: terminal/terminal-preferences.c:1350 terminal/terminal-preferences.c:1361
+#: terminal/terminal-preferences.c:1372 terminal/terminal-preferences.c:1383
+#: terminal/terminal-preferences.c:1394 terminal/terminal-preferences.c:1405
+#: terminal/terminal-preferences.c:1416 terminal/terminal-preferences.c:1427
+#: terminal/terminal-preferences.c:1438 terminal/terminal-preferences.c:1449
+#: terminal/terminal-preferences.c:1460 terminal/terminal-preferences.c:1471
+#: terminal/terminal-preferences-dialog.c:366
+msgid "Disabled"
+msgstr "Uitgeschakeld"
+
+#: terminal/terminal-widget.c:191 terminal/terminal-widget.c:192
+msgid "Custom title"
+msgstr "Aangepaste titel"
+
+#: terminal/terminal-widget.c:207
+msgid "Encoding"
+msgstr "Tekenset"
+
+#: terminal/terminal-widget.c:208
+msgid "Terminal encoding"
+msgstr "Tekenset voor terminal"
+
+#: terminal/terminal-widget.c:218 terminal/terminal-widget.c:219
+msgid "Title"
+msgstr "Titel"
+
+#: terminal/terminal-widget.c:472
+msgid "Current user unknown"
+msgstr "Huidige gebuiker onbekend"
+
+#: terminal/terminal-widget.c:827
+#, c-format
+msgid ""
+"Unable to drop selection of type text/plain to terminal: Wrong format (%d) "
+"or length (%d)\n"
+msgstr ""
+"Kon selectie met type text/plain niet naar terminal slepen: Verkeerd formaat "
+"(%d) of verkeerde lengte (%d)\n"
+
+#: terminal/terminal-widget.c:843
+#, c-format
+msgid ""
+"Unable to drop Mozilla URL on terminal: Wrong format (%d) or length (%d)\n"
+msgstr ""
+"Kon Mozilla URL niet naar terminal slepen: Verkeerd formaat (%d) of "
+"verkeerde lengte (%d)\n"
+
+#: terminal/terminal-widget.c:869
+#, c-format
+msgid "Unable to drop URI list on terminal: Wrong format (%d) or length (%d)\n"
+msgstr ""
+"Kon URI lijst niet naar terminal slepen: Verkeerd formaat (%d) of verkeerde "
+"lengte (%d)\n"
+
+#: terminal/terminal-widget.c:1278
+msgid "Untitled"
+msgstr "Zonder titel"
+
+#: terminal/terminal-window.c:147
+msgid "_File"
+msgstr "_Bestand"
+
+#: terminal/terminal-window.c:148
+msgid "Open _Tab"
+msgstr "Nieuw _tabblad"
+
+#: terminal/terminal-window.c:149
+msgid "Open _Terminal"
+msgstr "_Terminal openen"
+
+#: terminal/terminal-window.c:150
+msgid "C_lose Tab"
+msgstr "Tabblad s_luiten"
+
+#: terminal/terminal-window.c:151
+msgid "_Close Window"
+msgstr "Venster _sluiten"
+
+#: terminal/terminal-window.c:152
+msgid "_Edit"
+msgstr "Be_werken"
+
+#: terminal/terminal-window.c:153
+msgid "_Copy"
+msgstr "_Kopiëren"
+
+#: terminal/terminal-window.c:154
+msgid "_Paste"
+msgstr "_Plakken"
+
+#: terminal/terminal-window.c:156
+msgid "_View"
+msgstr "_Beeld"
+
+#: terminal/terminal-window.c:157
+msgid "_Terminal"
+msgstr "_Terminal"
+
+#: terminal/terminal-window.c:158
+msgid "_Previous Tab"
+msgstr "_Vorige tabblad"
+
+#: terminal/terminal-window.c:159
+msgid "_Next Tab"
+msgstr "Volge_nde tabblad"
+
+#: terminal/terminal-window.c:160
+msgid "_Set Title"
+msgstr "Titel in_stellen"
+
+#: terminal/terminal-window.c:161
+msgid "_Reset"
+msgstr "He_rinitialiseren"
+
+#: terminal/terminal-window.c:162
+msgid "Reset and C_lear"
+msgstr "Herinitia_liseren en wissen"
+
+#: terminal/terminal-window.c:163
+msgid "_Help"
+msgstr "_Hulp"
+
+#: terminal/terminal-window.c:164
+msgid "_Contents"
+msgstr "_Inhoud"
+
+#: terminal/terminal-window.c:165
+msgid "_Report a bug"
+msgstr "Een bug _rapporteren"
+
+#: terminal/terminal-window.c:166
+msgid "_About"
+msgstr "In_fo"
+
+#: terminal/terminal-window.c:167
+msgid "_Input Methods"
+msgstr "_Invoermethoden"
+
+#: terminal/terminal-window.c:172
+msgid "Show _Menubar"
+msgstr "_Menubalk tonen"
+
+#: terminal/terminal-window.c:173
+msgid "Show Window _Borders"
+msgstr "Vensterranden t_onen"
+
+#: terminal/terminal-window.c:174
+msgid "_Fullscreen"
+msgstr "_Volledig scherm"
+
+#: terminal/terminal-window.c:769 terminal/terminal-window.c:796
+#: terminal/terminal-window.c:860 terminal/terminal-preferences-dialog.c:1014
+#, c-format
+msgid "Unable to launch online help: %s"
+msgstr "Kon on-line hulp niet starten: %s"
+
+#: terminal/terminal-window.c:906
+msgid "<b>Title:</b>"
+msgstr "<b>Titel:</b>"
+
+#: terminal/terminal-window.c:952
+msgid "X Terminal Emulator"
+msgstr "X Terminalprogramma"
+
+#: terminal/terminal-window.c:956
+msgid "Maintainer"
+msgstr "Projectleider"
+
+#: terminal/terminal-window.c:957
+msgid "Icon Designer"
+msgstr "De Pictogramontwerper"
+
+#: terminal/terminal-window.c:958
+msgid "Translator (nl)"
+msgstr ""
+
+#: terminal/terminal-app.c:197
+#, c-format
+msgid "TerminalServer: %s\n"
+msgstr "Terminal Server: %s\n"
+
+#: terminal/terminal-app.c:209
+msgid "D-BUS message bus disconnected, exiting...\n"
+msgstr ""
+
+#: terminal/terminal-app.c:288
+msgid "Unable to connect to D-BUS message daemon"
+msgstr ""
+
+#: terminal/terminal-app.c:297
+#, c-format
+msgid "Unable to acquire service %s: %s"
+msgstr ""
+
+#: terminal/terminal-app.c:309
+#, c-format
+msgid "Unable to register object %s\n"
+msgstr ""
+
+#: terminal/terminal-app.c:374
+#, c-format
+msgid "Invalid geometry string \"%s\"\n"
+msgstr "Ongeldige geometrie \"%s\"\n"
+
+#: terminal/terminal-options.c:68
+msgid ""
+"Option \"--execute/-x\" requires specifying the command to run on the rest "
+"of the command line"
+msgstr "De optie \"--execute/-x\" vereist een commandoregel als argument"
+
+#: terminal/terminal-options.c:96
+msgid ""
+"Option \"--command/-e\" requires specifying the command to run as its "
+"parameter"
+msgstr "De optie \"--command/-e\" vereist een commando als argument"
+
+#: terminal/terminal-options.c:146
+msgid "Option \"--title\" requires specifying the title as its parameter"
+msgstr "De optie \"--title\" vereist de titel als argument"
+
+#: terminal/terminal-options.c:172
+msgid ""
+"Option \"--working-directory\" requires specifying the working directory as "
+"its parameter"
+msgstr "De option \"--working-directory\" vereist de directory als argument"
+
+#: terminal/terminal-options.c:198
+msgid ""
+"Option \"--geometry\" requires specifying the window geometry as its "
+"parameter"
+msgstr "De optie \"--geometry\" vereist de venstergeomety als argument"
+
+#: terminal/terminal-options.c:215
+#, c-format
+msgid "Unknown option \"%s\""
+msgstr "Onbekende optie \"%s\""
+
+#: terminal/terminal-preferences-dialog.c:192
+msgid "Terminal Preferences"
+msgstr "Terminal voorkeuren"
+
+#: terminal/terminal-preferences-dialog.c:256
+msgid "<b>Title</b>"
+msgstr "<b>Titel:</b>"
+
+#: terminal/terminal-preferences-dialog.c:269
+msgid ""
+"The command running inside the terminal may dynamically set a new title."
+msgstr ""
+"De opdracht uitgevoerd in de terminal kan dynamisch een nieuwe titel "
+"instellen."
+
+#: terminal/terminal-preferences-dialog.c:276
+msgid "_Initial title:"
+msgstr "Begin_titel:"
+
+#: terminal/terminal-preferences-dialog.c:289
+msgid "_Dynamically-set title:"
+msgstr "_Dynamisch titel instellen:"
+
+#: terminal/terminal-preferences-dialog.c:301
+msgid "Replaces initial title"
+msgstr "Vervangt begintitel"
+
+#: terminal/terminal-preferences-dialog.c:302
+msgid "Goes before initial title"
+msgstr "Gaat voor begintitel"
+
+#: terminal/terminal-preferences-dialog.c:303
+msgid "Goes after initial title"
+msgstr "Gaat na begintitel"
+
+#: terminal/terminal-preferences-dialog.c:304
+msgid "Isn't displayed"
+msgstr "Is niet weergegeven"
+
+#: terminal/terminal-preferences-dialog.c:319
+msgid "<b>Command</b>"
+msgstr "<b>Opdracht</b>"
+
+#: terminal/terminal-preferences-dialog.c:328
+msgid "_Run command as login shell"
+msgstr "Opdracht _uitvoeren als loginshell"
+
+#: terminal/terminal-preferences-dialog.c:334
+msgid "_Update utmp/wtmp records when command is launched"
+msgstr "utmp/wtmp records _vernieuwen wanneer opdracht wordt uitgevoerd"
+
+#: terminal/terminal-preferences-dialog.c:344
+msgid "<b>Misc</b>"
+msgstr "<b>Overig</b>"
+
+#: terminal/terminal-preferences-dialog.c:359
+msgid "_Scrollbar is:"
+msgstr "_Schuifbalk is:"
+
+#: terminal/terminal-preferences-dialog.c:367
+msgid "On the left side"
+msgstr "Aan de linkerkant"
+
+#: terminal/terminal-preferences-dialog.c:368
+msgid "On the right side"
+msgstr "Aan de rechterkant"
+
+#: terminal/terminal-preferences-dialog.c:380
+msgid "Scr_ollback:"
+msgstr "Terugschuiven:"
+
+#: terminal/terminal-preferences-dialog.c:400
+msgid "Sc_roll on output"
+msgstr "Sc_rollen bij uitvoer"
+
+#: terminal/terminal-preferences-dialog.c:407
+msgid "Scroll on key_stroke"
+msgstr "Scrollen bij _toetsaanslag"
+
+#: terminal/terminal-preferences-dialog.c:414
+msgid "Show _menubar by default"
+msgstr "Standaard _menubalk tonen"
+
+#: terminal/terminal-preferences-dialog.c:421
+msgid "Terminal _bell"
+msgstr "Terminal_bel"
+
+#: terminal/terminal-preferences-dialog.c:428
+msgid "Show _borders by default"
+msgstr "Standaard venster_randen tonen"
+
+#: terminal/terminal-preferences-dialog.c:432
+msgid ""
+"Enable to show window decorations around newly created terminal windows."
+msgstr "Selecteer om vensterdecoraties te tonen bij nieuwe terminalvensters."
+
+#: terminal/terminal-preferences-dialog.c:438
+msgid "Cursor blin_ks"
+msgstr "Cursor _knippert"
+
+#: terminal/terminal-preferences-dialog.c:449
+msgid "General"
+msgstr "Algemeen"
+
+#: terminal/terminal-preferences-dialog.c:468
+msgid "<b>Font</b>"
+msgstr "<b>Lettertype</b>"
+
+#: terminal/terminal-preferences-dialog.c:477
+msgid "Choose Terminal Font"
+msgstr "Kiet lettertype voor terminal"
+
+#: terminal/terminal-preferences-dialog.c:487
+msgid "<b>Colors</b>"
+msgstr "<b>Kleuren</b>"
+
+#: terminal/terminal-preferences-dialog.c:500
+msgid "_Text color:"
+msgstr "_Tekstkleur:"
+
+#: terminal/terminal-preferences-dialog.c:510
+msgid "_Background color:"
+msgstr "_Achtergrondkleur:"
+
+#: terminal/terminal-preferences-dialog.c:521
+msgid "Terminal applications have this color palette available to them:"
+msgstr "Terminalprogramma's hebben dit palet tot hun beschikking"
+
+#: terminal/terminal-preferences-dialog.c:670
+msgid "<b>Background</b>"
+msgstr "<b>Achtergrond</b>"
+
+#: terminal/terminal-preferences-dialog.c:680
+msgid "None (use solid color)"
+msgstr "Geen (gebruik effen kleur)"
+
+#: terminal/terminal-preferences-dialog.c:681
+msgid "Background image"
+msgstr "Achtergrondafbeelding"
+
+#: terminal/terminal-preferences-dialog.c:682
+msgid "Transparent background"
+msgstr "Transparante achtergrond"
+
+#: terminal/terminal-preferences-dialog.c:698
+msgid "_Image file:"
+msgstr "_Afbeeldingsbestand:"
+
+#: terminal/terminal-preferences-dialog.c:740
+msgid "Shade transparent or image background:"
+msgstr "Transparante- of afbeeldingsachtergronden donker tinten"
+
+#: terminal/terminal-preferences-dialog.c:753
+msgid "<small><i>None</i></small>"
+msgstr "<small><i>Geen</i></small>"
+
+#: terminal/terminal-preferences-dialog.c:764
+msgid "<small><i>Maximum</i></small>"
+msgstr "<small><i>Maximum</i></small>"
+
+#: terminal/terminal-preferences-dialog.c:774
+msgid "Appearance"
+msgstr "Weergave"
+
+#: terminal/terminal-preferences-dialog.c:793
+msgid "<b>Menubar accelerator</b>"
+msgstr "<b>Menubalk sneltoets</b>"
+
+#: terminal/terminal-preferences-dialog.c:802
+msgid "Disable m_enu shortcut key (F10 by default)"
+msgstr "M_enu-sneltoets uitschakelen (standaard F10)"
+
+#: terminal/terminal-preferences-dialog.c:812
+msgid "<b>Shortcut keys</b>"
+msgstr "<b>Sneltoetsen</b>"
+
+#: terminal/terminal-preferences-dialog.c:834
+msgid "Shortcuts"
+msgstr "Sneltoetsen"
+
+#: terminal/terminal-preferences-dialog.c:853
+msgid "<b>Compatibility</b>"
+msgstr "<b>Compatibiliteit</b>"
+
+#: terminal/terminal-preferences-dialog.c:864
+msgid ""
+"These options may cause some applications to behave incorrectly. They are "
+"only here to allow you to work around certain applications and operating "
+"systems that expect different terminal behavior."
+msgstr ""
+"Door deze opties kunnen sommige toepassingen zich incorrect gedragen. Ze "
+"zijn er zodat u om sommige toepassingen en besturingssystemen die een ander "
+"terminalgedrag verwachten, heen kunt werken."
+
+#: terminal/terminal-preferences-dialog.c:872
+msgid "_Backspace key generates:"
+msgstr "_Backspace-toets genereert:"
+
+#: terminal/terminal-preferences-dialog.c:879
+#: terminal/terminal-preferences-dialog.c:900
+msgid "ASCII DEL"
+msgstr ""
+
+#: terminal/terminal-preferences-dialog.c:880
+#: terminal/terminal-preferences-dialog.c:901
+msgid "Escape sequence"
+msgstr "Stuurcode"
+
+#: terminal/terminal-preferences-dialog.c:881
+#: terminal/terminal-preferences-dialog.c:902
+msgid "Control-H"
+msgstr ""
+
+#: terminal/terminal-preferences-dialog.c:893
+msgid "_Delete key generates:"
+msgstr "_Delete-toets genereert:"
+
+#: terminal/terminal-preferences-dialog.c:914
+msgid "<tt>$TERM</tt> setting:"
+msgstr "<tt>$TERM</tt> instelling:"
+
+#: terminal/terminal-preferences-dialog.c:923
+msgid ""
+"This specifies the value the $TERM environment variable is set to, when a "
+"new terminal tab or terminal window is opened. The default should be ok for "
+"most systems. If you have problems with colors in some applications, try "
+"xterm-color here."
+msgstr ""
+"Dit geeft de waarde voor de $TERM omgevingsvariabele. De standaardwaarde zou "
+"moeten voldoen voor de meeste systemen. Als u problemen ondervindt met "
+"kleuren kunt u xterm-color proberen."
+
+#: terminal/terminal-preferences-dialog.c:936
+msgid "_Reset compatibility options to defaults"
+msgstr "Compabiliteitsopties te_rugzetten naar standaardinstellingen"
+
+#: terminal/terminal-preferences-dialog.c:946
+msgid "<b>Double click</b>"
+msgstr "<b>Dubbelklikken</b>"
+
+#: terminal/terminal-preferences-dialog.c:955
+msgid "Consider the following characters part of a word when double clicking:"
+msgstr ""
+"Beschouw de volgende karakters als onderdeel van een woord bij dubbelklikken:"
+
+#: terminal/terminal-preferences-dialog.c:973
+msgid "Advanced"
+msgstr "Geavanceerd"
+
+#: terminal/terminal-preferences-dialog.c:1041
+msgid "Select image file"
+msgstr "Plaatje selectern"
+
+#: terminal/terminal-shortcut-editor.c:85
+msgid "File"
+msgstr "Bestand"
+
+#: terminal/terminal-shortcut-editor.c:95
+msgid "Edit"
+msgstr "Bewerken"
+
+#: terminal/terminal-shortcut-editor.c:104
+msgid "View"
+msgstr "Beeld"
+
+#: terminal/terminal-shortcut-editor.c:124
+msgid "Help"
+msgstr "Hulp"
+
+#: terminal/terminal-shortcut-editor.c:204
+msgid "Action"
+msgstr "Actie"
+
+#: terminal/terminal-shortcut-editor.c:211
+msgid "Shortcut key"
+msgstr "Sneltoets"
+
+#: terminal/terminal-shortcut-editor.c:289
+msgid "Compose shortcut"
+msgstr "Sneltoets instellen"
+
+#: terminal/terminal-shortcut-editor.c:313
+msgid "Compose shortcut for:"
+msgstr "Sneltoets instellen voor:"
+
+#: terminal/terminal-shortcut-editor.c:330
+msgid "Failed to grab keyboard."
+msgstr "Kon toetsenbord niet vastzetten."
+
