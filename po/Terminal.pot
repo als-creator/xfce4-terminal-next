@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-12 20:39+0100\n"
+"POT-Creation-Date: 2004-12-13 11:40+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1280,18 +1280,19 @@ msgstr ""
 msgid "Enter the title for the current terminal tab"
 msgstr ""
 
-#: terminal/terminal-window.c:1282
+#: terminal/terminal-window.c:1290
 msgid "X Terminal Emulator"
 msgstr ""
 
-#: terminal/terminal-window.c:1286
+#: terminal/terminal-window.c:1294
 msgid "Maintainer"
 msgstr ""
 
-#: terminal/terminal-window.c:1287
+#: terminal/terminal-window.c:1295
 msgid "Icon Designer"
 msgstr ""
 
-#: terminal/terminal-window.c:1288
-msgid "Translator (nl)"
+#: terminal/terminal-window.c:1299
+#, c-format
+msgid "Translator (%s)"
 msgstr ""
