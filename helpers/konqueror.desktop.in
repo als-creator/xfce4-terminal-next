@@ -1,8 +1,9 @@
 [Desktop Entry]
+Icon=konqueror
+_Name=Konqueror
+Type=Application
 X-Terminal-Binaries=konqueror;
 X-Terminal-Category=WebBrowser
 X-Terminal-Command=%B "%u"
-X-Terminal-Icons=konqueror;
-_Name=Konqueror
 
 
