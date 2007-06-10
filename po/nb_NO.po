@@ -460,7 +460,7 @@ msgstr "Valget \"--role\" krever at du angir vindusrollen som argument"
 msgid ""
 "Option \"--startup-id\" requires specifying the startup id as its parameter"
 msgstr ""
-"Valget \"--startup-id\" krever at du angir oppstartid som argument"
+"Valget \"--startup-id\" krever at du angir oppstarttid som argument"
 
 #: ../terminal/terminal-options.c:412
 msgid ""
@@ -476,7 +476,7 @@ msgid ""
 "working directory as its parameter"
 msgstr ""
 "Valget \"--default-working-directory\" krever at du angir standard "
-"arbeidsmappe som dens argument"
+"arbeidsmappe som argument"
 
 #: ../terminal/terminal-options.c:452
 #, c-format
@@ -754,7 +754,7 @@ msgstr "Åpne bilde for å spesifiere farge"
 
 #: ../terminal/terminal-preferences-dialog.c:642
 msgid "Choose terminal cursor color"
-msgstr ""
+msgstr "Velg skrivemarkørfarge"
 
 #: ../terminal/terminal-preferences-dialog.c:658
 msgid "_Background color:"
