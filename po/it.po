@@ -13,7 +13,7 @@
 # Gianluca Foddis <gianluca.foddis@gmail.com>, 2009-2010
 # Mark <marco_pace@msn.com>, 2018
 # Massimiliano Vessi <angerangel@gmail.com>, 2014
-# Vincenzo Reale <vinx.reale@gmail.com>, 2020
+# Vincenzo Reale <smart2128vr@gmail.com>, 2020
 # Vittorio Palmisano <redclay@email.it>, 2005
 msgid ""
 msgstr ""
