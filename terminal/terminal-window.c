@@ -284,6 +284,8 @@ terminal_window_action_split_horizontal (TerminalWindow *window);
 static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window);
 static gboolean
+terminal_window_add_fresh_tab_idle (gpointer user_data);
+static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
 static gboolean
 terminal_window_action_close_pane (TerminalWindow *window);
@@ -2045,10 +2047,12 @@ terminal_window_notebook_page_removed (GtkNotebook *notebook,
 
       if (tray_icon)
         {
-          TerminalScreen *fresh = terminal_screen_new (terminal_tab_attr_new (),
-                                                       window->priv->grid_width,
-                                                       window->priv->grid_height);
-          terminal_window_add (window, fresh);
+          /* Do not add the replacement tab from inside the page-removed
+           * handler: the notebook is in the middle of removing a page and
+           * inserting another one there leaves it half-torn-down (the new page
+           * never gets a proper allocation and renders as grey). Defer it to
+           * an idle so the removal completes first. */
+          g_idle_add (terminal_window_add_fresh_tab_idle, window);
           gtk_widget_hide (GTK_WIDGET (window));
           return;
         }
@@ -2871,6 +2875,35 @@ static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window)
 {
   return terminal_window_action_split (window, GTK_ORIENTATION_VERTICAL);
+}
+
+
+
+/* Replaces the last tab that was closed while the status icon keeps the
+ * application alive. Runs from an idle so the notebook has finished removing
+ * the old page first, otherwise the inserted page stays unallocated and the
+ * window renders as a grey area. */
+static gboolean
+terminal_window_add_fresh_tab_idle (gpointer user_data)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (user_data);
+  TerminalScreen *fresh;
+
+  /* the window may have been destroyed, or a new tab may already exist,
+   * while we were waiting for the idle to run */
+  if (window == NULL || GTK_IS_WINDOW (window) == FALSE)
+    return G_SOURCE_REMOVE;
+
+  if (terminal_window_get_active (window) != NULL
+      || gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook)) > 0)
+    return G_SOURCE_REMOVE;
+
+  fresh = terminal_screen_new (terminal_tab_attr_new (),
+                               window->priv->grid_width,
+                               window->priv->grid_height);
+  terminal_window_add (window, fresh);
+
+  return G_SOURCE_REMOVE;
 }
 
 
