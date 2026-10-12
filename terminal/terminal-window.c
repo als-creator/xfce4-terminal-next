@@ -282,6 +282,8 @@ terminal_window_action_send_signal (SendSignalData *data);
 static gboolean
 terminal_window_action_split_horizontal (TerminalWindow *window);
 static gboolean
+terminal_window_action_start_tmux (TerminalWindow *window);
+static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
 static gboolean
 terminal_window_action_close_pane (TerminalWindow *window);
@@ -883,6 +885,16 @@ static XfceGtkActionEntry action_entries[] = {
     N_ ("Close the current split pane"),
     "window-close",
     G_CALLBACK (terminal_window_action_close_pane),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_START_TMUX,
+    "<Actions>/terminal-window/start-tmux",
+    "<control><shift>t",
+    XFCE_GTK_IMAGE_MENU_ITEM,
+    N_ ("Start _tmux Session"),
+    N_ ("Run tmux in this pane; the session survives an SSH disconnect"),
+    "utilities-terminal",
+    G_CALLBACK (terminal_window_action_start_tmux),
   },
   {
     TERMINAL_WINDOW_ACTION_FOCUS_UP,
@@ -2841,6 +2853,26 @@ terminal_window_action_split_vertical (TerminalWindow *window)
 
 
 static gboolean
+terminal_window_action_start_tmux (TerminalWindow *window)
+{
+  TerminalScreen *active;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  active = window->priv->active;
+  if (active == NULL)
+    return TRUE;
+
+  /* "-A" attaches to an existing session or creates one, so re-running this
+   * after an SSH reconnect simply picks the session back up. */
+  terminal_screen_feed_text (active, "tmux new-session -A -s main\n");
+
+  return TRUE;
+}
+
+
+
+static gboolean
 terminal_window_action_close_pane (TerminalWindow *window)
 {
   TerminalPanes *panes;
@@ -4749,7 +4781,8 @@ terminal_window_menu_add_section (TerminalWindow *window,
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SPLIT_HORIZONTAL), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SPLIT_VERTICAL), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_PANE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
     }
 
   if (sections & MENU_SECTION_VIEW)
