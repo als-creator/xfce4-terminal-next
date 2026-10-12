@@ -118,6 +118,7 @@ enum
   PROP_MISC_RIGHT_CLICK_ACTION,
   PROP_MISC_HYPERLINKS_ENABLED,
   PROP_MISC_TRAY_ICON,
+  PROP_MISC_TMUX_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
   PROP_SCROLLING_LINES,
@@ -1125,6 +1126,18 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           "MiscTrayIcon",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-tmux-command:
+   *
+   * Command typed into the pane by the "Start tmux Session" action.
+   **/
+  preferences_props[PROP_MISC_TMUX_COMMAND] =
+    g_param_spec_string ("misc-tmux-command",
+                         NULL,
+                         "MiscTmuxCommand",
+                         "tmux new-session -A -s main",
+                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:scrolling-bar:

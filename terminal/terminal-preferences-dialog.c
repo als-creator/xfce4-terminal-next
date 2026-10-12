@@ -529,17 +529,20 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
 
 
-  /* section: Status Icon */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Status Icon"));
+  /* section: tmux */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux"));
 
-  button = gtk_check_button_new_with_mnemonic (_("Show a status icon in the notification area"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tray-icon",
-                          G_OBJECT (button), "active",
+  entry = gtk_entry_new ();
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
+                          G_OBJECT (entry), "text",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Keep the application running in the notification area;"
-                                         " closing a window hides it instead of quitting."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
+  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by Ctrl+Shift+M and the"
+                                        " \"Start tmux Session\" menu entry.\n"
+                                        "The default attaches to an existing session, which is"
+                                        " what makes it survive an SSH disconnect."));
+  gtk_widget_set_hexpand (entry, TRUE);
+  gtk_grid_attach (GTK_GRID (grid), entry, 0, row, 3, 1);
+  gtk_widget_show (entry);
 
 
 

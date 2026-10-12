@@ -518,6 +518,30 @@ terminal_panes_remove_screen (TerminalPanes *panes,
     gtk_widget_destroy (GTK_WIDGET (screen));
     gtk_widget_destroy (GTK_WIDGET (paned));
 
+    /* The survivor was the size of one half of the collapsed paned, but it is
+     * now the only child of @panes and must fill it. queue_resize() alone is
+     * not enough: when @panes already had its allocation, GTK does not shrink
+     * or grow the child unless the container is told to recompute. Force an
+     * allocation pass from the current size of @panes. */
+    {
+      GtkAllocation pa;
+      gint w, h;
+
+      gtk_widget_get_allocation (GTK_WIDGET (panes), &pa);
+      w = pa.width;
+      h = pa.height;
+
+      gtk_widget_queue_resize (GTK_WIDGET (panes));
+
+      /* give GTK a synchronous allocation with the current size */
+      if (w > 1 && h > 1)
+        {
+          GtkAllocation full = { 0, 0, w, h };
+
+          gtk_widget_size_allocate (GTK_WIDGET (panes), &full);
+        }
+    }
+
     g_object_unref (paned);
     g_object_unref (other);
 
