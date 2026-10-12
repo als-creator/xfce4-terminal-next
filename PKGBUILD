@@ -6,7 +6,7 @@
 #   * нативные сплиты: Ctrl+Shift+O / Ctrl+Shift+E, закрытие Ctrl+Shift+F4
 #   * навигация по панелям: Alt+стрелки, Ctrl+Tab / Ctrl+Shift+Tab
 #   * guake-режим: иконка в трее, закрытие окна скрывает его вместо выхода
-#   * подменю tmux: запуск именованной сессии, attach и kill
+#   * tmux-команда (Ctrl+Shift+M), редактируется в настройках
 #
 # Изоляция от системного терминала:
 #   * бинарник называется xfce4-terminal-local -> НЕ перекрывает /usr/bin
@@ -18,7 +18,7 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=3
+pkgrel=4
 pkgdesc="Xfce Terminal with native split panes, tray mode and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
@@ -92,18 +92,28 @@ xfce4-terminal-local (локальная сборка)
   Focus Pane Up/Down/Left/Right   Alt+стрелки
   Next / Previous Pane            Ctrl+Tab / Ctrl+Shift+Tab
 
-tmux (правый клик -> tmux Session, или меню Terminal -> Split -> tmux Session):
-  Start tmux Session            Ctrl+Shift+M   tmux new-session -A -s main
-  Start tmux Session as Named   tmux new-session -A -s <имя>
-  Attach to tmux Session        выбор из живых сессий
-  Kill tmux Session             выбор из живых сессий
+tmux (правый клик -> Start tmux Session, или меню Terminal -> Split):
+  Start tmux Session   Ctrl+Shift+M
 
-  Флаг -A в "new-session -A" означает attach-or-create: повторный запуск
-  после обрыва SSH просто подхватывает уже существующую сессию.
+  Выполняет команду из настроек: Правки -> Настройки -> tmux.
+  По умолчанию: tmux new-session -A -s main
+  Флаг -A = attach-or-create, поэтому повторный запуск после обрыва SSH
+  просто подхватывает уже существующую сессию.
+
+  Свою команду можно задать, например:
+    tmux new-session -A -s work
+    tmux attach -t deploy
+  xfconf-query -c xfce4-terminal -p /misc-tmux-command -s "tmux attach -t X"
 
 guake-режим:
-  Правки -> Прочее -> Показать значок в трее. После включения закрытие окна
-  скрывает его вместо выхода; выход - только через меню значка в трее.
+  Включается настройкой misc-tray-icon
+  (xfconf-query -c xfce4-terminal -p /misc-tray-icon -n -t bool -s true).
+
+  После включения:
+    * закрытие окна скрывает его, а не закрывает
+    * Ctrl+D на последней вкладке создаёт новую пустую вкладку,
+      процесс продолжает жить
+    * выход - только через меню значка в трее -> Quit
 
 Запуск:   xfce4-terminal-local
 Меню:     "Xfce4 Terminal (Split Panes)"
