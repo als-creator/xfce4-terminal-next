@@ -6,6 +6,7 @@
 #   * нативные сплиты: Ctrl+Shift+O / Ctrl+Shift+E, закрытие Ctrl+Shift+F4
 #   * навигация по панелям: Alt+стрелки, Ctrl+Tab / Ctrl+Shift+Tab
 #   * guake-режим: иконка в трее, закрытие окна скрывает его вместо выхода
+#   * подменю tmux: запуск именованной сессии, attach и kill
 #
 # Изоляция от системного терминала:
 #   * бинарник называется xfce4-terminal-local -> НЕ перекрывает /usr/bin
@@ -17,8 +18,8 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=2
-pkgdesc="Xfce Terminal with native split panes and tray mode (isolated local build)"
+pkgrel=3
+pkgdesc="Xfce Terminal with native split panes, tray mode and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
 license=('GPL2')
@@ -66,13 +67,13 @@ package() {
 [Desktop Entry]
 Name=Xfce4 Terminal (Split Panes)
 GenericName=Terminal Emulator
-Comment=Terminal with native split panes and tray mode
+Comment=Terminal with native split panes, tray mode and tmux integration
 Exec=/usr/local/bin/xfce4-terminal-local %F
 Icon=org.xfce.terminal
 Type=Application
 Terminal=false
 Categories=System;TerminalEmulator;
-Keywords=shell;prompt;commandline;command;split;pane;
+Keywords=shell;prompt;commandline;command;split;pane;tmux;
 StartupNotify=true
 EOF
 
@@ -82,22 +83,36 @@ EOF
 xfce4-terminal-local (локальная сборка)
 ====================================
 
-Отличия от системного xfce4-terminal:
-  * нативные сплиты:        Ctrl+Shift+O (вбок), Ctrl+Shift+E (сверху/снизу)
-  * закрыть панель:          Ctrl+Shift+F4
-  * фокус по панелям:        Alt+стрелки, Ctrl+Tab / Ctrl+Shift+Tab
-  * guake-режим:             Правки -> Прочее -> Показать значок в трее;
-                             закрытие окна скрывает его вместо выхода
+Сплиты (правый клик в терминале -> Split, или меню Terminal -> Split):
+  Split Horizontally        Ctrl+Shift+O     панели рядом
+  Split Vertically          Ctrl+Shift+E     панели друг над другом
+  Close Pane                Ctrl+Shift+F4
+
+Навигация по панелям (только хоткеи, в меню не выведены):
+  Focus Pane Up/Down/Left/Right   Alt+стрелки
+  Next / Previous Pane            Ctrl+Tab / Ctrl+Shift+Tab
+
+tmux (правый клик -> tmux Session, или меню Terminal -> Split -> tmux Session):
+  Start tmux Session            Ctrl+Shift+M   tmux new-session -A -s main
+  Start tmux Session as Named   tmux new-session -A -s <имя>
+  Attach to tmux Session        выбор из живых сессий
+  Kill tmux Session             выбор из живых сессий
+
+  Флаг -A в "new-session -A" означает attach-or-create: повторный запуск
+  после обрыва SSH просто подхватывает уже существующую сессию.
+
+guake-режим:
+  Правки -> Прочее -> Показать значок в трее. После включения закрытие окна
+  скрывает его вместо выхода; выход - только через меню значка в трее.
 
 Запуск:   xfce4-terminal-local
-Меню:     "Xfce Terminal (Split Panes)"
+Меню:     "Xfce4 Terminal (Split Panes)"
 Путь:     /usr/local/bin/xfce4-terminal-local
 
 Изоляция от системного пакета xfce4-terminal:
   - своё имя бинарника (нет перекрытия в PATH)
   - своё D-Bus-имя org.xfce.Terminal5Local
-  - свои настройки: канал xfconf "xfce4-terminal-local" НЕ используется,
-    настройки общие с системным терминалом (тот же канал xfce4-terminal)
+  - настройки общие с системным терминалом (тот же канал xfce4-terminal)
 
 Удаление:  sudo pacman -Rns xfce4-terminal-local
 EOF
