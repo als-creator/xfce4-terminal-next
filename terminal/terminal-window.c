@@ -4230,6 +4230,10 @@ terminal_window_add_panes (TerminalWindow *window,
   /* create the tab label */
   label = terminal_window_create_panes_label (window, panes);
 
+  /* show the pane tree first, see bug #13263 (the notebook does not show the
+   * page itself and window init already ran before the tab was added) */
+  gtk_widget_show (GTK_WIDGET (panes));
+
   page = gtk_notebook_insert_page (GTK_NOTEBOOK (window->priv->notebook), GTK_WIDGET (panes), label, -1);
   gtk_container_child_set (GTK_CONTAINER (window->priv->notebook), GTK_WIDGET (panes), "tab-expand", TRUE, NULL);
   gtk_container_child_set (GTK_CONTAINER (window->priv->notebook), GTK_WIDGET (panes), "tab-fill", TRUE, NULL);
