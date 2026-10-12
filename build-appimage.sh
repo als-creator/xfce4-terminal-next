@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
 APPDIR="$SCRIPT_DIR/xfce4-terminal.AppDir"
-OUTPUT_DIR="$HOME/xfce4-terminal.AppImage"
+OUTPUT_DIR="$HOME"
 LINUXDEPLOY_DIR="/tmp/opencode/appimage-tools/squashfs-root"
 APPIMAGETOOL="/tmp/opencode/appimage-tools/appimagetool-x86_64.AppImage"
 
