@@ -529,8 +529,11 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
 
 
-  /* section: tmux */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux"));
+  /* section: tmux launch command */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux Launch Command"));
+  label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+  gtk_widget_show (label);
 
   entry = gtk_entry_new ();
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
@@ -540,8 +543,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                                         " \"Start tmux Session\" menu entry.\n"
                                         "The default attaches to an existing session, which is"
                                         " what makes it survive an SSH disconnect."));
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
   gtk_widget_set_hexpand (entry, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), entry, 0, row, 3, 1);
+  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
   gtk_widget_show (entry);
 
 
