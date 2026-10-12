@@ -284,6 +284,12 @@ terminal_window_action_split_horizontal (TerminalWindow *window);
 static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window);
 static gboolean
+terminal_window_action_start_tmux_named (TerminalWindow *window);
+static gboolean
+terminal_window_action_tmux_attach (TerminalWindow *window);
+static gboolean
+terminal_window_action_tmux_kill (TerminalWindow *window);
+static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
 static gboolean
 terminal_window_action_close_pane (TerminalWindow *window);
@@ -889,12 +895,42 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_START_TMUX,
     "<Actions>/terminal-window/start-tmux",
-    "<control><shift>t",
+    "<control><shift>m",
     XFCE_GTK_IMAGE_MENU_ITEM,
-    N_ ("Start _tmux Session"),
+    N_ ("Start tmux _Session"),
     N_ ("Run tmux in this pane; the session survives an SSH disconnect"),
     "utilities-terminal",
     G_CALLBACK (terminal_window_action_start_tmux),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_START_TMUX_NAMED,
+    "<Actions>/terminal-window/start-tmux-named",
+    "",
+    XFCE_GTK_IMAGE_MENU_ITEM,
+    N_ ("Start tmux Session as _Named..."),
+    N_ ("Prompt for a session name and start tmux with it"),
+    "utilities-terminal",
+    G_CALLBACK (terminal_window_action_start_tmux_named),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_TMUX_ATTACH,
+    "<Actions>/terminal-window/tmux-attach",
+    "",
+    XFCE_GTK_IMAGE_MENU_ITEM,
+    N_ ("Attach to tmux _Session..."),
+    N_ ("List the existing tmux sessions and attach to the chosen one"),
+    "utilities-terminal",
+    G_CALLBACK (terminal_window_action_tmux_attach),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_TMUX_KILL,
+    "<Actions>/terminal-window/tmux-kill",
+    "",
+    XFCE_GTK_IMAGE_MENU_ITEM,
+    N_ ("_Kill tmux Session..."),
+    N_ ("Choose a tmux session to kill"),
+    "utilities-terminal",
+    G_CALLBACK (terminal_window_action_tmux_kill),
   },
   {
     TERMINAL_WINDOW_ACTION_FOCUS_UP,
@@ -2872,6 +2908,232 @@ terminal_window_action_start_tmux (TerminalWindow *window)
 
 
 
+/* asks for a single line of text and returns it newly allocated, or NULL */
+static gchar *
+terminal_window_ask_text (TerminalWindow *window,
+                          const gchar *title,
+                          const gchar *initial)
+{
+  GtkWidget *dialog;
+  GtkWidget *box;
+  GtkWidget *entry;
+  gchar *result = NULL;
+
+  dialog = gtk_dialog_new_with_buttons (title, GTK_WINDOW (window),
+                                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                        _("_OK"), GTK_RESPONSE_ACCEPT,
+                                        NULL);
+  gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ON_PARENT);
+  gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+
+  box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+  gtk_container_set_border_width (GTK_CONTAINER (box), 6);
+
+  entry = gtk_entry_new ();
+  gtk_entry_set_text (GTK_ENTRY (entry), initial != NULL ? initial : "");
+  gtk_entry_set_activates_default (GTK_ENTRY (entry), TRUE);
+  gtk_box_pack_start (GTK_BOX (box), entry, TRUE, TRUE, 0);
+  gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_ACCEPT);
+  gtk_widget_show_all (dialog);
+
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+    result = g_strdup (gtk_entry_get_text (GTK_ENTRY (entry)));
+
+  gtk_widget_destroy (dialog);
+
+  return result;
+}
+
+
+
+static gboolean
+terminal_window_action_start_tmux_named (TerminalWindow *window)
+{
+  gchar *name;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  if (window->priv->active == NULL)
+    return TRUE;
+
+  name = terminal_window_ask_text (window, _("Start tmux Session"), "main");
+  if (name == NULL || *name == '\0')
+    {
+      g_free (name);
+      return TRUE;
+    }
+
+  {
+    gchar *cmd = g_strdup_printf ("tmux new-session -A -s %s\n", name);
+
+    terminal_screen_feed_text (window->priv->active, cmd);
+    g_free (cmd);
+  }
+
+  g_free (name);
+
+  return TRUE;
+}
+
+
+
+/* returns a newly allocated list of tmux session names, or NULL */
+static GSList *
+terminal_window_tmux_sessions (void)
+{
+  gchar *output = NULL;
+  gchar **lines;
+  GSList *names = NULL;
+  gint i;
+
+  if (!g_spawn_command_line_sync ("tmux list-sessions -F '#S'",
+                                  &output, NULL, NULL, NULL))
+    return NULL;
+
+  if (output == NULL || *output == '\0')
+    {
+      g_free (output);
+      return NULL;
+    }
+
+  lines = g_strsplit (output, "\n", -1);
+  g_free (output);
+
+  for (i = 0; lines[i] != NULL; i++)
+    {
+      if (*lines[i] != '\0')
+        names = g_slist_prepend (names, g_strdup (lines[i]));
+    }
+
+  g_strfreev (lines);
+
+  return g_slist_reverse (names);
+}
+
+
+
+static gboolean
+terminal_window_action_tmux_attach (TerminalWindow *window)
+{
+  GtkWidget *dialog;
+  GtkWidget *content;
+  GtkWidget *combo;
+  GSList *names, *lp;
+  gboolean done = FALSE;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  if (window->priv->active == NULL)
+    return TRUE;
+
+  names = terminal_window_tmux_sessions ();
+  if (names == NULL)
+    {
+      /* nothing running: fall back to creating the default session */
+      terminal_screen_feed_text (window->priv->active,
+                                 "tmux new-session -A -s main\n");
+      return TRUE;
+    }
+
+  dialog = gtk_dialog_new_with_buttons (_("Attach to tmux Session"),
+                                        GTK_WINDOW (window),
+                                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                        _("_Attach"), GTK_RESPONSE_ACCEPT,
+                                        NULL);
+  gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ON_PARENT);
+  gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+
+  content = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+  gtk_container_set_border_width (GTK_CONTAINER (content), 6);
+
+  combo = gtk_combo_box_text_new ();
+  for (lp = names; lp != NULL; lp = lp->next)
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (combo), lp->data);
+  gtk_box_pack_start (GTK_BOX (content), combo, TRUE, TRUE, 0);
+  gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_ACCEPT);
+  gtk_widget_show_all (dialog);
+
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+    {
+      const gchar *sel = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (combo));
+
+      if (sel != NULL)
+        {
+          gchar *cmd = g_strdup_printf ("tmux attach-session -t %s\n", sel);
+
+          terminal_screen_feed_text (window->priv->active, cmd);
+          g_free (cmd);
+          done = TRUE;
+        }
+    }
+
+  gtk_widget_destroy (dialog);
+  g_slist_free_full (names, g_free);
+
+  return done || TRUE;
+}
+
+
+
+static gboolean
+terminal_window_action_tmux_kill (TerminalWindow *window)
+{
+  GtkWidget *dialog;
+  GtkWidget *content;
+  GtkWidget *combo;
+  GSList *names, *lp;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  if (window->priv->active == NULL)
+    return TRUE;
+
+  names = terminal_window_tmux_sessions ();
+  if (names == NULL)
+    return TRUE;
+
+  dialog = gtk_dialog_new_with_buttons (_("Kill tmux Session"),
+                                        GTK_WINDOW (window),
+                                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                        _("_Kill"), GTK_RESPONSE_ACCEPT,
+                                        NULL);
+  gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ON_PARENT);
+  gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+
+  content = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+  gtk_container_set_border_width (GTK_CONTAINER (content), 6);
+
+  combo = gtk_combo_box_text_new ();
+  for (lp = names; lp != NULL; lp = lp->next)
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (combo), lp->data);
+  gtk_box_pack_start (GTK_BOX (content), combo, TRUE, TRUE, 0);
+  gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_ACCEPT);
+  gtk_widget_show_all (dialog);
+
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+    {
+      const gchar *sel = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (combo));
+
+      if (sel != NULL)
+        {
+          gchar *cmd = g_strdup_printf ("tmux kill-session -t %s\n", sel);
+
+          terminal_screen_feed_text (window->priv->active, cmd);
+          g_free (cmd);
+        }
+    }
+
+  gtk_widget_destroy (dialog);
+  g_slist_free_full (names, g_free);
+
+  return TRUE;
+}
+
+
+
 static gboolean
 terminal_window_action_close_pane (TerminalWindow *window)
 {
@@ -4717,6 +4979,8 @@ terminal_window_menu_add_section (TerminalWindow *window,
 
   GtkWidget *item;
   GtkWidget *insert_to_menu;
+  GtkWidget *tmux_menu;
+  GtkWidget *tmux_item;
   GtkMenu *submenu;
   static const gint n_signal_names = 31;
 
@@ -4782,7 +5046,18 @@ terminal_window_menu_add_section (TerminalWindow *window,
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SPLIT_VERTICAL), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_PANE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
+
+      tmux_menu = gtk_menu_new ();
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (tmux_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX_NAMED), G_OBJECT (window), GTK_MENU_SHELL (tmux_menu));
+      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (tmux_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_TMUX_ATTACH), G_OBJECT (window), GTK_MENU_SHELL (tmux_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_TMUX_KILL), G_OBJECT (window), GTK_MENU_SHELL (tmux_menu));
+      gtk_widget_show_all (tmux_menu);
+
+      tmux_item = gtk_menu_item_new_with_mnemonic (_("tmux _Session"));
+      gtk_menu_item_set_submenu (GTK_MENU_ITEM (tmux_item), tmux_menu);
+      gtk_menu_shell_append (GTK_MENU_SHELL (insert_to_menu), tmux_item);
     }
 
   if (sections & MENU_SECTION_VIEW)
