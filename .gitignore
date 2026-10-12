@@ -1,0 +1,11 @@
+# Сборка AppImage
+/xfce4-terminal.AppDir/
+/squashfs-root/
+/dist/
+*.AppImage
+
+# Сборка Arch-пакета
+/pkg/
+/src/
+/pkg.tar.zst
+*.pkg.tar.zst

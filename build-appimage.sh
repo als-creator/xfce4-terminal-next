@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
 APPDIR="$SCRIPT_DIR/xfce4-terminal.AppDir"
-OUTPUT_DIR="$HOME"
+OUTPUT_DIR="$SCRIPT_DIR/dist"
 LINUXDEPLOY_DIR="/tmp/opencode/appimage-tools/squashfs-root"
 APPIMAGETOOL="/tmp/opencode/appimage-tools/appimagetool-x86_64.AppImage"
 
@@ -74,7 +74,6 @@ OUTPUT_FILE="$OUTPUT_DIR/xfce4-terminal-${VERSION}-x86_64.AppImage"
 
 "$APPIMAGETOOL" \
     --appimage-extract-and-run \
-    --yes \
     "$APPDIR" \
     "$OUTPUT_FILE" \
     2>&1 | tee /tmp/opencode/appimagetool.log
