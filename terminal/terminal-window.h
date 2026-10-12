@@ -173,6 +173,12 @@ void
 terminal_window_add_panes (TerminalWindow *window,
                            TerminalPanes *panes);
 
+guint
+terminal_window_get_n_tabs (TerminalWindow *window);
+
+void
+terminal_window_add_fresh_tab (TerminalWindow *window);
+
 TerminalScreen *
 terminal_window_get_active (TerminalWindow *window);
 

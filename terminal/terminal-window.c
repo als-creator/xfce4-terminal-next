@@ -2887,7 +2887,6 @@ static gboolean
 terminal_window_add_fresh_tab_idle (gpointer user_data)
 {
   TerminalWindow *window = TERMINAL_WINDOW (user_data);
-  TerminalScreen *fresh;
 
   /* the window may have been destroyed, or a new tab may already exist,
    * while we were waiting for the idle to run */
@@ -2898,12 +2897,37 @@ terminal_window_add_fresh_tab_idle (gpointer user_data)
       || gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook)) > 0)
     return G_SOURCE_REMOVE;
 
+  terminal_window_add_fresh_tab (window);
+
+  return G_SOURCE_REMOVE;
+}
+
+
+
+guint
+terminal_window_get_n_tabs (TerminalWindow *window)
+{
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), 0);
+
+  return gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
+}
+
+
+
+void
+terminal_window_add_fresh_tab (TerminalWindow *window)
+{
+  TerminalScreen *fresh;
+
+  g_return_if_fail (TERMINAL_IS_WINDOW (window));
+
+  if (terminal_window_get_n_tabs (window) > 0)
+    return;
+
   fresh = terminal_screen_new (terminal_tab_attr_new (),
                                window->priv->grid_width,
                                window->priv->grid_height);
   terminal_window_add (window, fresh);
-
-  return G_SOURCE_REMOVE;
 }
 
 

@@ -816,6 +816,12 @@ terminal_app_tray_show_hide (TerminalApp *app)
         }
       else
         {
+          /* Safety net: a window must never be presented without a tab, or it
+           * shows as a grey empty frame. Mirrors guake, which re-adds a tab
+           * before showing the window again. */
+          if (terminal_window_get_n_tabs (TERMINAL_WINDOW (lp->data)) == 0)
+            terminal_window_add_fresh_tab (TERMINAL_WINDOW (lp->data));
+
           gtk_widget_show (GTK_WIDGET (lp->data));
           gtk_window_present (GTK_WINDOW (lp->data));
         }
