@@ -1821,3 +1821,11 @@ msgstr "Настроить терминал Xfce"
 #: xfce4-terminal-settings.desktop.in:6
 msgid "terminal;settings;preferences;configuration;configure;"
 msgstr "terminal;settings;preferences;configuration;configure;терминал;консоль;настройки;конфигурация;настроить;"
+
+#: terminal/terminal-preferences-dialog.c:533
+msgid "tmux Launch Options"
+msgstr "Опции запуска tmux"
+
+#: terminal/terminal-preferences-dialog.c:534
+msgid "Command to _start tmux:"
+msgstr "Команда _запуска tmux:"

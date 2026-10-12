@@ -529,8 +529,8 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
 
 
-  /* section: tmux launch command */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux Launch Command"));
+  /* section: tmux launch options */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux Launch Options"));
   label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
   gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
   gtk_widget_show (label);
