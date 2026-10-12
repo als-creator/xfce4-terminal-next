@@ -1760,7 +1760,7 @@ static void
 terminal_screen_vte_window_contents_changed (TerminalScreen *screen)
 {
   g_return_if_fail (TERMINAL_IS_SCREEN (screen));
-  g_return_if_fail (GTK_IS_LABEL (screen->tab_label));
+  g_return_if_fail (screen->tab_label == NULL || GTK_IS_LABEL (screen->tab_label));
   g_return_if_fail (TERMINAL_IS_PREFERENCES (screen->preferences));
 
   /* leave if we should not start an update */
@@ -2859,6 +2859,15 @@ terminal_screen_focus (TerminalScreen *screen)
 {
   g_return_if_fail (TERMINAL_IS_SCREEN (screen));
   gtk_widget_grab_focus (GTK_WIDGET (screen->terminal));
+}
+
+
+
+GtkWidget *
+terminal_screen_get_terminal_widget (TerminalScreen *screen)
+{
+  g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), NULL);
+  return GTK_WIDGET (screen->terminal);
 }
 
 

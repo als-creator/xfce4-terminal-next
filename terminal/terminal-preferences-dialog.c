@@ -529,6 +529,20 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
 
 
+  /* section: Status Icon */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Status Icon"));
+
+  button = gtk_check_button_new_with_mnemonic (_("Show a status icon in the notification area"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tray-icon",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Keep the application running in the notification area;"
+                                         " closing a window hides it instead of quitting."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+
+
   /*
    * Drop-down
    */

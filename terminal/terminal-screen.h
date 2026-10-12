@@ -110,6 +110,14 @@ terminal_screen_get_tab_label (TerminalScreen *screen);
 void
 terminal_screen_focus (TerminalScreen *screen);
 
+/**
+ * Returns the widget that receives keyboard focus inside @screen
+ * (the embedded terminal). Used by the split-pane container to track
+ * which pane the user focused.
+ **/
+GtkWidget *
+terminal_screen_get_terminal_widget (TerminalScreen *screen);
+
 const gchar *
 terminal_screen_get_encoding (TerminalScreen *screen);
 void

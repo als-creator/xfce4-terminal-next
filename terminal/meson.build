@@ -10,6 +10,8 @@ terminal_sources = [
   'terminal-image-loader.h',
   'terminal-options.c',
   'terminal-options.h',
+  'terminal-panes.c',
+  'terminal-panes.h',
   'terminal-preferences-dialog.c',
   'terminal-preferences-dialog.h',
   'terminal-preferences.c',

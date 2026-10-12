@@ -21,6 +21,7 @@
 #define TERMINAL_WINDOW_H
 
 #include "terminal-options.h"
+#include "terminal-panes.h"
 #include "terminal-preferences.h"
 #include "terminal-screen.h"
 
@@ -94,6 +95,17 @@ typedef enum
   TERMINAL_WINDOW_ACTION_READ_ONLY,
   TERMINAL_WINDOW_ACTION_SCROLL_ON_OUTPUT,
 
+  /* split panes */
+  TERMINAL_WINDOW_ACTION_SPLIT_HORIZONTAL,
+  TERMINAL_WINDOW_ACTION_SPLIT_VERTICAL,
+  TERMINAL_WINDOW_ACTION_CLOSE_PANE,
+  TERMINAL_WINDOW_ACTION_FOCUS_UP,
+  TERMINAL_WINDOW_ACTION_FOCUS_DOWN,
+  TERMINAL_WINDOW_ACTION_FOCUS_LEFT,
+  TERMINAL_WINDOW_ACTION_FOCUS_RIGHT,
+  TERMINAL_WINDOW_ACTION_FOCUS_NEXT,
+  TERMINAL_WINDOW_ACTION_FOCUS_PREV,
+
   /* go-to tab accelerators */
   TERMINAL_WINDOW_ACTION_GOTO_TAB_1,
   TERMINAL_WINDOW_ACTION_GOTO_TAB_2,
@@ -115,6 +127,7 @@ typedef enum
   MENU_SECTION_COPY = 1 << 2,
   MENU_SECTION_PASTE = 1 << 3,
   MENU_SECTION_VIEW = 1 << 4,
+  MENU_SECTION_SPLIT = 1 << 5,
 } MenuSections;
 
 typedef struct _TerminalWindowClass
@@ -154,6 +167,10 @@ terminal_window_new (const gchar *role,
 void
 terminal_window_add (TerminalWindow *window,
                      TerminalScreen *screen);
+
+void
+terminal_window_add_panes (TerminalWindow *window,
+                           TerminalPanes *panes);
 
 TerminalScreen *
 terminal_window_get_active (TerminalWindow *window);

@@ -117,6 +117,7 @@ enum
   PROP_MISC_SHOW_UNSAFE_PASTE_DIALOG,
   PROP_MISC_RIGHT_CLICK_ACTION,
   PROP_MISC_HYPERLINKS_ENABLED,
+  PROP_MISC_TRAY_ICON,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
   PROP_SCROLLING_LINES,
@@ -1110,6 +1111,19 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           NULL,
                           "MiscHyperlinksEnabled",
                           TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-tray-icon:
+   *
+   * Whether to keep a status icon in the notification area that keeps the
+   * application running when the last window is closed.
+   **/
+  preferences_props[PROP_MISC_TRAY_ICON] =
+    g_param_spec_boolean ("misc-tray-icon",
+                          NULL,
+                          "MiscTrayIcon",
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
