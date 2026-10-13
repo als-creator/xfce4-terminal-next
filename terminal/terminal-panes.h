@@ -84,6 +84,27 @@ gchar *
 terminal_panes_get_layout (TerminalPanes *panes);
 
 /**
+ * Same as terminal_panes_get_layout(), but every pane also contributes the
+ * directory it was last in, one per pane in the same order as the layout:
+ * "H50,.,.)|/home/user/src|/tmp".
+ *
+ * A directory can contain anything, so the count of the fields is taken from
+ * the layout and not from the separators; an empty field means that no
+ * directory was remembered for that pane. Records without any field (written
+ * by an older version) stay valid: they simply carry no directories.
+ */
+gchar *
+terminal_panes_get_session_layout (TerminalPanes *panes);
+
+/**
+ * Splits a record written by terminal_panes_get_session_layout() into its
+ * directories. Returns a newly allocated NULL-terminated array to be freed with
+ * g_strfreev(), or NULL when the record carries no directories at all.
+ */
+gchar **
+terminal_panes_session_cdirs (const gchar *record);
+
+/**
  * Removes @screen from the pane tree, collapsing the split.
  *
  * Returns %FALSE (and does nothing) if @screen is the only pane left; in that

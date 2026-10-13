@@ -241,6 +241,10 @@ struct _TerminalScreen
   gchar *working_directory;
   GCancellable *cancellable;
 
+  /* TRUE when the working directory was asked for on the command line or in
+   * the preferences, so that a restored pane does not overwrite it */
+  guint directory_is_explicit : 1;
+
   gchar **custom_command;
   gchar *custom_title;
   gchar *initial_title;
@@ -2146,7 +2150,10 @@ terminal_screen_new (TerminalTabAttr *attr,
   if (attr->command != NULL)
     terminal_screen_set_custom_command (screen, attr->command);
   if (attr->directory != NULL)
-    terminal_screen_set_working_directory (screen, attr->directory);
+    {
+      terminal_screen_set_working_directory (screen, attr->directory);
+      screen->directory_is_explicit = TRUE;
+    }
   if (attr->title != NULL)
     terminal_screen_set_custom_title (screen, attr->title);
   if (attr->initial_title != NULL)
@@ -2530,6 +2537,23 @@ terminal_screen_get_title (TerminalScreen *screen)
  *
  * Return value : The current working directory of @screen.
  **/
+/**
+ * terminal_screen_has_explicit_directory:
+ * @screen: a #TerminalScreen
+ *
+ * Returns: %TRUE when the working directory of @screen was asked for rather
+ * than guessed, in which case a restored pane must keep it.
+ */
+gboolean
+terminal_screen_has_explicit_directory (TerminalScreen *screen)
+{
+  g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), FALSE);
+
+  return screen->directory_is_explicit ? TRUE : FALSE;
+}
+
+
+
 const gchar *
 terminal_screen_get_working_directory (TerminalScreen *screen)
 {

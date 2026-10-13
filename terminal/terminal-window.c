@@ -370,6 +370,9 @@ terminal_window_restore_panes_layout (TerminalWindow *window,
                                        const gchar     *layout);
 static void
 terminal_window_save_panes_layouts (TerminalWindow *window);
+static gchar *
+terminal_window_saved_pane_directory (const gchar *record,
+                                      guint        nth);
 
 static void
 terminal_window_create_menu (TerminalWindow *window,
@@ -1657,7 +1660,6 @@ terminal_window_focus_in_event (GtkWidget *widget,
 
 
 /* Guake-style layout normalization for the accelerators of this window.
-/* Guake-style layout normalization for the accelerators of this window.
  *
  * Under a non-latin layout a key press such as Ctrl+Shift+T produces a cyrillic
  * keysym, so the accelerators of the window (which are stored as latin keysyms)
@@ -2088,8 +2090,27 @@ terminal_window_notebook_page_added (GtkNotebook *notebook,
       && window->priv->panes_layouts != NULL
       && window->priv->panes_layouts[window->priv->panes_layout_index] != NULL)
     {
-      terminal_window_restore_panes_layout (window, panes,
-                                             window->priv->panes_layouts[window->priv->panes_layout_index]);
+      const gchar *record = window->priv->panes_layouts[window->priv->panes_layout_index];
+
+      /* the shell of the first pane is started after this handler returns, so
+       * this is the last chance to send it to the directory it was left in */
+      if (screens != NULL)
+        {
+          TerminalScreen *first = TERMINAL_SCREEN (screens->data);
+
+          if (!terminal_screen_has_explicit_directory (first))
+            {
+              gchar *directory = terminal_window_saved_pane_directory (record, 0);
+
+              if (directory != NULL && *directory != '\0'
+                  && g_file_test (directory, G_FILE_TEST_IS_DIR))
+                terminal_screen_set_working_directory (first, directory);
+
+              g_free (directory);
+            }
+        }
+
+      terminal_window_restore_panes_layout (window, panes, record);
       window->priv->panes_layout_index++;
     }
 
@@ -2989,33 +3010,58 @@ terminal_window_action_new_tab (TerminalWindow *window)
  * Every split of the fork anchors on a single pane, so replaying a layout is
  * just a sequence of terminal_panes_split_screen_at() calls: first split the
  * pane that is being restored, then grow its left side, then its right side. */
+typedef struct
+{
+  /* where we are in the layout string of the tab */
+  const gchar *cursor;
+
+  /* the directories the panes were left in, one per pane of the layout; they
+   * are handed out in the same order the panes are created in */
+  gchar **cdirs;
+  guint n_cdirs;
+  guint next_cdir;
+} TerminalPanesRestore;
+
+
+/* the next remembered directory, or NULL when the record carries none left */
+static const gchar *
+terminal_panes_restore_next_cdir (TerminalPanesRestore *restore)
+{
+  if (restore == NULL || restore->next_cdir >= restore->n_cdirs)
+    return NULL;
+
+  return restore->cdirs[restore->next_cdir++];
+}
+
+
 static void
-terminal_window_restore_panes_subtree (TerminalWindow  *window,
-                                        TerminalPanes    *panes,
-                                        TerminalScreen   *screen,
-                                        const gchar     **cursor)
+terminal_window_restore_panes_subtree (TerminalWindow     *window,
+                                        TerminalPanes       *panes,
+                                        TerminalScreen      *screen,
+                                        TerminalPanesRestore *restore)
 {
   const gchar *p;
   GtkOrientation orientation;
   gdouble fraction = 0.5;
   gint percent;
   TerminalScreen *new_screen;
+  const gchar *cdir;
 
-  if (screen == NULL || cursor == NULL || *cursor == NULL || **cursor == '\0')
+  if (screen == NULL || restore == NULL || restore->cursor == NULL)
     return;
 
-  p = *cursor;
+  p = restore->cursor;
 
   /* a leaf is a single pane, nothing to restore */
   if (*p == '.')
     {
-      *cursor = p + 1;
+      restore->cursor = p + 1;
       return;
     }
 
   if (*p != 'H' && *p != 'V')
     {
-      *cursor = NULL;
+      restore->cursor = NULL;
       return;
     }
 
@@ -3039,12 +3085,12 @@ terminal_window_restore_panes_subtree (TerminalWindow  *window,
     p++;
 
   /* the left side grows inside the pane we already have */
-  *cursor = p;
-  terminal_window_restore_panes_subtree (window, panes, screen, cursor);
-  if (*cursor == NULL)
+  restore->cursor = p;
+  terminal_window_restore_panes_subtree (window, panes, screen, restore);
+  if (restore->cursor == NULL)
     return;
 
-  p = *cursor;
+  p = restore->cursor;
   if (*p == ',')
     p++;
 
@@ -3057,20 +3103,25 @@ terminal_window_restore_panes_subtree (TerminalWindow  *window,
 
   terminal_screen_widget_append_accels (new_screen, window->priv->accel_group);
 
+  /* the shell of this pane starts in the directory it was left in */
+  cdir = terminal_panes_restore_next_cdir (restore);
+  if (cdir != NULL && *cdir != '\0' && g_file_test (cdir, G_FILE_TEST_IS_DIR))
+    terminal_screen_set_working_directory (new_screen, cdir);
+
   terminal_panes_split_screen_at (panes, screen, orientation, new_screen, fraction);
   terminal_screen_launch_child (new_screen);
 
   /* the right side grows inside the new pane */
-  *cursor = p;
-  terminal_window_restore_panes_subtree (window, panes, new_screen, cursor);
-  if (*cursor == NULL)
+  restore->cursor = p;
+  terminal_window_restore_panes_subtree (window, panes, new_screen, restore);
+  if (restore->cursor == NULL)
     return;
 
-  p = *cursor;
+  p = restore->cursor;
   if (*p == ')')
     p++;
 
-  *cursor = p;
+  restore->cursor = p;
 }
 
 
@@ -3078,13 +3129,26 @@ terminal_window_restore_panes_subtree (TerminalWindow  *window,
 static void
 terminal_window_restore_panes_layout (TerminalWindow *window,
                                        TerminalPanes   *panes,
-                                       const gchar     *layout)
+                                       const gchar     *record)
 {
+  TerminalPanesRestore restore;
   TerminalScreen *screen;
-  const gchar *cursor = layout;
+  const gchar *bar;
+  gchar *layout;
 
-  if (layout == NULL || *layout == '\0' || strcmp (layout, ".") == 0)
+  if (record == NULL || *record == '\0')
     return;
+
+  /* the record is the layout of the tab followed by the directory of every
+   * pane; the layout grammar knows no '|', so the first one ends it */
+  bar = strchr (record, '|');
+  layout = g_strndup (record, bar != NULL ? (gsize) (bar - record) : strlen (record));
+
+  if (*layout == '\0' || strcmp (layout, ".") == 0)
+    {
+      g_free (layout);
+      return;
+    }
 
   screen = terminal_panes_get_active (panes);
   if (screen == NULL)
@@ -3095,7 +3159,42 @@ terminal_window_restore_panes_layout (TerminalWindow *window,
     }
 
   if (screen != NULL)
-    terminal_window_restore_panes_subtree (window, panes, screen, &cursor);
+    {
+      restore.cdirs = terminal_panes_session_cdirs (record);
+      restore.n_cdirs = restore.cdirs != NULL ? g_strv_length (restore.cdirs) : 0;
+      /* the first pane got its directory when it was created, its shell has not
+       * been started yet at this point */
+      restore.next_cdir = 1;
+      restore.cursor = layout;
+
+      terminal_window_restore_panes_subtree (window, panes, screen, &restore);
+
+      g_strfreev (restore.cdirs);
+    }
+
+  g_free (layout);
+}
+
+
+/* the directory the first pane of a tab was left in, newly allocated or NULL */
+static gchar *
+terminal_window_saved_pane_directory (const gchar *record,
+                                      guint        nth)
+{
+  gchar **cdirs;
+  gchar *directory;
+
+  cdirs = terminal_panes_session_cdirs (record);
+  if (cdirs == NULL || cdirs[nth] == NULL)
+    {
+      g_strfreev (cdirs);
+      return NULL;
+    }
+
+  directory = g_strdup (cdirs[nth]);
+  g_strfreev (cdirs);
+
+  return directory;
 }
 
 
@@ -3117,7 +3216,8 @@ terminal_window_save_panes_layouts (TerminalWindow *window)
       GtkWidget *child = gtk_notebook_get_nth_page (GTK_NOTEBOOK (window->priv->notebook), i);
 
       if (TERMINAL_IS_PANES (child))
-        g_ptr_array_add (layouts, terminal_panes_get_layout (TERMINAL_PANES (child)));
+        g_ptr_array_add (layouts,
+                         terminal_panes_get_session_layout (TERMINAL_PANES (child)));
     }
 
   g_object_set (G_OBJECT (window->priv->preferences), "misc-panes-layouts", layouts->pdata, NULL);

@@ -61,6 +61,10 @@ struct _TerminalPanes
 #define PANES_MOVE_STEP 10
 #define PANES_MIN_PANE_SIZE 35
 
+/* separates the layout of a saved tab from the directories of its panes; the
+ * layout grammar has no character like it */
+#define PANES_CDIR_SEPARATOR '|'
+
 
 
 enum
@@ -759,6 +763,102 @@ terminal_panes_get_layout (TerminalPanes *panes)
 /* Guake has no separate "active pane" state: the pane that owns the keyboard
  * focus is the active one. panes->active stays as a cache for the moments when
  * the focus is outside the pane tree (menu, dialog, search bar). */
+/**
+ * terminal_panes_get_session_layout:
+ * @panes: a #TerminalPanes
+ *
+ * Returns the pane layout together with the directory of every pane, so that a
+ * tab that is restored comes back with its shells in the directories they were
+ * left in.
+ *
+ * Returns: (transfer full): a newly allocated record, free with g_free().
+ */
+gchar *
+terminal_panes_get_session_layout (TerminalPanes *panes)
+{
+  GSList *screens, *lp;
+  GString *str;
+  gchar *layout;
+
+  g_return_val_if_fail (TERMINAL_IS_PANES (panes), NULL);
+
+  layout = terminal_panes_get_layout (panes);
+  str = g_string_new (layout != NULL ? layout : ".");
+  g_free (layout);
+
+  /* the panes are collected in the same order the layout walks the tree, so the
+   * n-th field belongs to the n-th pane of the layout */
+  screens = terminal_panes_get_screens (panes);
+  for (lp = screens; lp != NULL; lp = lp->next)
+    {
+      const gchar *directory;
+
+      directory = terminal_screen_get_working_directory (TERMINAL_SCREEN (lp->data));
+
+      /* a directory may hold anything but the path separator, the '|', newlines
+       * included, so what is written is escaped and read back unescaped */
+      g_string_append_c (str, PANES_CDIR_SEPARATOR);
+      if (directory != NULL)
+        {
+          gchar *escaped = g_uri_escape_string (directory, NULL, FALSE);
+
+          g_string_append (str, escaped != NULL ? escaped : "");
+          g_free (escaped);
+        }
+    }
+  g_slist_free (screens);
+
+  return g_string_free (str, FALSE);
+}
+
+
+/**
+ * terminal_panes_session_cdirs:
+ * @record: (nullable): a record written by terminal_panes_get_session_layout()
+ *
+ * Returns: (transfer full) (element-type utf8) (nullable): the directories of
+ * the record as a NULL-terminated array, or %NULL when there are none.
+ */
+gchar **
+terminal_panes_session_cdirs (const gchar *record)
+{
+  GPtrArray *cdirs;
+  const gchar *p;
+
+  g_return_val_if_fail (record != NULL, NULL);
+
+  p = strchr (record, PANES_CDIR_SEPARATOR);
+  if (p == NULL)
+    return NULL;
+
+  cdirs = g_ptr_array_new ();
+
+  /* the layout grammar knows no '|', so the first one ends the layout; the
+   * number of directories is decided by the layout, not by the separators */
+  while (*p != '\0')
+    {
+      const gchar *start = p + 1;
+      const gchar *end = strchr (start, PANES_CDIR_SEPARATOR);
+      const gchar *stop = (end != NULL) ? end : start + strlen (start);
+      gchar *raw = g_strndup (start, stop - start);
+      gchar *directory;
+
+      directory = g_uri_unescape_string (raw, NULL);
+      g_ptr_array_add (cdirs, directory != NULL ? directory : raw);
+      g_free (raw);
+
+      if (end == NULL)
+        break;
+
+      p = end;
+    }
+
+  g_ptr_array_add (cdirs, NULL);
+
+  return (gchar **) g_ptr_array_free (cdirs, FALSE);
+}
+
+
 static TerminalScreen *
 panes_screen_from_focus (TerminalPanes *panes)
 {

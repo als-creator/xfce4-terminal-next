@@ -44,6 +44,19 @@ The pane tree of every tab is serialized and restored on the next start, so the
 panes come back the way they were left. A pane is `.`, a split is `H50,.,.`
 (orientation, divider position in percent, then the two sides).
 
+### Tabs come back in their directories
+
+The saved record of a tab carries the directory of every pane after the layout,
+one escaped field per pane, so a restored tab is not just shaped the same way
+but sits in the same directories. The directory of the first pane is applied
+before its shell is started; the others when their pane is created.
+
+The directory is the one the shell reports, so no shell integration is needed:
+VTE is asked for the current directory of the pane, and the process' own
+directory is used when the shell says nothing. A directory that no longer
+exists is skipped, and a directory given on the command line or in the
+preferences is never overwritten.
+
 ### tmux
 
 * <kbd>Ctrl+Shift+M</kbd> runs the configured start command in the pane

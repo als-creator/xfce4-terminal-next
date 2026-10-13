@@ -75,6 +75,16 @@ terminal_screen_get_title (TerminalScreen *screen);
 
 const gchar *
 terminal_screen_get_working_directory (TerminalScreen *screen);
+
+/**
+ * Whether the working directory of @screen was asked for (a directory given on
+ * the command line or in the preferences) rather than guessed. A pane that is
+ * restored from a saved layout must not overwrite such a directory.
+ *
+ * Returns: %TRUE if the directory is known to be the one that was asked for.
+ */
+gboolean
+terminal_screen_has_explicit_directory (TerminalScreen *screen);
 void
 terminal_screen_set_working_directory (TerminalScreen *screen,
                                        const gchar *directory);
