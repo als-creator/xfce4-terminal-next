@@ -651,40 +651,19 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-toggle-key",
                           G_OBJECT (entry), "text",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (entry, _("Grabbed by the terminal itself, so it works only in"
-                                        " an X11 session. Leave the field empty to disable"
-                                        " it."));
+  gtk_widget_set_tooltip_text (entry, _("Grabbed by the terminal itself, so the shortcut"
+                                        " works only in an X11 session; leave the field"
+                                        " empty to disable it. The panel itself works in"
+                                        " X11 as well as in a Wayland session, but a"
+                                        " Wayland client never sees the keys of the other"
+                                        " windows: there, assign a system shortcut to"
+                                        " \"xfce4-terminal-local --drop-down\" and enable"
+                                        " the toggle option above, and the shortcut will"
+                                        " show and hide the panel."));
   gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
   gtk_widget_set_hexpand (entry, TRUE);
   gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
   gtk_widget_show (entry);
-
-  /* next row */
-  row++;
-
-  label = gtk_label_new (_("The panel works in an X11 as well as in a Wayland session, but the"
-                           " terminal can grab the shortcut above only in an X11 session: a"
-                           " Wayland client never sees the keys of the other windows. In a"
-                           " Wayland session, assign a system shortcut to the command below and"
-                           " enable the toggle option above it, so that the shortcut shows and"
-                           " hides the panel."));
-  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
-  gtk_label_set_yalign (GTK_LABEL (label), 0.0f);
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
-  gtk_widget_show (label);
-
-  /* next row */
-  row++;
-
-  label = gtk_label_new (_("Command for the system shortcut:"));
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-  gtk_widget_show (label);
-
-  label = gtk_label_new (PACKAGE_NAME "-local --drop-down");
-  gtk_label_set_selectable (GTK_LABEL (label), TRUE);
-  gtk_grid_attach (GTK_GRID (grid), label, 1, row, 2, 1);
-  gtk_widget_show (label);
 
   /* section: Appearance & Animation */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Appearance and Animation"));

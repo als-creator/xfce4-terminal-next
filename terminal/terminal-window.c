@@ -983,7 +983,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_MOVE_PANE_UP,
     "<Actions>/terminal-window/move-pane-up",
-    "",
+    "<control><shift>Up",
     XFCE_GTK_MENU_ITEM,
     N_ ("Move Pane _Up"),
     N_ ("Move the current split pane up"),
@@ -993,7 +993,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_MOVE_PANE_DOWN,
     "<Actions>/terminal-window/move-pane-down",
-    "",
+    "<control><shift>Down",
     XFCE_GTK_MENU_ITEM,
     N_ ("Move Pane _Down"),
     N_ ("Move the current split pane down"),
@@ -1003,7 +1003,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_MOVE_PANE_LEFT,
     "<Actions>/terminal-window/move-pane-left",
-    "",
+    "<control><shift>Left",
     XFCE_GTK_MENU_ITEM,
     N_ ("Move Pane _Left"),
     N_ ("Move the current split pane left"),
@@ -1013,7 +1013,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_MOVE_PANE_RIGHT,
     "<Actions>/terminal-window/move-pane-right",
-    "",
+    "<control><shift>Right",
     XFCE_GTK_MENU_ITEM,
     N_ ("Move Pane _Right"),
     N_ ("Move the current split pane right"),
