@@ -562,6 +562,20 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
+
+
+
+  /*
+   * Drop-down
+   */
+  label = gtk_label_new (_("Drop-down"));
+  vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
+  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
+  dialog->dropdown_label = GTK_LABEL (label);
+  dialog->dropdown_vbox = GTK_BOX (vbox);
+  dialog->dropdown_notebook = GTK_NOTEBOOK (notebook);
+
+
   /* next row */
   row++;
 
@@ -577,19 +591,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                                          " how to show and hide it in each of them."));
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
-
-
-
-  /*
-   * Drop-down
-   */
-  label = gtk_label_new (_("Drop-down"));
-  vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
-  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
-  dialog->dropdown_label = GTK_LABEL (label);
-  dialog->dropdown_vbox = GTK_BOX (vbox);
-  dialog->dropdown_notebook = GTK_NOTEBOOK (notebook);
-
 
   /* section: Behavior */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));

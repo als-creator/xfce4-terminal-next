@@ -3754,7 +3754,10 @@ terminal_window_action_prefs (TerminalWindow *window)
 {
   if (window->priv->preferences_dialog == NULL)
     {
-      window->priv->preferences_dialog = terminal_preferences_dialog_new (window->priv->drop_down, window->priv->drop_down);
+      /* the drop-down page is always shown: it holds the setting that makes a
+       * window a drop-down in the first place, which has to be reachable from
+       * a normal window too */
+      window->priv->preferences_dialog = terminal_preferences_dialog_new (TRUE, window->priv->drop_down);
       if (G_LIKELY (window->priv->preferences_dialog != NULL))
         {
           window->priv->n_child_windows++;
