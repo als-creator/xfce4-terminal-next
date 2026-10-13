@@ -22,7 +22,7 @@ Native split panes inside a tab, built as a tree of `GtkPaned` in a
 | Close pane | <kbd>Ctrl+Shift+X</kbd> |
 | Focus pane up / down / left / right | <kbd>Alt+↑</kbd> <kbd>Alt+↓</kbd> <kbd>Alt+←</kbd> <kbd>Alt+→</kbd> |
 | Next / previous pane | <kbd>Ctrl+Tab</kbd> <kbd>Ctrl+Shift+Tab</kbd> |
-| Move pane up / down / left / right | unbound, see below |
+| Move pane up / down / left / right | unbound, divider can also be dragged with the mouse |
 
 Ported from Guake, which does the same thing:
 
@@ -33,9 +33,10 @@ Ported from Guake, which does the same thing:
   10px, keeping at least 35px on both sides (`SplitMover` in Guake);
 * the focused pane *is* the active pane, there is no second source of truth.
 
-The four `Move pane` actions ship without an accelerator on purpose: they are
-in the *Split* menu and can be bound in the keyboard shortcuts dialog, so they
-do not fight with keys that full screen applications use.
+The four `Move pane` actions ship without an accelerator and are not in the
+menus: the divider can be dragged with the mouse, and the actions are there for
+the keyboard shortcuts dialog, so that they do not fight with keys that full
+screen applications use.
 
 ### Pane layout is remembered
 

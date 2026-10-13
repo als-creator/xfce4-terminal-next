@@ -5258,11 +5258,6 @@ terminal_window_menu_add_section (TerminalWindow *window,
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_PANE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_UP), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_DOWN), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_LEFT), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_RIGHT), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
     }
 
   if (sections & MENU_SECTION_VIEW)
