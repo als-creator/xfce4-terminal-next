@@ -52,6 +52,10 @@ struct _TerminalPanes
 /* data key used to set the pane position to half only once after allocation */
 #define PANES_OUR_POSITION "panes-our-position"
 
+/* data key for a divider position asked for before the split had a size: the
+ * percentage is applied at the first allocation, otherwise it would be lost */
+#define PANES_WANTED_PERCENT "panes-wanted-percent"
+
 /* how far a single move-pane step shifts the divider, and how small a pane may
  * become while doing so (both taken from Guake's SplitMover) */
 #define PANES_MOVE_STEP 10
@@ -486,7 +490,7 @@ panes_paned_size_allocate (GtkWidget *widget,
                            gpointer user_data G_GNUC_UNUSED)
 {
   GtkOrientation orientation;
-  gint size, half, current, ours;
+  gint size, half, current, ours, position, percent;
 
   orientation = gtk_orientable_get_orientation (GTK_ORIENTABLE (widget));
   size = (orientation == GTK_ORIENTATION_HORIZONTAL)
@@ -494,23 +498,48 @@ panes_paned_size_allocate (GtkWidget *widget,
            : allocation->height;
 
   /* ignore degenerate allocations (e.g. a 1x1 size during construction) */
-  if (size <= 1)
-    return;
-
-  half = MAX (1, size / 2);
-  current = gtk_paned_get_position (GTK_PANED (widget));
-  ours = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (widget),
-                                             PANES_OUR_POSITION));
-
-  /* keep the divider centered on every allocation (which also fixes up the
-   * position after a transient construction-time size), but stop as soon as
-   * the user has dragged the divider somewhere else */
-  if (current == 0 || current == ours)
+  if (size > 1)
     {
-      gtk_paned_set_position (GTK_PANED (widget), half);
-      g_object_set_data (G_OBJECT (widget), PANES_OUR_POSITION,
-                         GINT_TO_POINTER (half));
+      /* a split that asked for a position before it had a size (restoring the
+       * layout of a tab, for instance) gets it here; centering it instead
+       * would throw the stored position away */
+      percent = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (widget), PANES_WANTED_PERCENT));
+      if (percent > 0)
+        {
+          position = CLAMP ((gint) (((gint64) percent * size + 50) / 100),
+                            PANES_MIN_PANE_SIZE,
+                            MAX (PANES_MIN_PANE_SIZE, size - PANES_MIN_PANE_SIZE));
+          /* deliberately no PANES_OUR_POSITION here: that marks "the divider is
+           * still where the container put it", and setting it would let the
+           * centering below undo the stored position on the next allocation */
+          g_object_set_data (G_OBJECT (widget), PANES_WANTED_PERCENT, NULL);
+          gtk_paned_set_position (GTK_PANED (widget), position);
+        }
+      else
+        {
+          half = MAX (1, size / 2);
+          current = gtk_paned_get_position (GTK_PANED (widget));
+          ours = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (widget),
+                                                     PANES_OUR_POSITION));
+
+          /* keep the divider centered on every allocation (which also fixes up
+           * the position after a transient construction-time size), but stop as
+           * soon as the user has dragged the divider somewhere else */
+          if (current == 0 || current == ours)
+            {
+              gtk_paned_set_position (GTK_PANED (widget), half);
+              g_object_set_data (G_OBJECT (widget), PANES_OUR_POSITION,
+                                 GINT_TO_POINTER (half));
+            }
+        }
     }
+
+  /* GtkWidget runs this signal instead of the class handler as soon as a
+   * handler is connected, so without this the panes of a split would keep the
+   * size they were given when the split was made: the divider could be moved
+   * but the panes would not follow it. Chain up, after adjusting the position
+   * so that the panes get their sizes in this very pass. */
+  GTK_WIDGET_GET_CLASS (widget)->size_allocate (widget, allocation);
 }
 
 
@@ -645,6 +674,12 @@ panes_paned_set_fraction (GtkWidget *paned,
 
   if (size <= 2 * PANES_MIN_PANE_SIZE)
     {
+      /* no usable size yet: remember the request in percent (an integer fits
+       * into the object data without allocating) and let the allocation
+       * handler place the divider once the pane knows how big it is */
+      gint percent = (gint) (CLAMP (fraction, 0.0, 1.0) * 100.0 + 0.5);
+
+      g_object_set_data (G_OBJECT (paned), PANES_WANTED_PERCENT, GINT_TO_POINTER (percent));
       panes_paned_position_half (paned);
       return;
     }
