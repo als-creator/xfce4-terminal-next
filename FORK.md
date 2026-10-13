@@ -17,9 +17,9 @@ Native split panes inside a tab, built as a tree of `GtkPaned` in a
 
 | Action | Accelerator |
 | --- | --- |
-| Split horizontally | <kbd>Ctrl+Shift+O</kbd> |
+| Split horizontally | <kbd>Ctrl+Shift+H</kbd> |
 | Split vertically | <kbd>Ctrl+Shift+E</kbd> |
-| Close pane | <kbd>Ctrl+Shift+F4</kbd> |
+| Close pane | <kbd>Ctrl+Shift+X</kbd> |
 | Focus pane up / down / left / right | <kbd>Alt+↑</kbd> <kbd>Alt+↓</kbd> <kbd>Alt+←</kbd> <kbd>Alt+→</kbd> |
 | Next / previous pane | <kbd>Ctrl+Tab</kbd> <kbd>Ctrl+Shift+Tab</kbd> |
 | Move pane up / down / left / right | unbound, see below |

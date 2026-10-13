@@ -883,7 +883,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_SPLIT_HORIZONTAL,
     "<Actions>/terminal-window/split-horizontal",
-    "<control><shift>o",
+    "<control><shift>h",
     XFCE_GTK_IMAGE_MENU_ITEM,
     N_ ("Split _Horizontally"),
     N_ ("Split the terminal side by side"),
@@ -903,7 +903,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_CLOSE_PANE,
     "<Actions>/terminal-window/close-pane",
-    "<control><shift>F4",
+    "<control><shift>x",
     XFCE_GTK_IMAGE_MENU_ITEM,
     N_ ("_Close Pane"),
     N_ ("Close the current split pane"),
