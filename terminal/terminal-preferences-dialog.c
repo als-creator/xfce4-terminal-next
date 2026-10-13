@@ -579,9 +579,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Behavior */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));
 
-  /* next row */
-  row++;
-
   button = gtk_check_button_new_with_mnemonic (_("Use the _drop-down terminal"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-drop-down",
                           G_OBJECT (button), "active",
@@ -594,6 +591,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                                          " how to show and hide it in each of them."));
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
+
+  /* next row */
+  row++;
 
   button = gtk_check_button_new_with_mnemonic (_("_Keep window open when it loses focus"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-keep-open-default",
