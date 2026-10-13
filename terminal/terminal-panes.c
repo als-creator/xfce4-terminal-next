@@ -677,15 +677,16 @@ panes_layout_append (GString   *str,
 
       gtk_widget_get_allocation (widget, &alloc);
       size = (gtk_orientable_get_orientation (GTK_ORIENTABLE (widget)) == GTK_ORIENTATION_HORIZONTAL)
-               ? alloc.width : alloc.height;
+               ? alloc.width
+               : alloc.height;
 
       if (size > 0)
         fraction = CLAMP ((gdouble) gtk_paned_get_position (GTK_PANED (widget)) / (gdouble) size,
                           0.0, 1.0);
 
       g_string_append_printf (str, "%c%d,",
-                              gtk_orientable_get_orientation (GTK_ORIENTABLE (widget)) == GTK_ORIENTATION_HORIZONTAL
-                                ? 'H' : 'V',
+                              gtk_orientable_get_orientation (GTK_ORIENTABLE (widget))
+                                == GTK_ORIENTATION_HORIZONTAL ? 'H' : 'V',
                               (gint) (fraction * 100.0 + 0.5));
 
       panes_layout_append (str, child1);
@@ -773,8 +774,10 @@ terminal_panes_move_pane (TerminalPanes *panes,
       if (!GTK_IS_PANED (parent))
         continue;
 
-      if ((horizontal && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_HORIZONTAL)
-          || (!horizontal && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_VERTICAL))
+      if ((horizontal
+           && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_HORIZONTAL)
+          || (!horizontal
+              && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_VERTICAL))
         break;
     }
 

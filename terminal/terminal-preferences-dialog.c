@@ -571,7 +571,10 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
   gtk_widget_set_tooltip_text (button, _("Open the terminal as a drop-down panel that slides in"
                                          " from the top edge, the same as"
-                                         " \"xfce4-terminal --drop-down\"."));
+                                         " \"xfce4-terminal --drop-down\".\n"
+                                         "The panel works in an X11 as well as in a Wayland"
+                                         " session; the Drop-down page of this dialog explains"
+                                         " how to show and hide it in each of them."));
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
@@ -623,32 +626,65 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
-  /* see terminal_window_dropdown_set_property() */
-  if (WINDOWING_IS_X11 ())
-    {
-      /* next row */
-      row++;
+  /* next row */
+  row++;
 
-      button = gtk_check_button_new_with_mnemonic (_("_Show status icon in notification area"));
-      g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-status-icon",
-                              G_OBJECT (button), "active",
-                              G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-      gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-      gtk_widget_show (button);
+  button = gtk_check_button_new_with_mnemonic (_("Toggle the window when _started again"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-parameters-once",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Show or hide the drop-down window when the"
+                                         " application is started again, instead of"
+                                         " opening a new tab in it."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
 
-      /* next row */
-      row++;
+  /* next row */
+  row++;
 
-      button = gtk_check_button_new_with_mnemonic (_("Toggle the window when _started again"));
-      g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-parameters-once",
-                              G_OBJECT (button), "active",
-                              G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-      gtk_widget_set_tooltip_text (button, _("Show or hide the drop-down window when the"
-                                             " application is started again, instead of"
-                                             " opening a new tab in it."));
-      gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-      gtk_widget_show (button);
-    }
+  label = gtk_label_new_with_mnemonic (_("Global _toggle key (X11 only):"));
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+  gtk_widget_show (label);
+
+  entry = gtk_entry_new ();
+  g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-toggle-key",
+                          G_OBJECT (entry), "text",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (entry, _("Grabbed by the terminal itself, so it works only in"
+                                        " an X11 session. Leave the field empty to disable"
+                                        " it."));
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
+  gtk_widget_set_hexpand (entry, TRUE);
+  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
+  gtk_widget_show (entry);
+
+  /* next row */
+  row++;
+
+  label = gtk_label_new (_("The panel works in an X11 as well as in a Wayland session, but the"
+                           " terminal can grab the shortcut above only in an X11 session: a"
+                           " Wayland client never sees the keys of the other windows. In a"
+                           " Wayland session, assign a system shortcut to the command below and"
+                           " enable the toggle option above it, so that the shortcut shows and"
+                           " hides the panel."));
+  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  gtk_label_set_yalign (GTK_LABEL (label), 0.0f);
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
+  gtk_widget_show (label);
+
+  /* next row */
+  row++;
+
+  label = gtk_label_new (_("Command for the system shortcut:"));
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+  gtk_widget_show (label);
+
+  label = gtk_label_new (PACKAGE_NAME "-local --drop-down");
+  gtk_label_set_selectable (GTK_LABEL (label), TRUE);
+  gtk_grid_attach (GTK_GRID (grid), label, 1, row, 2, 1);
+  gtk_widget_show (label);
 
   /* section: Appearance & Animation */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Appearance and Animation"));

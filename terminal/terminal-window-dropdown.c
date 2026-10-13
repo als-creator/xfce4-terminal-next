@@ -28,6 +28,11 @@
 #include <stdlib.h>
 #endif
 
+#ifdef ENABLE_X11
+#include <gdk/gdkx.h>
+#include <X11/Xlib.h>
+#endif
+
 #ifdef HAVE_GTK_LAYER_SHELL
 #include <gtk-layer-shell.h>
 #endif
@@ -51,7 +56,6 @@ enum
   PROP_DROPDOWN_POSITION,
   PROP_DROPDOWN_POSITION_VERTICAL,
   PROP_DROPDOWN_OPACITY,
-  PROP_DROPDOWN_STATUS_ICON,
   PROP_DROPDOWN_KEEP_ABOVE,
   PROP_DROPDOWN_ANIMATION_TIME,
   PROP_DROPDOWN_ALWAYS_SHOW_TABS,
@@ -74,15 +78,12 @@ terminal_window_dropdown_focus_in_event (GtkWidget *widget,
 static gboolean
 terminal_window_dropdown_focus_out_event (GtkWidget *widget,
                                           GdkEventFocus *event);
-static gboolean
-terminal_window_dropdown_status_icon_press_event (GtkStatusIcon *status_icon,
-                                                  GdkEventButton *event,
-                                                  TerminalWindowDropdown *dropdown);
+#ifdef ENABLE_X11
 static void
-terminal_window_dropdown_status_icon_popup_menu (GtkStatusIcon *status_icon,
-                                                 guint button,
-                                                 guint32 timestamp,
-                                                 TerminalWindowDropdown *dropdown);
+terminal_window_dropdown_grab_toggle_key (TerminalWindowDropdown *dropdown);
+static void
+terminal_window_dropdown_ungrab_toggle_key (TerminalWindowDropdown *dropdown);
+#endif
 static gboolean
 terminal_window_dropdown_can_grab (gpointer data);
 static void
@@ -143,8 +144,6 @@ struct _TerminalWindowDropdown
   gdouble rel_position;
   gdouble rel_position_vertical;
 
-  GtkStatusIcon *status_icon;
-
   /* last screen and monitor */
   GdkScreen *screen;
   gint monitor_num;
@@ -160,6 +159,11 @@ struct _TerminalWindowDropdown
 
   /* used to not hide the terminal when dialogs are opened */
   gboolean ignore_next_focus_out_event;
+
+  /* accelerator grabbed on the X11 root window, if any */
+  guint grab_key;
+  guint grab_mods;
+  GdkFilterFunc grab_filter;
 };
 
 
@@ -217,12 +221,6 @@ terminal_window_dropdown_class_init (TerminalWindowDropdownClass *klass)
                        NULL, NULL,
                        0, 100, 100,
                        G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-
-  dropdown_props[PROP_DROPDOWN_STATUS_ICON] =
-    g_param_spec_boolean ("dropdown-status-icon",
-                          NULL, NULL,
-                          TRUE,
-                          G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
 
   dropdown_props[PROP_DROPDOWN_KEEP_ABOVE] =
     g_param_spec_boolean ("dropdown-keep-above",
@@ -569,8 +567,9 @@ terminal_window_dropdown_finalize (GObject *object)
     g_source_remove (dropdown->monitor_removed_idle_id);
 #endif
 
-  if (dropdown->status_icon != NULL)
-    g_object_unref (G_OBJECT (dropdown->status_icon));
+#ifdef ENABLE_X11
+  terminal_window_dropdown_ungrab_toggle_key (dropdown);
+#endif
 
   if (dropdown->screen != NULL)
     g_signal_handlers_disconnect_by_func (G_OBJECT (dropdown->screen),
@@ -580,23 +579,6 @@ terminal_window_dropdown_finalize (GObject *object)
   (*G_OBJECT_CLASS (terminal_window_dropdown_parent_class)->finalize) (object);
 }
 
-
-
-static void
-icon_theme_changed (GtkIconTheme *icon_theme,
-                    TerminalWindowDropdown *dropdown)
-{
-  const gchar *icon_name = gtk_window_get_icon_name (GTK_WINDOW (dropdown));
-  if (icon_name != NULL)
-    {
-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-      if (g_path_is_absolute (icon_name))
-        gtk_status_icon_set_from_file (dropdown->status_icon, icon_name);
-      else
-        gtk_status_icon_set_from_icon_name (dropdown->status_icon, icon_name);
-      G_GNUC_END_IGNORE_DEPRECATIONS
-    }
-}
 
 
 
@@ -610,7 +592,6 @@ terminal_window_dropdown_set_property (GObject *object,
   TerminalWindow *window = TERMINAL_WINDOW (object);
   gdouble opacity;
   GdkScreen *screen;
-  const gchar *icon_name;
 
   switch (prop_id)
     {
@@ -638,41 +619,6 @@ terminal_window_dropdown_set_property (GObject *object,
         opacity = 1.00;
 
       gtk_widget_set_opacity (GTK_WIDGET (dropdown), opacity);
-      return;
-
-    case PROP_DROPDOWN_STATUS_ICON:
-      /*
-       * FIXME: GtkStatusIcon is X11 only
-       * See also https://gitlab.xfce.org/apps/xfce4-terminal/-/issues/197
-       */
-      if (!WINDOWING_IS_X11 ())
-        return;
-
-      if (g_value_get_boolean (value))
-        {
-          /* icon_name will be NULL initially after creation; will update it later */
-          icon_name = gtk_window_get_icon_name (GTK_WINDOW (object));
-          if (dropdown->status_icon == NULL && icon_name != NULL)
-            {
-              G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-              dropdown->status_icon = g_path_is_absolute (icon_name)
-                                        ? gtk_status_icon_new_from_file (icon_name)
-                                        : gtk_status_icon_new_from_icon_name (icon_name);
-              gtk_status_icon_set_title (dropdown->status_icon, _("Drop-down Terminal"));
-              gtk_status_icon_set_tooltip_text (dropdown->status_icon, _("Toggle Drop-down Terminal"));
-              G_GNUC_END_IGNORE_DEPRECATIONS
-              g_signal_connect (G_OBJECT (dropdown->status_icon), "button-press-event",
-                                G_CALLBACK (terminal_window_dropdown_status_icon_press_event), dropdown);
-              g_signal_connect (G_OBJECT (dropdown->status_icon), "popup-menu",
-                                G_CALLBACK (terminal_window_dropdown_status_icon_popup_menu), dropdown);
-              g_signal_connect_object (gtk_icon_theme_get_default (), "changed",
-                                       G_CALLBACK (icon_theme_changed), dropdown, 0);
-            }
-        }
-      else
-        {
-          g_clear_object (&dropdown->status_icon);
-        }
       return;
 
     case PROP_DROPDOWN_KEEP_ABOVE:
@@ -778,49 +724,6 @@ terminal_window_dropdown_focus_out_event (GtkWidget *widget,
   return retval;
 }
 
-
-
-static gboolean
-terminal_window_dropdown_status_icon_press_event (GtkStatusIcon *status_icon,
-                                                  GdkEventButton *event,
-                                                  TerminalWindowDropdown *dropdown)
-{
-  /* keep this event for the menu */
-  if (event->button == 3)
-    return FALSE;
-
-  if (gdk_window_is_visible (gtk_widget_get_window (GTK_WIDGET (dropdown))))
-    terminal_window_dropdown_hide (dropdown);
-  else
-    terminal_window_dropdown_show (dropdown, event->time, TRUE);
-
-  return TRUE;
-}
-
-
-
-static void
-terminal_window_dropdown_status_icon_popup_menu (GtkStatusIcon *status_icon,
-                                                 guint button,
-                                                 guint32 timestamp,
-                                                 TerminalWindowDropdown *dropdown)
-{
-  TerminalWindow *window;
-  GtkWidget *menu;
-
-  window = TERMINAL_WINDOW (dropdown);
-
-  menu = gtk_menu_new ();
-  g_signal_connect (G_OBJECT (menu), "selection-done", G_CALLBACK (gtk_widget_destroy), NULL);
-
-  xfce_gtk_menu_item_new_from_action_entry (terminal_window_get_action_entry (window, TERMINAL_WINDOW_ACTION_PREFERENCES), G_OBJECT (window), GTK_MENU_SHELL (menu));
-  xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
-  xfce_gtk_menu_item_new_from_action_entry (terminal_window_get_action_entry (window, TERMINAL_WINDOW_ACTION_CLOSE_WINDOW), G_OBJECT (window), GTK_MENU_SHELL (menu));
-  xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
-
-  gtk_widget_show_all (menu);
-  gtk_menu_popup_at_pointer (GTK_MENU (menu), NULL);
-}
 
 
 
@@ -1267,6 +1170,120 @@ terminal_dropdown_window_screen_size_changed (GdkScreen *screen,
 
 
 
+#ifdef ENABLE_X11
+static guint
+terminal_window_dropdown_grab_lock_masks (void)
+{
+  /* the key press arrives with the lock keys in its state, so they have to be
+   * masked out before the modifiers can be compared */
+  return LockMask | Mod2Mask | 0x2000 /* ScrollLock */;
+}
+
+
+
+static GdkFilterReturn
+terminal_window_dropdown_grab_filter (GdkXEvent *gdk_xevent,
+                                      GdkEvent *event,
+                                      gpointer   user_data)
+{
+  TerminalWindowDropdown *dropdown = TERMINAL_WINDOW_DROPDOWN (user_data);
+  XEvent *xevent = (XEvent *) gdk_xevent;
+
+  if (event->type != GDK_KEY_PRESS || xevent->type != KeyPress)
+    return GDK_FILTER_CONTINUE;
+
+  if (xevent->xkey.keycode == dropdown->grab_key
+      && (xevent->xkey.state & ~terminal_window_dropdown_grab_lock_masks ()) == dropdown->grab_mods)
+    {
+      terminal_window_dropdown_toggle (dropdown, NULL, FALSE);
+      return GDK_FILTER_REMOVE;
+    }
+
+  return GDK_FILTER_CONTINUE;
+}
+
+
+
+/* Grabs the shortcut on the X server root window, the same way Guake grabs its
+ * show/hide key with the Keybinder library. X11 only: a Wayland client never
+ * sees the keys of other windows. */
+static void
+terminal_window_dropdown_grab_toggle_key (TerminalWindowDropdown *dropdown)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (dropdown);
+  GdkDisplay *display;
+  GdkKeymap *keymap;
+  GdkKeymapKey *entries;
+  gchar *accel;
+  guint key, mods, keycode;
+  gint n_entries;
+  int code;
+
+  g_object_get (terminal_window_get_preferences (window), "dropdown-toggle-key", &accel, NULL);
+  key = 0;
+  mods = 0;
+  if (accel != NULL)
+    gtk_accelerator_parse (accel, &key, &mods);
+  g_free (accel);
+
+  if (key == 0)
+    return;
+
+  keymap = gdk_keymap_get_for_display (gtk_widget_get_display (GTK_WIDGET (dropdown)));
+  if (keymap == NULL)
+    return;
+
+  entries = NULL;
+  n_entries = 0;
+  if (!gdk_keymap_get_entries_for_keyval (keymap, key, &entries, &n_entries)
+      || entries == NULL || n_entries == 0)
+    {
+      g_free (entries);
+      return;
+    }
+
+  keycode = entries[0].keycode;
+  g_free (entries);
+
+  display = gtk_widget_get_display (GTK_WIDGET (dropdown));
+  gdk_x11_display_error_trap_push (display);
+  XGrabKey (GDK_DISPLAY_XDISPLAY (display), (gint) keycode, (gint) mods,
+            GDK_ROOT_WINDOW (), TRUE, GrabModeAsync, GrabModeAsync);
+  /* another client already grabs this combination */
+  code = gdk_x11_display_error_trap_pop (display);
+  if (code != 0)
+    {
+      g_warning ("Unable to grab the drop-down shortcut, another application is using it");
+      return;
+    }
+
+  dropdown->grab_key = keycode;
+  dropdown->grab_mods = mods;
+  dropdown->grab_filter = terminal_window_dropdown_grab_filter;
+  gdk_window_add_filter (NULL, dropdown->grab_filter, dropdown);
+}
+
+
+
+static void
+terminal_window_dropdown_ungrab_toggle_key (TerminalWindowDropdown *dropdown)
+{
+  GdkDisplay *display;
+
+  if (dropdown->grab_key == 0)
+    return;
+
+  display = gtk_widget_get_display (GTK_WIDGET (dropdown));
+  gdk_window_add_filter (NULL, dropdown->grab_filter, NULL);
+  XUngrabKey (GDK_DISPLAY_XDISPLAY (display), (gint) dropdown->grab_key,
+              (gint) dropdown->grab_mods, GDK_ROOT_WINDOW ());
+  dropdown->grab_key = 0;
+  dropdown->grab_mods = 0;
+}
+#endif /* ENABLE_X11 */
+
+
+
 GtkWidget *
 terminal_window_dropdown_new (const gchar *role,
                               const gchar *icon,
@@ -1277,8 +1294,6 @@ terminal_window_dropdown_new (const gchar *role,
   TerminalWindow *window;
   gboolean show_menubar;
   gboolean show_toolbar;
-  gboolean show_icon;
-  GValue value = G_VALUE_INIT;
 
   if (G_LIKELY (role == NULL))
     role = PACKAGE_NAME "-dropdown";
@@ -1292,14 +1307,7 @@ terminal_window_dropdown_new (const gchar *role,
   g_object_get (terminal_window_get_preferences (window),
                 "misc-menubar-default", &show_menubar,
                 "misc-toolbar-default", &show_toolbar,
-                "dropdown-status-icon", &show_icon,
                 NULL);
-
-  /* update status bar icon */
-  g_value_init (&value, G_TYPE_BOOLEAN);
-  g_value_set_boolean (&value, show_icon);
-  terminal_window_dropdown_set_property (G_OBJECT (window),
-                                         PROP_DROPDOWN_STATUS_ICON, &value, NULL);
 
   /* setup menubar visibility */
   if (G_LIKELY (menubar != TERMINAL_VISIBILITY_DEFAULT))
@@ -1313,6 +1321,11 @@ terminal_window_dropdown_new (const gchar *role,
 
   /* setup full screen */
   window->is_fullscreen = fullscreen && window->fullscreen_supported;
+
+#ifdef ENABLE_X11
+  /* global shortcut to show and hide the window, X11 only */
+  terminal_window_dropdown_grab_toggle_key (TERMINAL_WINDOW_DROPDOWN (window));
+#endif
 
   return GTK_WIDGET (window);
 }
