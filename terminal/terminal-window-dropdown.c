@@ -753,15 +753,16 @@ terminal_window_dropdown_focus_out_event (GtkWidget *widget,
     {
       if (!gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (dropdown->keep_open)))
         {
-          /* check if the user is not pressing a key */
-          if (!terminal_window_dropdown_can_grab (dropdown))
+          /* a keyboard grab can only be probed on x11; on the other backends
+           * the probe always fails and would keep rescheduling itself */
+          if (WINDOWING_IS_X11 () && !terminal_window_dropdown_can_grab (dropdown))
             {
               /* hide the window */
               terminal_window_dropdown_hide (dropdown);
 
               return retval;
             }
-          else if (dropdown->grab_timeout_id == 0)
+          else if (WINDOWING_IS_X11 () && dropdown->grab_timeout_id == 0)
             {
               /* focus-out with keyboard grab */
               dropdown->grab_timeout_id =

@@ -9,3 +9,6 @@
 /src/
 /pkg.tar.zst
 *.pkg.tar.zst
+# сгенерированный шаблон перевода
+/po/xfce4-terminal.pot
+*.po~

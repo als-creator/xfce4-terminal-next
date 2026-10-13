@@ -57,6 +57,33 @@ terminal_panes_split_screen (TerminalPanes *panes,
                              TerminalScreen *new_screen);
 
 /**
+ * Same as terminal_panes_split_screen(), but puts the divider at @fraction
+ * (0.0 - 1.0) of the split instead of the middle.
+ */
+void
+terminal_panes_split_screen_at (TerminalPanes *panes,
+                                TerminalScreen *screen,
+                                GtkOrientation orientation,
+                                TerminalScreen *new_screen,
+                                gdouble fraction);
+
+/**
+ * Shifts the divider of the split the given pane lives in, the way Guake moves
+ * and resizes a split with its move-terminal-split-* hotkeys.
+ */
+void
+terminal_panes_move_pane (TerminalPanes *panes,
+                          TerminalScreen *screen,
+                          TerminalPanesDirection direction);
+
+/**
+ * Returns the pane layout as a newly allocated string, in the format that the
+ * window replays when it restores the panes of a tab. Free with g_free().
+ */
+gchar *
+terminal_panes_get_layout (TerminalPanes *panes);
+
+/**
  * Removes @screen from the pane tree, collapsing the split.
  *
  * Returns %FALSE (and does nothing) if @screen is the only pane left; in that

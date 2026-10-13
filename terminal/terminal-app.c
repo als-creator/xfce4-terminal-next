@@ -972,6 +972,13 @@ terminal_app_update_tray (TerminalApp *app)
   gboolean enabled = FALSE;
 
   g_object_get (G_OBJECT (app->preferences), "misc-tray-icon", &enabled, NULL);
+
+  /* GtkStatusIcon is x11 only: without a tray there is nothing to click, and
+   * keeping the application alive behind a hidden window would leave no way to
+   * quit it at all, so the whole tray mode stays off on other backends */
+  if (!WINDOWING_IS_X11 ())
+    enabled = FALSE;
+
   terminal_app_tray_set_enabled (app, enabled);
 }
 
@@ -1502,6 +1509,17 @@ terminal_app_process (TerminalApp *app,
   for (lp = attrs; lp != NULL; lp = lp->next)
     {
       attr = lp->data;
+
+      /* the drop-down setting plays the role of "xfce4-terminal --drop-down",
+       * so an explicit --drop-down on the command line stays in charge */
+      if (!attr->drop_down)
+        {
+          gboolean drop_down = FALSE;
+
+          g_object_get (G_OBJECT (app->preferences), "misc-drop-down", &drop_down, NULL);
+          if (drop_down)
+            attr->drop_down = TRUE;
+        }
 
       terminal_app_open_window (app, attr);
       terminal_window_attr_free (attr);

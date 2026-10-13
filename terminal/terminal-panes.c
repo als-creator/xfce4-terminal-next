@@ -28,6 +28,10 @@
 
 
 
+static void panes_paned_position_half (GtkWidget *paned);
+static void panes_paned_set_fraction (GtkWidget *paned,
+                                      gdouble    fraction);
+
 struct _TerminalPanes
 {
   GtkBin parent_instance;
@@ -47,6 +51,11 @@ struct _TerminalPanes
 
 /* data key used to set the pane position to half only once after allocation */
 #define PANES_OUR_POSITION "panes-our-position"
+
+/* how far a single move-pane step shifts the divider, and how small a pane may
+ * become while doing so (both taken from Guake's SplitMover) */
+#define PANES_MOVE_STEP 10
+#define PANES_MIN_PANE_SIZE 35
 
 
 
@@ -540,10 +549,11 @@ terminal_panes_new_with_screen (TerminalScreen *screen)
 
 
 void
-terminal_panes_split_screen (TerminalPanes *panes,
-                             TerminalScreen *screen,
-                             GtkOrientation orientation,
-                             TerminalScreen *new_screen)
+terminal_panes_split_screen_at (TerminalPanes *panes,
+                                TerminalScreen *screen,
+                                GtkOrientation orientation,
+                                TerminalScreen *new_screen,
+                                gdouble fraction)
 {
   GtkWidget *parent;
   GtkWidget *paned;
@@ -608,12 +618,196 @@ terminal_panes_split_screen (TerminalPanes *panes,
   g_object_unref (screen);
 
   panes_watch_screen (panes, new_screen);
-  panes_paned_position_half (paned);
+
+  /* put the divider where the caller asked for */
+  panes_paned_set_fraction (paned, fraction);
 
   /* make the new pane active */
   panes->active = new_screen;
   panes_emit_active_changed (panes, new_screen);
   terminal_screen_focus (new_screen);
+}
+
+
+
+/* put the divider at @fraction of the split, keeping both sides usable; while
+ * the paned is not allocated yet the divider is simply centered */
+static void
+panes_paned_set_fraction (GtkWidget *paned,
+                          gdouble    fraction)
+{
+  GtkAllocation alloc;
+  gint size, position;
+
+  gtk_widget_get_allocation (paned, &alloc);
+  size = (gtk_orientable_get_orientation (GTK_ORIENTABLE (paned)) == GTK_ORIENTATION_HORIZONTAL)
+           ? alloc.width : alloc.height;
+
+  if (size <= 2 * PANES_MIN_PANE_SIZE)
+    {
+      panes_paned_position_half (paned);
+      return;
+    }
+
+  position = (gint) (fraction * size + 0.5);
+  position = CLAMP (position, PANES_MIN_PANE_SIZE, size - PANES_MIN_PANE_SIZE);
+  gtk_paned_set_position (GTK_PANED (paned), position);
+}
+
+
+
+/* Serializes the pane tree the way Guake stores its layout: a leaf is ".", a
+ * split is "<O><percent>,<left>,<right>", where O is H for children side by
+ * side and V for children stacked, and percent is the divider position.
+ *
+ * The format is replayable with terminal_panes_split_screen_at(), because every
+ * split of the fork anchors on a single pane: the tree of a split is always
+ * "grow the left side further, then the right side". */
+static void
+panes_layout_append (GString   *str,
+                     GtkWidget *widget)
+{
+  if (GTK_IS_PANED (widget))
+    {
+      GtkWidget *child1 = gtk_paned_get_child1 (GTK_PANED (widget));
+      GtkWidget *child2 = gtk_paned_get_child2 (GTK_PANED (widget));
+      GtkAllocation alloc;
+      gdouble fraction = 0.5;
+      gint size;
+
+      gtk_widget_get_allocation (widget, &alloc);
+      size = (gtk_orientable_get_orientation (GTK_ORIENTABLE (widget)) == GTK_ORIENTATION_HORIZONTAL)
+               ? alloc.width : alloc.height;
+
+      if (size > 0)
+        fraction = CLAMP ((gdouble) gtk_paned_get_position (GTK_PANED (widget)) / (gdouble) size,
+                          0.0, 1.0);
+
+      g_string_append_printf (str, "%c%d,",
+                              gtk_orientable_get_orientation (GTK_ORIENTABLE (widget)) == GTK_ORIENTATION_HORIZONTAL
+                                ? 'H' : 'V',
+                              (gint) (fraction * 100.0 + 0.5));
+
+      panes_layout_append (str, child1);
+      g_string_append_c (str, ',');
+      panes_layout_append (str, child2);
+      g_string_append_c (str, ')');
+    }
+  else if (widget != NULL)
+    {
+      g_string_append_c (str, '.');
+    }
+}
+
+
+
+gchar *
+terminal_panes_get_layout (TerminalPanes *panes)
+{
+  GString *str;
+
+  g_return_val_if_fail (TERMINAL_IS_PANES (panes), NULL);
+
+  str = g_string_new (NULL);
+  panes_layout_append (str, panes->root);
+  if (str->len == 0)
+    g_string_append_c (str, '.');
+
+  return g_string_free (str, FALSE);
+}
+
+
+
+/* guake's SplitMover: shift the divider of the split the active pane lives in,
+ * the same way Guake moves and resizes a split with move-terminal-split-*. */
+/* Guake has no separate "active pane" state: the pane that owns the keyboard
+ * focus is the active one. panes->active stays as a cache for the moments when
+ * the focus is outside the pane tree (menu, dialog, search bar). */
+static TerminalScreen *
+panes_screen_from_focus (TerminalPanes *panes)
+{
+  GtkWidget *widget;
+
+  if (!gtk_widget_has_focus (GTK_WIDGET (panes)))
+    return NULL;
+
+  widget = gtk_window_get_focus (GTK_WINDOW (gtk_widget_get_toplevel (GTK_WIDGET (panes))));
+  while (widget != NULL)
+    {
+      if (TERMINAL_IS_SCREEN (widget))
+        return TERMINAL_SCREEN (widget);
+
+      widget = gtk_widget_get_parent (widget);
+    }
+
+  return NULL;
+}
+
+
+
+void
+terminal_panes_move_pane (TerminalPanes *panes,
+                          TerminalScreen *screen,
+                          TerminalPanesDirection direction)
+{
+  GtkWidget *parent;
+  GtkAllocation alloc;
+  gboolean horizontal;
+  gint position, size, position_new;
+
+  g_return_if_fail (TERMINAL_IS_PANES (panes));
+
+  if (screen == NULL)
+    return;
+
+  /* left/right move a horizontal paned (children side by side), up/down a
+   * vertical one (children stacked) */
+  horizontal = (direction == TERMINAL_PANES_DIRECTION_LEFT
+                || direction == TERMINAL_PANES_DIRECTION_RIGHT);
+
+  /* walk up to the split that controls the size of this pane */
+  for (parent = gtk_widget_get_parent (GTK_WIDGET (screen));
+       parent != NULL;
+       parent = gtk_widget_get_parent (parent))
+    {
+      if (!GTK_IS_PANED (parent))
+        continue;
+
+      if ((horizontal && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_HORIZONTAL)
+          || (!horizontal && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_VERTICAL))
+        break;
+    }
+
+  /* the pane is not split in that direction, nothing to move */
+  if (parent == NULL)
+    return;
+
+  gtk_widget_get_allocation (parent, &alloc);
+  size = horizontal ? alloc.width : alloc.height;
+  if (size <= 2 * PANES_MIN_PANE_SIZE)
+    return;
+
+  position = gtk_paned_get_position (GTK_PANED (parent));
+  position_new = position + ((direction == TERMINAL_PANES_DIRECTION_DOWN
+                              || direction == TERMINAL_PANES_DIRECTION_RIGHT)
+                             ? PANES_MOVE_STEP : -PANES_MOVE_STEP);
+
+  /* keep both sides usable */
+  position_new = CLAMP (position_new, PANES_MIN_PANE_SIZE, size - PANES_MIN_PANE_SIZE);
+
+  gtk_paned_set_position (GTK_PANED (parent), position_new);
+  panes_paned_set_fraction (parent, (gdouble) position_new / (gdouble) size);
+}
+
+
+
+void
+terminal_panes_split_screen (TerminalPanes *panes,
+                             TerminalScreen *screen,
+                             GtkOrientation orientation,
+                             TerminalScreen *new_screen)
+{
+  terminal_panes_split_screen_at (panes, screen, orientation, new_screen, 0.5);
 }
 
 
@@ -763,7 +957,18 @@ terminal_panes_remove_screen (TerminalPanes *panes,
 TerminalScreen *
 terminal_panes_get_active (TerminalPanes *panes)
 {
+  TerminalScreen *screen;
+
   g_return_val_if_fail (TERMINAL_IS_PANES (panes), NULL);
+
+  /* the focus decides as long as it is inside this pane tree */
+  screen = panes_screen_from_focus (panes);
+  if (screen != NULL)
+    {
+      /* keep the cache warm; the signal is emitted by the focus handlers */
+      panes->active = screen;
+      return screen;
+    }
 
   return panes->active;
 }

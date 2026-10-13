@@ -6,6 +6,8 @@ terminal_sources = [
   'terminal-encoding-action.h',
   'terminal-gdbus.c',
   'terminal-gdbus.h',
+  'terminal-keys.c',
+  'terminal-keys.h',
   'terminal-image-loader.c',
   'terminal-image-loader.h',
   'terminal-options.c',

@@ -37,6 +37,7 @@
 
 #include "terminal-encoding-action.h"
 #include "terminal-enum-types.h"
+#include "terminal-keys.h"
 #include "terminal-marshal.h"
 #include "terminal-options.h"
 #include "terminal-panes.h"
@@ -302,6 +303,14 @@ terminal_window_action_focus_next (TerminalWindow *window);
 static gboolean
 terminal_window_action_focus_prev (TerminalWindow *window);
 static gboolean
+terminal_window_action_move_pane_up (TerminalWindow *window);
+static gboolean
+terminal_window_action_move_pane_down (TerminalWindow *window);
+static gboolean
+terminal_window_action_move_pane_left (TerminalWindow *window);
+static gboolean
+terminal_window_action_move_pane_right (TerminalWindow *window);
+static gboolean
 terminal_window_action_contents (TerminalWindow *window);
 static gboolean
 terminal_window_action_about (TerminalWindow *window);
@@ -353,6 +362,14 @@ title_popover_close (GtkWidget *popover,
 static void
 terminal_window_do_close_tab (TerminalScreen *screen,
                               TerminalWindow *window);
+static gboolean
+terminal_window_panes_layout_restore_idle (gpointer user_data);
+static void
+terminal_window_restore_panes_layout (TerminalWindow *window,
+                                       TerminalPanes   *panes,
+                                       const gchar     *layout);
+static void
+terminal_window_save_panes_layouts (TerminalWindow *window);
 
 static void
 terminal_window_create_menu (TerminalWindow *window,
@@ -423,6 +440,11 @@ struct _TerminalWindowPrivate
 
   TerminalVisibility scrollbar_visibility;
   TerminalZoomLevel zoom;
+
+  /* saved pane layouts of the tabs, replayed while the startup tabs appear */
+  gchar **panes_layouts;
+  gint panes_layout_index;
+  guint panes_layout_idle;
 
   /* if this is a TerminalWindowDropdown */
   guint drop_down : 1;
@@ -959,6 +981,46 @@ static XfceGtkActionEntry action_entries[] = {
     G_CALLBACK (terminal_window_action_focus_prev),
   },
   {
+    TERMINAL_WINDOW_ACTION_MOVE_PANE_UP,
+    "<Actions>/terminal-window/move-pane-up",
+    "",
+    XFCE_GTK_MENU_ITEM,
+    N_ ("Move Pane _Up"),
+    N_ ("Move the current split pane up"),
+    NULL,
+    G_CALLBACK (terminal_window_action_move_pane_up),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_MOVE_PANE_DOWN,
+    "<Actions>/terminal-window/move-pane-down",
+    "",
+    XFCE_GTK_MENU_ITEM,
+    N_ ("Move Pane _Down"),
+    N_ ("Move the current split pane down"),
+    NULL,
+    G_CALLBACK (terminal_window_action_move_pane_down),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_MOVE_PANE_LEFT,
+    "<Actions>/terminal-window/move-pane-left",
+    "",
+    XFCE_GTK_MENU_ITEM,
+    N_ ("Move Pane _Left"),
+    N_ ("Move the current split pane left"),
+    NULL,
+    G_CALLBACK (terminal_window_action_move_pane_left),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_MOVE_PANE_RIGHT,
+    "<Actions>/terminal-window/move-pane-right",
+    "",
+    XFCE_GTK_MENU_ITEM,
+    N_ ("Move Pane _Right"),
+    N_ ("Move the current split pane right"),
+    NULL,
+    G_CALLBACK (terminal_window_action_move_pane_right),
+  },
+  {
     TERMINAL_WINDOW_ACTION_HELP_MENU,
     "<Actions>/terminal-window/help-menu",
     "",
@@ -1261,6 +1323,13 @@ terminal_window_init (TerminalWindow *window)
                                                G_N_ELEMENTS (action_entries),
                                                window);
 
+  /* the tabs that exist at startup get their panes back from the saved layout;
+   * later tabs are new ones and start with a single pane */
+  g_object_get (G_OBJECT (window->priv->preferences), "misc-panes-layouts",
+                &window->priv->panes_layouts, NULL);
+  window->priv->panes_layout_index = 0;
+  window->priv->panes_layout_idle = g_idle_add (terminal_window_panes_layout_restore_idle, window);
+
   gtk_window_add_accel_group (GTK_WINDOW (window), window->priv->accel_group);
 
   window->menubar = gtk_menu_bar_new ();
@@ -1390,6 +1459,10 @@ terminal_window_finalize (GObject *object)
 {
   TerminalWindow *window = TERMINAL_WINDOW (object);
 
+  if (window->priv->panes_layout_idle != 0)
+    g_source_remove (window->priv->panes_layout_idle);
+  g_strfreev (window->priv->panes_layouts);
+
   /* disconnect prefs signal handlers */
   g_signal_handlers_disconnect_by_func (G_OBJECT (window->priv->preferences),
                                         G_CALLBACK (terminal_window_update_mnemonic_modifier), window);
@@ -1436,6 +1509,12 @@ terminal_window_delete_event (GtkWidget *widget,
         {
           g_object_get (G_OBJECT (window->priv->preferences),
                         "misc-tray-icon", &tray_icon, NULL);
+
+          /* the tray only exists on x11, and without it there would be no way
+           * to quit an application that keeps itself alive (see
+           * terminal_app_update_tray()) */
+          if (!WINDOWING_IS_X11 ())
+            tray_icon = FALSE;
         }
 
       if (tray_icon)
@@ -1577,11 +1656,89 @@ terminal_window_focus_in_event (GtkWidget *widget,
 
 
 
+/* Guake-style layout normalization for the accelerators of this window.
+/* Guake-style layout normalization for the accelerators of this window.
+ *
+ * Under a non-latin layout a key press such as Ctrl+Shift+T produces a cyrillic
+ * keysym, so the accelerators of the window (which are stored as latin keysyms)
+ * never match and they look dead. Map the key press back to the latin symbol of
+ * the same physical key and run the action, the same way Guake does it in
+ * Keybindings.activate().
+ *
+ * This runs before the accelerators of the window are consulted, but only for
+ * key presses that really are layout dependent: a latin key press is returned
+ * untouched, so on a latin layout nothing changes at all. */
+static gboolean
+terminal_window_activate_layout_accel (TerminalWindow *window,
+                                       GdkEventKey    *event)
+{
+  guint32 keyval = 0;
+  guint mods = 0;
+  guint mask;
+  gint e;
+
+  if (!terminal_keys_normalize_layout_accel (event, &keyval, &mods))
+    return FALSE;
+
+  mask = gtk_accelerator_get_default_mod_mask ();
+
+  for (e = 0; e < (gint) G_N_ELEMENTS (action_entries); e++)
+    {
+      const XfceGtkActionEntry *entry = &action_entries[e];
+      const gchar *name;
+      const gchar *slash;
+      GtkAccelKey current;
+      gboolean matched;
+
+      if (entry->callback == NULL || entry->accel_path == NULL)
+        continue;
+
+      /* the accelerator map is keyed by the action name, i.e. the last
+       * component of the accel path */
+      slash = strrchr (entry->accel_path, '/');
+      name = slash != NULL ? slash + 1 : entry->accel_path;
+
+      /* prefer the accelerator the user has bound in the keyboard shortcuts
+       * dialog, fall back to the one from the action entry */
+      memset (&current, 0, sizeof (current));
+      matched = gtk_accel_map_lookup_entry (name, &current)
+                && current.accel_key != 0
+                && current.accel_key == keyval
+                && (current.accel_mods & mask) == mods;
+
+      if (!matched)
+        matched = terminal_keys_accel_matches (entry->default_accelerator, keyval, mods);
+
+      if (matched)
+        {
+          ((void (*) (TerminalWindow *, gpointer)) entry->callback) (window, NULL);
+          return TRUE;
+        }
+    }
+
+  return FALSE;
+}
+
+
+
 static gboolean
 terminal_window_key_press_event (GtkWidget *widget,
                                  GdkEventKey *event)
 {
   TerminalWindow *window = TERMINAL_WINDOW (widget);
+
+  /* F1 toggles a drop-down window, the way Guake uses its own key to show and
+   * hide the panel; in a normal window F1 still opens the help */
+  if (TERMINAL_IS_WINDOW_DROPDOWN (window)
+      && event->keyval == GDK_KEY_F1
+      && (event->state & gtk_accelerator_get_default_mod_mask ()) == 0)
+    {
+      terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), NULL, FALSE);
+      return TRUE;
+    }
+
+  if (terminal_window_activate_layout_accel (window, event))
+    return TRUE;
 
   if (xfce_gtk_handle_tab_accels (event, window->priv->accel_group, window, action_entries, G_N_ELEMENTS (action_entries)))
     return TRUE;
@@ -1926,6 +2083,16 @@ terminal_window_notebook_page_added (GtkNotebook *notebook,
   g_signal_connect (G_OBJECT (panes), "active-screen-changed",
                     G_CALLBACK (terminal_window_panes_active_screen_changed), window);
 
+  /* put the panes of this tab back the way they were before a restart */
+  if (window->priv->panes_layout_index >= 0
+      && window->priv->panes_layouts != NULL
+      && window->priv->panes_layouts[window->priv->panes_layout_index] != NULL)
+    {
+      terminal_window_restore_panes_layout (window, panes,
+                                             window->priv->panes_layouts[window->priv->panes_layout_index]);
+      window->priv->panes_layout_index++;
+    }
+
   /* connect the screen signals for every pane in the tree */
   for (lp = screens; lp != NULL; lp = lp->next)
     {
@@ -2043,6 +2210,12 @@ terminal_window_notebook_page_removed (GtkNotebook *notebook,
         {
           g_object_get (G_OBJECT (window->priv->preferences),
                         "misc-tray-icon", &tray_icon, NULL);
+
+          /* the tray only exists on x11, and without it there would be no way
+           * to quit an application that keeps itself alive (see
+           * terminal_app_update_tray()) */
+          if (!WINDOWING_IS_X11 ())
+            tray_icon = FALSE;
         }
 
       if (tray_icon)
@@ -2061,6 +2234,9 @@ terminal_window_notebook_page_removed (GtkNotebook *notebook,
       gtk_widget_destroy (GTK_WIDGET (window));
       return;
     }
+
+  /* the panes of the remaining tabs changed, remember them */
+  terminal_window_save_panes_layouts (window);
 
   /* show the tabs when needed */
   terminal_window_notebook_show_tabs (window);
@@ -2806,6 +2982,148 @@ terminal_window_action_new_tab (TerminalWindow *window)
 
 
 
+/* Guake remembers the split layout of every tab and puts the panes back the way
+ * they were. The layout of a tab is a string built by terminal_panes_get_layout():
+ * "." is a pane, "H50,.,." a horizontal split, "V30,.,." a vertical one.
+ *
+ * Every split of the fork anchors on a single pane, so replaying a layout is
+ * just a sequence of terminal_panes_split_screen_at() calls: first split the
+ * pane that is being restored, then grow its left side, then its right side. */
+static void
+terminal_window_restore_panes_subtree (TerminalWindow  *window,
+                                        TerminalPanes    *panes,
+                                        TerminalScreen   *screen,
+                                        const gchar     **cursor)
+{
+  GtkOrientation orientation;
+  gdouble fraction = 0.5;
+  gint percent;
+  TerminalScreen *new_screen;
+
+  if (screen == NULL || *cursor == NULL || **cursor == '\0')
+    return;
+
+  if (**cursor == '.')
+    {
+      (*cursor)++;
+      return;
+    }
+
+  if (**cursor != 'H' && **cursor != 'V')
+    {
+      *cursor = NULL;
+      return;
+    }
+
+  orientation = (**cursor == 'H') ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL;
+  (*cursor)++;
+
+  if (*cursor != NULL && **cursor == '(')
+    (*cursor)++;
+
+  percent = 0;
+  while (*cursor != NULL && **cursor != '\0' && g_ascii_isdigit (**cursor))
+    percent = percent * 10 + (*(*cursor)++ - '0');
+  if (percent > 0)
+    fraction = percent / 100.0;
+
+  if (*cursor != NULL && **cursor == ',')
+    (*cursor)++;
+
+  /* the left side grows inside the pane we already have */
+  terminal_window_restore_panes_subtree (window, panes, screen, cursor);
+
+  if (*cursor == NULL)
+    return;
+
+  if (**cursor == ',')
+    (*cursor)++;
+
+  /* the right side is a new pane, split off with the stored divider position */
+  new_screen = TERMINAL_SCREEN (g_object_new (TERMINAL_TYPE_SCREEN, NULL));
+  terminal_window_setup_screen (window, TERMINAL_WIDGET (new_screen));
+
+  if (window->priv->font || window->priv->zoom != TERMINAL_ZOOM_LEVEL_DEFAULT)
+    terminal_screen_update_font (new_screen);
+
+  terminal_screen_widget_append_accels (new_screen, window->priv->accel_group);
+
+  terminal_panes_split_screen_at (panes, screen, orientation, new_screen, fraction);
+  terminal_screen_launch_child (new_screen);
+
+  terminal_window_restore_panes_subtree (window, panes, new_screen, cursor);
+
+  if (*cursor != NULL && **cursor == ')')
+    (*cursor)++;
+}
+
+
+
+static void
+terminal_window_restore_panes_layout (TerminalWindow *window,
+                                       TerminalPanes   *panes,
+                                       const gchar     *layout)
+{
+  TerminalScreen *screen;
+  const gchar *cursor = layout;
+
+  if (layout == NULL || *layout == '\0' || strcmp (layout, ".") == 0)
+    return;
+
+  screen = terminal_panes_get_active (panes);
+  if (screen == NULL)
+    {
+      GSList *screens = terminal_panes_get_screens (panes);
+      screen = TERMINAL_SCREEN (screens->data);
+      g_slist_free (screens);
+    }
+
+  if (screen != NULL)
+    terminal_window_restore_panes_subtree (window, panes, screen, &cursor);
+}
+
+
+
+/* store the layout of every tab, so the panes come back after a restart */
+static void
+terminal_window_save_panes_layouts (TerminalWindow *window)
+{
+  GPtrArray *layouts;
+  gint npages, i;
+
+  g_return_if_fail (TERMINAL_IS_WINDOW (window));
+
+  npages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
+  layouts = g_ptr_array_new_with_free_func (g_free);
+
+  for (i = 0; i < npages; i++)
+    {
+      GtkWidget *child = gtk_notebook_get_nth_page (GTK_NOTEBOOK (window->priv->notebook), i);
+
+      if (TERMINAL_IS_PANES (child))
+        g_ptr_array_add (layouts, terminal_panes_get_layout (TERMINAL_PANES (child)));
+    }
+
+  g_object_set (G_OBJECT (window->priv->preferences), "misc-panes-layouts", layouts->pdata, NULL);
+  g_ptr_array_unref (layouts);
+}
+
+
+
+/* the saved layouts only belong to the tabs that exist at startup */
+static gboolean
+terminal_window_panes_layout_restore_idle (gpointer user_data)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (user_data);
+
+  window->priv->panes_layout_index = -1;
+  window->priv->panes_layout_idle = 0;
+
+  return FALSE;
+}
+
+
+
 static gboolean
 terminal_window_action_split (TerminalWindow *window,
                               GtkOrientation orientation)
@@ -2857,6 +3175,8 @@ terminal_window_action_split (TerminalWindow *window,
 
   /* start the shell in the new pane */
   terminal_screen_launch_child (new_screen);
+
+  terminal_window_save_panes_layouts (window);
 
   return TRUE;
 }
@@ -2989,6 +3309,8 @@ terminal_window_action_close_pane (TerminalWindow *window)
           terminal_window_set_active_screen (window, panes, new_active);
           terminal_screen_focus (new_active);
         }
+
+      terminal_window_save_panes_layouts (window);
     }
 
   return TRUE;
@@ -3073,6 +3395,55 @@ terminal_window_action_focus_prev (TerminalWindow *window)
     terminal_panes_focus_previous (panes);
 
   return TRUE;
+}
+
+
+
+static gboolean
+terminal_window_action_move_pane (TerminalWindow        *window,
+                                  TerminalPanesDirection  direction)
+{
+  TerminalPanes *panes;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  panes = terminal_window_get_current_panes (window);
+  if (panes != NULL)
+    terminal_panes_move_pane (panes, terminal_panes_get_active (panes), direction);
+
+  return TRUE;
+}
+
+
+
+static gboolean
+terminal_window_action_move_pane_up (TerminalWindow *window)
+{
+  return terminal_window_action_move_pane (window, TERMINAL_PANES_DIRECTION_UP);
+}
+
+
+
+static gboolean
+terminal_window_action_move_pane_down (TerminalWindow *window)
+{
+  return terminal_window_action_move_pane (window, TERMINAL_PANES_DIRECTION_DOWN);
+}
+
+
+
+static gboolean
+terminal_window_action_move_pane_left (TerminalWindow *window)
+{
+  return terminal_window_action_move_pane (window, TERMINAL_PANES_DIRECTION_LEFT);
+}
+
+
+
+static gboolean
+terminal_window_action_move_pane_right (TerminalWindow *window)
+{
+  return terminal_window_action_move_pane (window, TERMINAL_PANES_DIRECTION_RIGHT);
 }
 
 
@@ -4871,6 +5242,11 @@ terminal_window_menu_add_section (TerminalWindow *window,
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_PANE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
+      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_UP), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_DOWN), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_LEFT), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
+      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_MOVE_PANE_RIGHT), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
     }
 
   if (sections & MENU_SECTION_VIEW)

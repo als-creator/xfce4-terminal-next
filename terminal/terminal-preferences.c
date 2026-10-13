@@ -118,6 +118,8 @@ enum
   PROP_MISC_RIGHT_CLICK_ACTION,
   PROP_MISC_HYPERLINKS_ENABLED,
   PROP_MISC_TRAY_ICON,
+  PROP_MISC_DROP_DOWN,
+  PROP_MISC_PANES_LAYOUTS,
   PROP_MISC_TMUX_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
@@ -1124,8 +1126,34 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-tray-icon",
                           NULL,
                           "MiscTrayIcon",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-drop-down:
+   *
+   * Whether a terminal started without an explicit window type behaves like
+   * "xfce4-terminal --drop-down", i.e. it slides in from the top edge.
+   **/
+  preferences_props[PROP_MISC_DROP_DOWN] =
+    g_param_spec_boolean ("misc-drop-down",
+                          NULL,
+                          "MiscDropDown",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-panes-layouts:
+   *
+   * Saved layout of the split panes of every tab, in tab order, so that the
+   * panes come back the way they were left.
+   **/
+  preferences_props[PROP_MISC_PANES_LAYOUTS] =
+    g_param_spec_boxed ("misc-panes-layouts",
+                        NULL,
+                        "MiscPanesLayouts",
+                        G_TYPE_STRV,
+                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-tmux-command:
