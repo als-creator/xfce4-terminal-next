@@ -576,6 +576,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   dialog->dropdown_notebook = GTK_NOTEBOOK (notebook);
 
 
+  /* section: Behavior */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));
+
   /* next row */
   row++;
 
@@ -591,9 +594,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                                          " how to show and hide it in each of them."));
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
-
-  /* section: Behavior */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));
 
   button = gtk_check_button_new_with_mnemonic (_("_Keep window open when it loses focus"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-keep-open-default",
