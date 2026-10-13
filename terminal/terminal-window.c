@@ -1727,8 +1727,8 @@ terminal_window_key_press_event (GtkWidget *widget,
 {
   TerminalWindow *window = TERMINAL_WINDOW (widget);
 
-  /* F1 toggles a drop-down window, the way Guake uses its own key to show and
-   * hide the panel; in a normal window F1 still opens the help */
+  /* F1 shows and hides a drop-down window. A normal window keeps the upstream
+   * binding and opens the help, since there the key is more useful there. */
   if (TERMINAL_IS_WINDOW_DROPDOWN (window)
       && event->keyval == GDK_KEY_F1
       && (event->state & gtk_accelerator_get_default_mod_mask ()) == 0)

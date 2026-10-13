@@ -71,8 +71,8 @@ needs those keys.
 * *Drop-down → Toggle the window when started again* (`dropdown-parameters-once`)
   makes a second start show or hide the panel instead of opening a new tab in
   it, which is what a system shortcut needs.
-* <kbd>F1</kbd> shows and hides a drop-down window, the key Guake uses for its
-  own panel.
+* <kbd>F1</kbd> shows and hides a drop-down window (a normal window keeps the
+  upstream binding and opens the help).
 
 ### Accelerators under non-latin keyboard layouts
 
