@@ -2995,49 +2995,58 @@ terminal_window_restore_panes_subtree (TerminalWindow  *window,
                                         TerminalScreen   *screen,
                                         const gchar     **cursor)
 {
+  const gchar *p;
   GtkOrientation orientation;
   gdouble fraction = 0.5;
   gint percent;
   TerminalScreen *new_screen;
 
-  if (screen == NULL || *cursor == NULL || **cursor == '\0')
+  if (screen == NULL || cursor == NULL || *cursor == NULL || **cursor == '\0')
     return;
 
-  if (**cursor == '.')
+  p = *cursor;
+
+  /* a leaf is a single pane, nothing to restore */
+  if (*p == '.')
     {
-      (*cursor)++;
+      *cursor = p + 1;
       return;
     }
 
-  if (**cursor != 'H' && **cursor != 'V')
+  if (*p != 'H' && *p != 'V')
     {
       *cursor = NULL;
       return;
     }
 
-  orientation = (**cursor == 'H') ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL;
-  (*cursor)++;
+  orientation = (*p == 'H') ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL;
+  p++;
 
-  if (*cursor != NULL && **cursor == '(')
-    (*cursor)++;
+  if (*p == '(')
+    p++;
 
   percent = 0;
-  while (*cursor != NULL && **cursor != '\0' && g_ascii_isdigit (**cursor))
-    percent = percent * 10 + (*(*cursor)++ - '0');
+  while (g_ascii_isdigit (*p))
+    {
+      percent = percent * 10 + (*p - '0');
+      p++;
+    }
+
   if (percent > 0)
     fraction = percent / 100.0;
 
-  if (*cursor != NULL && **cursor == ',')
-    (*cursor)++;
+  if (*p == ',')
+    p++;
 
   /* the left side grows inside the pane we already have */
+  *cursor = p;
   terminal_window_restore_panes_subtree (window, panes, screen, cursor);
-
   if (*cursor == NULL)
     return;
 
-  if (**cursor == ',')
-    (*cursor)++;
+  p = *cursor;
+  if (*p == ',')
+    p++;
 
   /* the right side is a new pane, split off with the stored divider position */
   new_screen = TERMINAL_SCREEN (g_object_new (TERMINAL_TYPE_SCREEN, NULL));
@@ -3051,10 +3060,17 @@ terminal_window_restore_panes_subtree (TerminalWindow  *window,
   terminal_panes_split_screen_at (panes, screen, orientation, new_screen, fraction);
   terminal_screen_launch_child (new_screen);
 
+  /* the right side grows inside the new pane */
+  *cursor = p;
   terminal_window_restore_panes_subtree (window, panes, new_screen, cursor);
+  if (*cursor == NULL)
+    return;
 
-  if (*cursor != NULL && **cursor == ')')
-    (*cursor)++;
+  p = *cursor;
+  if (*p == ')')
+    p++;
+
+  *cursor = p;
 }
 
 

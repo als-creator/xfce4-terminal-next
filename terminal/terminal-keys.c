@@ -1,5 +1,7 @@
-/*
- * Copyright (c) 2026 xfce4-terminal-local contributors
+/*-
+ * Copyright (c) 2026 als-creator
+ *
+ * Layout independent accelerators for xfce4-terminal.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -11,10 +13,14 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
- * Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <glib.h>
 #include <gdk/gdk.h>
@@ -32,8 +38,8 @@
  *
  * Under a non-latin layout a key press such as Ctrl+Shift+O produces a cyrillic
  * keysym. The accelerators of the window are stored as latin keysyms, so they
- * never match and the pane hotkeys look dead. This maps the key press back to
- * the latin symbol of the same physical key, exactly like Guake does it in
+ * never match and they look dead. This maps the key press back to the latin
+ * symbol of the same physical key, exactly like Guake does it in
  * Keybindings.activate().
  *
  * Returns %TRUE if the key press could be normalized, %FALSE if it is not
@@ -41,11 +47,11 @@
  */
 gboolean
 terminal_keys_normalize_layout_accel (GdkEventKey  *event,
-                                       guint32      *keyval,
-                                       guint        *mods)
+                                      guint32      *keyval,
+                                      guint        *mods)
 {
   GdkKeymap *keymap;
-  GdkKeymapKey *key_entries;
+  GdkKeymapKey *entries;
   guint *keyvals;
   gint n_entries;
   gint i;
@@ -73,24 +79,26 @@ terminal_keys_normalize_layout_accel (GdkEventKey  *event,
   keycode = event->hardware_keycode;
   if (keycode == 0)
     {
-      GdkKeymapKey *sym_keys = NULL;
-      gint n_sym_keys = 0;
+      GdkKeymapKey *sym_entries;
+      gint n_sym_entries;
 
-      if (gdk_keymap_get_entries_for_keyval (keymap, event->keyval, &sym_keys, &n_sym_keys)
-          && sym_keys != NULL && n_sym_keys > 0)
-        keycode = sym_keys[0].keycode;
+      sym_entries = NULL;
+      n_sym_entries = 0;
 
-      g_free (sym_keys);
+      if (gdk_keymap_get_entries_for_keyval (keymap, event->keyval, &sym_entries, &n_sym_entries)
+          && sym_entries != NULL && n_sym_entries > 0)
+        keycode = sym_entries[0].keycode;
+
+      g_free (sym_entries);
 
       if (keycode == 0)
         return FALSE;
     }
 
-  key_entries = NULL;
+  entries = NULL;
   keyvals = NULL;
   n_entries = 0;
-  if (!gdk_keymap_get_entries_for_keycode (keymap, keycode,
-                                           &key_entries, &keyvals, &n_entries))
+  if (!gdk_keymap_get_entries_for_keycode (keymap, keycode, &entries, &keyvals, &n_entries))
     return FALSE;
 
   /* take the first latin symbol of the physical key */
@@ -102,7 +110,7 @@ terminal_keys_normalize_layout_accel (GdkEventKey  *event,
         break;
       }
 
-  g_free (key_entries);
+  g_free (entries);
   g_free (keyvals);
 
   if (symbol == 0)
