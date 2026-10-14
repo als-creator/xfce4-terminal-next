@@ -18,8 +18,8 @@ PATH=/tmp/opencode/venv/bin:$PATH meson compile -C build
 
 | Что | Как |
 | --- | --- |
-| Нормализация раскладки | `cd /tmp/opencode && gcc -o test-keys test-keys.c /mnt/Data/Projects/xfce4-terminal/terminal/terminal-keys.c -I/mnt/Data/Projects/xfce4-terminal/terminal $(pkg-config --cflags --libs gtk+-3.0) && DISPLAY=:0.0 ./test-keys` — 21 проверка |
-| Панели | `python3 /tmp/opencode/build-test.py && DISPLAY=:0.0 /tmp/opencode/test-panes` — 56 проверок |
+| Нормализация раскладки | `gcc -o /tmp/opencode/test-keys tests/test-keys.c terminal/terminal-keys.c -Iterminal $(pkg-config --cflags --libs gtk+-3.0)` и `DISPLAY=:0.0 /tmp/opencode/test-keys` — 22 проверки |
+| Панели | `python3 tests/build-test.py` и `DISPLAY=:0.0 /tmp/opencode/test-panes` — 67 проверок |
 | Переводы | `msgfmt -c --statistics -o /dev/null po/ru.po` |
 
 Пересобрать стенд панелей нужно после изменений в `terminal-panes.c`/`.h`.
