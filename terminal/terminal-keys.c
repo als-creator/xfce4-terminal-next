@@ -89,30 +89,86 @@ terminal_keys_shift_held (void)
 #endif
 }
 
-/* Whether the shift key is worth asking about: only presses that can take part
- * in an accelerator. A plain key press (typing) and keys without a letter
- * (tab, arrows, function keys) are handled by the accelerators as before, so
- * those stay free of a server round trip.
+/* Whether the keysym is one of the modifier keys themselves: a lone modifier
+ * press is no accelerator, so there is nothing to restore for it. */
+static gboolean
+terminal_keys_keyval_is_modifier (guint32 keyval)
+{
+  switch (keyval)
+    {
+    case GDK_KEY_Shift_L:
+    case GDK_KEY_Shift_R:
+    case GDK_KEY_Control_L:
+    case GDK_KEY_Control_R:
+    case GDK_KEY_Alt_L:
+    case GDK_KEY_Alt_R:
+    case GDK_KEY_Meta_L:
+    case GDK_KEY_Meta_R:
+    case GDK_KEY_Super_L:
+    case GDK_KEY_Super_R:
+    case GDK_KEY_Hyper_L:
+    case GDK_KEY_Hyper_R:
+    case GDK_KEY_Caps_Lock:
+    case GDK_KEY_Shift_Lock:
+    case GDK_KEY_Num_Lock:
+    case GDK_KEY_ISO_Level3_Shift:
+    case GDK_KEY_ISO_Level3_Latch:
+    case GDK_KEY_ISO_Level3_Lock:
+    case GDK_KEY_Mode_switch:
+    /* with Ctrl+Shift as the layout switch the key press of shift itself
+     * arrives as a group switch keysym, not as Shift_L/Shift_R */
+    case GDK_KEY_ISO_Next_Group:
+    case GDK_KEY_ISO_Prev_Group:
+    case GDK_KEY_ISO_First_Group:
+    case GDK_KEY_ISO_Last_Group:
+    case GDK_KEY_ISO_Group_Latch:
+    case GDK_KEY_ISO_Group_Lock:
+      return TRUE;
+    default:
+      return FALSE;
+    }
+}
+
+/* Whether the shift key is worth asking about: a press that carries another
+ * modifier but no shift. Plain typing stays free of a server round trip.
  *
- * The layout switch drops the latin keysym on the physical key when it turns
- * the group over to the latin one, and a cyrillic keysym when it turns it the
- * other way; both cases need the question. */
+ * Every such press needs the question, not only the ones with a latin symbol:
+ * with tab, arrows and function keys nothing but the modifier is missing, and
+ * with the latin letters of the layout the switch may have sent the key press
+ * over to the latin group. */
 static gboolean
 terminal_keys_shift_may_be_swallowed (const GdkEventKey *event)
 {
-  guint32 kv = event->keyval;
-
   if ((event->state & GDK_SHIFT_MASK) != 0)
     return FALSE;
 
   if ((event->state & (GDK_CONTROL_MASK | GDK_MOD1_MASK | GDK_SUPER_MASK)) == 0)
     return FALSE;
 
-  return (kv >= 'a' && kv <= 'z')
-         || (kv >= 'A' && kv <= 'Z')
-         /* anything above ascii except the functional keys (0xff00..0xffff:
-          * arrows, function keys, tab) */
-         || (kv > 0x7e && (kv < 0xff00 || kv > 0xffff));
+  return !terminal_keys_keyval_is_modifier (event->keyval);
+}
+
+/**
+ * terminal_keys_swallowed_shift:
+ * @event: a key press event
+ *
+ * Whether the layout switch swallowed the shift of @event (see
+ * terminal_keys_shift_held()). The caller can then either normalize the key
+ * press with terminal_keys_normalize_layout_accel_ext() — which takes the state
+ * of the shift as a parameter — or put %GDK_SHIFT_MASK back into the event so
+ * that every other consumer of the key press (the tab handler, the menu
+ * bindings, the terminal widget) sees the press the user really made. A key
+ * without any latin symbol (Ctrl+Shift+Tab, Ctrl+Shift+Left) needs the latter,
+ * since nothing but the modifier is missing for it.
+ *
+ * Returns %TRUE if the shift is held down but missing from the event.
+ */
+gboolean
+terminal_keys_swallowed_shift (GdkEventKey *event)
+{
+  g_return_val_if_fail (event != NULL, FALSE);
+
+  return terminal_keys_shift_may_be_swallowed (event) && terminal_keys_shift_held ();
 }
 
 /**
@@ -143,7 +199,7 @@ terminal_keys_normalize_layout_accel (GdkEventKey  *event,
   g_return_val_if_fail (keyval != NULL, FALSE);
   g_return_val_if_fail (mods != NULL, FALSE);
 
-  shift_held = terminal_keys_shift_may_be_swallowed (event) && terminal_keys_shift_held ();
+  shift_held = terminal_keys_swallowed_shift (event);
 
   return terminal_keys_normalize_layout_accel_ext (event, shift_held, keyval, mods);
 }
@@ -194,9 +250,9 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
   if (event->keyval <= 0x7e && !shift_held)
     return FALSE;
 
-  /* the layout switch turned the group over to the latin one and swallowed the
-   * shift on the way: the key press already carries the latin symbol of the
-   * physical key, only the modifier has to be put back */
+  /* the key press already carries the latin symbol of the physical key: only
+   * the modifier has to be put back (the layout switch turned the group over to
+   * the latin one, or the key does not depend on the layout at all) */
   if (event->keyval <= 0x7e)
     {
       *keyval = gdk_keyval_to_lower (event->keyval);
@@ -250,10 +306,21 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
   g_free (keyvals);
 
   if (symbol == 0)
-    return FALSE;
+    {
+      /* keys without a latin symbol (tab, arrows, function keys) do not depend
+       * on the layout at all; with a swallowed shift only the modifier was
+       * missing, the keysym is already the right one */
+      if (!shift_held)
+        return FALSE;
+
+      *keyval = event->keyval;
+      *mods = state & gtk_accelerator_get_default_mod_mask ();
+
+      return TRUE;
+    }
 
   /* the key press already carries the latin symbol of this physical key */
-  if (symbol == event->keyval)
+  if (symbol == event->keyval && !shift_held)
     return FALSE;
 
   /* with shift held the latin symbol is lower case, left tab stays a tab */

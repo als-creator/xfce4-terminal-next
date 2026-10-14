@@ -130,9 +130,14 @@ the X server for the real state of the physical keys (`XQueryKeymap()`) and
 restores the shift, so <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep their
 own meanings. Depending on the direction of the switch the key press carries
 either the cyrillic symbol (the group went to the non-latin one) or the latin
-one (the group went back); both are handled. The query runs only for key
-presses of a letter that carry another modifier, and only on X11; on Wayland
-the previous behaviour stays. Verified with a live stand
+one (the group went back); both are handled. Keys without a latin symbol
+(<kbd>Ctrl+Shift+Tab</kbd>, <kbd>Ctrl+Shift+Up</kbd>) only miss the modifier,
+so there the key press is kept and the modifier is put back into the event
+itself — this keeps the tab handler, the menu bindings and the terminal widget
+consistent as well. The query runs only for key presses that carry another
+modifier (the modifier keys themselves and the group switch keysym they turn
+into, `ISO_Next_Group`, stay untouched), and only on X11; on Wayland the
+previous behaviour stays. Verified with a live stand
 (`tests/keys-live-test.sh`) on a private display: the shift is really swallowed
 there and the accelerator still fires.
 

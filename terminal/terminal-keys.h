@@ -25,6 +25,11 @@
 
 G_BEGIN_DECLS
 
+/* Whether the layout switch swallowed the shift of this key press; ask the X
+ * server about the real state of the physical keys. Returns %TRUE when the
+ * shift is held down but missing from the event. */
+gboolean terminal_keys_swallowed_shift (GdkEventKey *event);
+
 gboolean terminal_keys_normalize_layout_accel (GdkEventKey  *event,
                                                guint32      *keyval,
                                                guint        *mods);

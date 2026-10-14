@@ -44,7 +44,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 
 1. Сборка: `PATH=$PWD/.venv/bin:$PATH meson compile -C build`.
 2. Стенды, которых касается правка:
-   - нормализация раскладки — `tests/bin/test-keys` (31 проверка);
+   - нормализация раскладки — `tests/bin/test-keys` (40 проверок);
    - панели — `python3 tests/build-test.py` и `tests/bin/test-panes` (67 проверок);
    - выпадающее окно и разделение режимов — `tests/stand-wm.sh`, затем
      `dbus-run-session -- tests/split-test.sh` (и `guake-*.sh`/`plain-test.sh`).
@@ -69,13 +69,13 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 
 | Что | Как |
 | --- | --- |
-| Нормализация раскладки | `mkdir -p tests/bin && gcc -o tests/bin/test-keys tests/test-keys.c terminal/terminal-keys.c -Iterminal $(pkg-config --cflags --libs gtk+-3.0 gdk-x11-3.0 x11)` и `DISPLAY=:0.0 tests/bin/test-keys` — 31 проверка |
+| Нормализация раскладки | `mkdir -p tests/bin && gcc -o tests/bin/test-keys tests/test-keys.c terminal/terminal-keys.c -Iterminal $(pkg-config --cflags --libs gtk+-3.0 gdk-x11-3.0 x11)` и `DISPLAY=:0.0 tests/bin/test-keys` — 40 проверок |
 | Панели | `python3 tests/build-test.py` и `DISPLAY=:0.0 tests/bin/test-panes` — 67 проверок |
 | Переводы | `msgfmt -c --statistics -o /dev/null po/ru.po` |
 | Разделение режимов | `tests/stand-wm.sh` и в `dbus-run-session` → `tests/split-test.sh` |
 | Выпадающее окно | `tests/guake-test.sh` (Ctrl+D скрывает панель, F1 возвращает), `tests/guake-hide-test.sh`, `tests/guake-off-test.sh` (настройка выключена — апстрим) |
 | Обычное окно | `tests/plain-test.sh` (Ctrl+D закрывает и выходит) |
-| Хоткеи на нелатинской раскладке | `tests/keys-live-test.sh` на `:99` с `grp:ctrl_shift_toggle`: `Ctrl+Shift+H` срабатывает, `Ctrl+H` — нет; печатает `KEY … match=1/0` |
+| Хоткеи на нелатинской раскладке | `tests/keys-live-test.sh` на `:99` с `grp:ctrl_shift_toggle`: `Ctrl+Shift+H` и `Ctrl+Shift+Tab` срабатывают, `Ctrl+H`/`Ctrl+Tab` — нет; печатает `KEY … h=1/0 tab=1/0` |
 
 Стенды выпадающего окна и разделения режимов работают на изолированном
 дисплее `:99` и не перехватывают фокус у пользователя: их поднимает

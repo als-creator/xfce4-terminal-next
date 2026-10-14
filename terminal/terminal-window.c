@@ -1665,14 +1665,15 @@ terminal_window_focus_in_event (GtkWidget *widget,
  * untouched, so on a latin layout nothing changes at all. */
 static gboolean
 terminal_window_activate_layout_accel (TerminalWindow *window,
-                                       GdkEventKey    *event)
+                                       GdkEventKey    *event,
+                                       gboolean        shift_held)
 {
   guint32 keyval = 0;
   guint mods = 0;
   guint mask;
   gint e;
 
-  if (!terminal_keys_normalize_layout_accel (event, &keyval, &mods))
+  if (!terminal_keys_normalize_layout_accel_ext (event, shift_held, &keyval, &mods))
     return FALSE;
 
   mask = gtk_accelerator_get_default_mod_mask ();
@@ -1716,6 +1717,7 @@ terminal_window_key_press_event (GtkWidget *widget,
                                  GdkEventKey *event)
 {
   TerminalWindow *window = TERMINAL_WINDOW (widget);
+  gboolean shift_held;
 
   /* F1 shows and hides a drop-down window. A normal window keeps the upstream
    * binding and opens the help, since there the key is more useful there. */
@@ -1727,8 +1729,17 @@ terminal_window_key_press_event (GtkWidget *widget,
       return TRUE;
     }
 
-  if (terminal_window_activate_layout_accel (window, event))
+  /* the layout switch may have swallowed the shift out of the event state: ask
+   * once about the physical key, normalize the key press for the accelerators
+   * here, and put the modifier back into the event for every consumer below
+   * (the tab handler, the menu bindings, the terminal widget) */
+  shift_held = terminal_keys_swallowed_shift (event);
+
+  if (terminal_window_activate_layout_accel (window, event, shift_held))
     return TRUE;
+
+  if (shift_held)
+    event->state |= GDK_SHIFT_MASK;
 
   if (xfce_gtk_handle_tab_accels (event, window->priv->accel_group, window, action_entries, G_N_ELEMENTS (action_entries)))
     return TRUE;
