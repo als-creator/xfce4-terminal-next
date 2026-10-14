@@ -229,10 +229,6 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
                                          guint        *mods)
 {
   GdkKeymap *keymap;
-  GdkKeymapKey *entries;
-  guint *keyvals;
-  gint n_entries;
-  gint i;
   guint keycode;
   guint32 symbol;
   guint state;
@@ -249,16 +245,6 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
    * handle it as it is */
   if (event->keyval <= 0x7e && !shift_held)
     return FALSE;
-
-  /* the key press already carries the latin symbol of the physical key: only
-   * the modifier has to be put back (the layout switch turned the group over to
-   * the latin one, or the key does not depend on the layout at all) */
-  if (event->keyval <= 0x7e)
-    {
-      *keyval = gdk_keyval_to_lower (event->keyval);
-      *mods = state & gtk_accelerator_get_default_mod_mask ();
-      return TRUE;
-    }
 
   keymap = gdk_keymap_get_for_display (gdk_display_get_default ());
   if (keymap == NULL)
@@ -287,50 +273,35 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
         return FALSE;
     }
 
-  entries = NULL;
-  keyvals = NULL;
-  n_entries = 0;
-  if (!gdk_keymap_get_entries_for_keycode (keymap, keycode, &entries, &keyvals, &n_entries))
+  /* translate the key press back to the latin symbol of the physical key: the
+   * first group of the layout (latin on every layout that matters) and level 0,
+   * i.e. the symbol does not depend on the group the layout switch moved to nor
+   * on the shift it swallowed */
+  symbol = 0;
+  if (!gdk_keymap_translate_keyboard_state (keymap, keycode, state & ~GDK_SHIFT_MASK, 0,
+                                            &symbol, NULL, NULL, NULL))
     return FALSE;
 
-  /* take the first latin symbol of the physical key */
-  symbol = 0;
-  for (i = 0; i < n_entries; i++)
-    if (keyvals[i] > 0 && keyvals[i] <= 0x7e)
-      {
-        symbol = keyvals[i];
-        break;
-      }
-
-  g_free (entries);
-  g_free (keyvals);
-
-  if (symbol == 0)
+  /* a key without a latin symbol in the first group (tab, arrows, function
+   * keys) does not depend on the layout at all: with an unswallowed shift
+   * nothing is to normalize, with a swallowed one only the modifier was missing
+   * and the symbol of the physical key is the one to look up (a left tab
+   * translates to a plain tab, so the shift binding needs no special case) */
+  if (symbol == 0 || symbol > 0x7e)
     {
-      /* keys without a latin symbol (tab, arrows, function keys) do not depend
-       * on the layout at all; with a swallowed shift only the modifier was
-       * missing, the keysym is already the right one */
       if (!shift_held)
         return FALSE;
 
-      *keyval = event->keyval;
+      *keyval = symbol == 0 ? event->keyval : symbol;
       *mods = state & gtk_accelerator_get_default_mod_mask ();
 
       return TRUE;
     }
 
-  /* the key press already carries the latin symbol of this physical key */
+  /* the key press already carries the latin symbol of the physical key and the
+   * modifiers of the event: there is nothing to normalize */
   if (symbol == event->keyval && !shift_held)
     return FALSE;
-
-  /* with shift held the latin symbol is lower case, left tab stays a tab */
-  if (state & GDK_SHIFT_MASK)
-    {
-      if (symbol == GDK_KEY_ISO_Left_Tab)
-        symbol = GDK_KEY_Tab;
-      else
-        symbol = gdk_keyval_to_lower (symbol);
-    }
 
   *keyval = symbol;
   *mods = state & gtk_accelerator_get_default_mod_mask ();

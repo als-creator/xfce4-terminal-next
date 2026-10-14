@@ -115,12 +115,20 @@ needs those keys.
 Accelerators are stored as latin keysyms, but on a russian keyboard
 <kbd>Ctrl+Shift+O</kbd> produces a cyrillic keysym, so none of them match and
 the hotkeys look dead. A key press is mapped back to the latin symbol of the
-same physical key, like Guake does in `Keybindings.activate()`, which works for
-every layout because xkb always keeps the us layout in group 0.
+same physical key, like Guake does in `Keybindings.activate()`: the symbol is
+taken from the first group of the layout with `gdk_keymap_translate_keyboard_state()`
+(xkb always keeps the us layout in group 0) at level 0, so it neither depends on
+the group the switch moved to nor on the shift it swallowed.
+
+The remap carries every other modifier over as it is, so key presses with
+<kbd>Alt</kbd>, <kbd>Ctrl+Alt</kbd>, <kbd>Super</kbd> or <kbd>AltGr</kbd> are
+normalized the same way as the ones with <kbd>Ctrl</kbd> — only the latin symbol
+is looked up, never the modifier combination.
 
 Only key presses that really are layout dependent are remapped, so nothing
 changes on a latin layout, and a rebound accelerator from the keyboard
-shortcuts dialog is honoured.
+shortcuts dialog is honoured. Keys without a latin symbol (tab, arrows, function
+keys) are left to the accelerators as they are.
 
 When <kbd>Ctrl+Shift</kbd> is the layout switch itself
 (<kbd>grp:ctrl_shift_toggle</kbd>), xkb consumes the shift: it changes the group
