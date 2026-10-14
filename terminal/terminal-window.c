@@ -3371,7 +3371,14 @@ terminal_window_add_fresh_tab_idle (gpointer user_data)
   /* the window may have gone away in the meantime */
   if (window->priv->notebook != NULL
       && !gtk_widget_in_destruction (GTK_WIDGET (window)))
-    terminal_window_add_fresh_tab (window);
+    {
+      terminal_window_add_fresh_tab (window);
+
+      /* Guake-like behaviour: when the shell of the last tab ends, the panel
+       * slides away instead of staying on screen.  The process and the status
+       * icon stay alive, and the next toggle shows the fresh tab. */
+      gtk_widget_hide (GTK_WIDGET (window));
+    }
 
   return G_SOURCE_REMOVE;
 }

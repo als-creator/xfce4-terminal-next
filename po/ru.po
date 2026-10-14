@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Xfce Apps\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 12:33+0600\n"
+"POT-Creation-Date: 2026-10-14 13:11+0600\n"
 "PO-Revision-Date: 2013-07-03 18:42+0000\n"
 "Last-Translator: Andrei Stepanov, 2022-2024,2026\n"
 "Language-Team: Russian (http://app.transifex.com/xfce/xfce-apps/language/"
@@ -793,12 +793,13 @@ msgstr "Все_гда показывать значок в трее (не зав
 #: terminal/terminal-preferences-dialog.c:643
 msgid ""
 "Keep the drop-down window and its status icon alive: when the shell of the "
-"last tab ends, a fresh tab is opened instead of the window being closed. "
-"Closing the window explicitly still quits the application."
+"last tab ends, a fresh tab is opened and the window is hidden instead of "
+"being closed. Closing the window explicitly still quits the application."
 msgstr ""
 "Не закрывать выпадающее окно и не убирать его значок: когда оболочка "
 "последней вкладки завершается, вместо закрытия окна открывается новая "
-"вкладка. Явное закрытие окна по-прежнему завершает приложение."
+"вкладка, а само окно скрывается. Явное закрытие окна по-прежнему "
+"завершает приложение."
 
 #: terminal/terminal-preferences-dialog.c:655
 msgid "Toggle the window when _started again"
@@ -965,7 +966,7 @@ msgid "x height"
 msgstr "x высота"
 
 #: terminal/terminal-preferences-dialog.c:969
-#: terminal/terminal-preferences-dialog.c:1609 terminal/terminal-window.c:4224
+#: terminal/terminal-preferences-dialog.c:1609 terminal/terminal-window.c:4231
 msgid "Reset"
 msgstr "Сбросить"
 
@@ -1460,7 +1461,7 @@ msgstr ""
 "команды могут быть исполняемыми."
 
 #: terminal/terminal-screen.c:1933 terminal/terminal-window.c:1800
-#: terminal/terminal-window.c:4400
+#: terminal/terminal-window.c:4407
 msgid "_Cancel"
 msgstr "_Отмена"
 
@@ -1751,7 +1752,7 @@ msgstr "Найти _предыдущее"
 msgid "Sa_ve Contents..."
 msgstr "Со_хранить содержимое..."
 
-#: terminal/terminal-window.c:813 terminal/terminal-window.c:4264
+#: terminal/terminal-window.c:813 terminal/terminal-window.c:4271
 msgid "_Reset"
 msgstr "_Сбросить"
 
@@ -2045,79 +2046,79 @@ msgstr ""
 msgid "Close window?"
 msgstr "Закрыть окно?"
 
-#: terminal/terminal-window.c:3607
+#: terminal/terminal-window.c:3614
 msgid "Failed to open directory"
 msgstr "Не удалось открыть каталог"
 
-#: terminal/terminal-window.c:3837
+#: terminal/terminal-window.c:3844
 msgid "Copy _Input:"
 msgstr "Копировать _ввод:"
 
-#: terminal/terminal-window.c:3841
+#: terminal/terminal-window.c:3848
 msgid "Enter the text to be copied to all tabs"
 msgstr "Введите текст, который будет скопирован во все вкладки"
 
-#: terminal/terminal-window.c:3849
+#: terminal/terminal-window.c:3856
 msgid "Copy input"
 msgstr "Скопировать ввод"
 
-#: terminal/terminal-window.c:4215
+#: terminal/terminal-window.c:4222
 msgid "_Title:"
 msgstr "_Заголовок:"
 
-#: terminal/terminal-window.c:4219
+#: terminal/terminal-window.c:4226
 msgid "Enter the title for the current terminal tab"
 msgstr "Введите заголовок для текущей вкладки"
 
-#: terminal/terminal-window.c:4234
+#: terminal/terminal-window.c:4241
 msgid "Help"
 msgstr "Справка"
 
-#: terminal/terminal-window.c:4240
+#: terminal/terminal-window.c:4247
 msgid "Close"
 msgstr "Закрыть"
 
-#: terminal/terminal-window.c:4263
+#: terminal/terminal-window.c:4270
 msgid "Choose title color"
 msgstr "Указать цвет заголовка"
 
-#: terminal/terminal-window.c:4358
+#: terminal/terminal-window.c:4365
 msgid "Failed to create the regular expression"
 msgstr "Не удалось создать регулярное выражение"
 
-#: terminal/terminal-window.c:4398
+#: terminal/terminal-window.c:4405
 msgid "Save contents..."
 msgstr "Сохранить содержимое..."
 
-#: terminal/terminal-window.c:4401
+#: terminal/terminal-window.c:4408
 msgid "_Save"
 msgstr "_Сохранить"
 
-#: terminal/terminal-window.c:4439
+#: terminal/terminal-window.c:4446
 msgid "Failed to save terminal contents"
 msgstr "Не удалось сохранить содержимое терминала"
 
-#: terminal/terminal-window.c:5315
+#: terminal/terminal-window.c:5322
 msgid "Send Signal"
 msgstr "Отправить сигнал"
 
-#: terminal/terminal-window.c:5333
+#: terminal/terminal-window.c:5340
 msgid "Zoom"
 msgstr "Масштаб"
 
-#: terminal/terminal-window.c:5345
+#: terminal/terminal-window.c:5352
 msgid "Copy"
 msgstr "Копировать"
 
-#: terminal/terminal-window.c:5356
+#: terminal/terminal-window.c:5363
 msgid "Paste"
 msgstr "Вставить"
 
-#: terminal/terminal-window.c:5367
+#: terminal/terminal-window.c:5374
 msgid "Split"
 msgstr "Разделить"
 
-#: terminal/terminal-window.c:5378
+#: terminal/terminal-window.c:5385
 msgid "View Options"
 msgstr "Параметры вида"
 

@@ -83,10 +83,11 @@ needs those keys.
   (`GtkStatusIcon`, X11 only), with a new meaning: the icon stays as long as the
   process lives.
 * With it enabled the panel is kept alive like Guake does: when the shell of its
-  last tab ends (e.g. <kbd>Ctrl+D</kbd>), a fresh tab is opened instead of the
-  window (and the icon) being destroyed, so the process stays. Closing the
-  window on purpose (*Close Window* in the icon menu, the window's own close
-  button) still quits the application.
+  last tab ends (e.g. <kbd>Ctrl+D</kbd>), a fresh tab is opened and the panel is
+  hidden instead of the window (and the icon) being destroyed, so the process
+  stays; the next toggle (<kbd>F1</kbd>) shows the fresh tab. Closing the window
+  on purpose (*Close Window* in the icon menu, the window's own close button)
+  still quits the application.
 * With the setting off the behaviour is exactly upstream's: no icon, and the
   window and the application go away with their last tab. A normal (non
   drop-down) window always keeps upstream behaviour.

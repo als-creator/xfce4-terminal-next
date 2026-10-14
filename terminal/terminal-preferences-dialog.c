@@ -642,9 +642,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                               G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
       gtk_widget_set_tooltip_text (button, _("Keep the drop-down window and its status icon alive:"
                                              " when the shell of the last tab ends, a fresh"
-                                             " tab is opened instead of the window being closed."
-                                             " Closing the window explicitly still quits the"
-                                             " application."));
+                                             " tab is opened and the window is hidden instead"
+                                             " of being closed. Closing the window explicitly"
+                                             " still quits the application."));
       gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
       gtk_widget_show (button);
     }
