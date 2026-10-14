@@ -5,7 +5,8 @@
 # Особенности (в отличие от системного пакета xfce4-terminal):
 #   * нативные сплиты: Ctrl+Shift+H / Ctrl+Shift+E, закрытие Ctrl+Shift+X
 #   * навигация по панелям: Alt+стрелки, Ctrl+Tab / Ctrl+Shift+Tab
-#   * guake-режим: иконка в трее, закрытие окна скрывает его вместо выхода
+#   * выпадающий терминал: апстримный значок в трее, шелл последней вкладки
+#     пересоздаётся (Ctrl+D), процесс живёт
 #   * tmux-команда (Ctrl+Shift+M), редактируется в настройках
 #   * вкладки запоминаются вместе с рабочими каталогами панелей
 #     (отключается галочкой Настройки -> Сессия)
@@ -20,7 +21,7 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=21
+pkgrel=22
 pkgdesc="Xfce Terminal with native split panes and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
@@ -123,7 +124,8 @@ tmux (правый клик -> Start tmux Session, или меню Terminal -> S
   Включается настройкой misc-drop-down
   (xfconf-query -c xfce4-terminal -p /misc-drop-down -n -t bool -s true)
   или ключом --drop-down. F1 (настройка dropdown-toggle-key) показывает
-  и скрывает панель. Значок в области уведомлений - апстримная настройка
+  и скрывает панель.
+
   Настройка dropdown-keep-alive "Всегда показывать значок в трее
   (не завершать процесс)" (включена по умолчанию, только X11) заменяет
   апстримную "Show status icon in notification area". Значок апстримный:
