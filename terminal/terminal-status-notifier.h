@@ -56,6 +56,8 @@ typedef struct
   gpointer user_data;
 } TerminalStatusNotifierInfo;
 
+/* Whether a StatusNotifierWatcher is on the bus, that is whether the desktop
+ * can show a tray icon at all. */
 gboolean
 terminal_status_notifier_is_supported (void);
 
