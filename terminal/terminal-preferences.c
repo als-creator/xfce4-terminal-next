@@ -72,7 +72,7 @@ enum
   PROP_DROPDOWN_KEEP_ABOVE,
   PROP_DROPDOWN_TOGGLE_FOCUS,
   PROP_DROPDOWN_KEEP_ALIVE,
-  PROP_DROPDOWN_TOGGLE_KEY,
+  PROP_DROPDOWN_START_HIDDEN,
   PROP_DROPDOWN_WIDTH,
   PROP_DROPDOWN_HEIGHT,
   PROP_DROPDOWN_OPACITY,
@@ -652,20 +652,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
   /**
    * TerminalPreferences:dropdown-keep-above:
    **/
-  /**
-   * TerminalPreferences:dropdown-toggle-key:
-   *
-   * Accelerator grabbed on the X server root window to show or hide the
-   * drop-down window from anywhere. Only used on X11, an empty value
-   * disables the grab.
-   **/
-  preferences_props[PROP_DROPDOWN_TOGGLE_KEY] =
-    g_param_spec_string ("dropdown-toggle-key",
-                         NULL,
-                         "DropdownToggleKey",
-                         "F1",
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
   preferences_props[PROP_DROPDOWN_KEEP_ABOVE] =
     g_param_spec_boolean ("dropdown-keep-above",
                           NULL,
@@ -696,6 +682,21 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           NULL,
                           "DropdownKeepAlive",
                           TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+
+  /**
+   * TerminalPreferences:dropdown-start-hidden:
+   *
+   * Start the drop-down window out of sight: it is created with the session
+   * (autostart) but does not cover the desktop, the shortcut shows it. Does
+   * not apply when an existing panel is reused.
+   **/
+  preferences_props[PROP_DROPDOWN_START_HIDDEN] =
+    g_param_spec_boolean ("dropdown-start-hidden",
+                          NULL,
+                          "DropdownStartHidden",
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
 

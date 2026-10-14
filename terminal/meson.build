@@ -22,6 +22,8 @@ terminal_sources = [
   'terminal-search-dialog.h',
   'terminal-screen.c',
   'terminal-screen.h',
+  'terminal-shortcuts.c',
+  'terminal-shortcuts.h',
   'terminal-util.c',
   'terminal-util.h',
   'terminal-widget.c',

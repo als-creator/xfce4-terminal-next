@@ -88,12 +88,6 @@ terminal_window_dropdown_status_icon_popup_menu (GtkStatusIcon *status_icon,
                                                  guint button,
                                                  guint32 timestamp,
                                                  TerminalWindowDropdown *dropdown);
-#ifdef ENABLE_X11
-static void
-terminal_window_dropdown_grab_toggle_key (TerminalWindowDropdown *dropdown);
-static void
-terminal_window_dropdown_ungrab_toggle_key (TerminalWindowDropdown *dropdown);
-#endif
 static gboolean
 terminal_window_dropdown_can_grab (gpointer data);
 static void
@@ -171,11 +165,6 @@ struct _TerminalWindowDropdown
 
   /* used to not hide the terminal when dialogs are opened */
   gboolean ignore_next_focus_out_event;
-
-  /* accelerator grabbed on the X11 root window, if any */
-  guint grab_key;
-  guint grab_mods;
-  GdkFilterFunc grab_filter;
 };
 
 
@@ -587,10 +576,6 @@ terminal_window_dropdown_finalize (GObject *object)
 
   if (dropdown->status_icon != NULL)
     g_object_unref (G_OBJECT (dropdown->status_icon));
-
-#ifdef ENABLE_X11
-  terminal_window_dropdown_ungrab_toggle_key (dropdown);
-#endif
 
   if (dropdown->screen != NULL)
     g_signal_handlers_disconnect_by_func (G_OBJECT (dropdown->screen),
@@ -1289,151 +1274,6 @@ terminal_dropdown_window_screen_size_changed (GdkScreen *screen,
 
 
 
-#ifdef ENABLE_X11
-static guint
-terminal_window_dropdown_grab_lock_masks (void)
-{
-  /* the key press arrives with the lock keys in its state; on top of that the
-   * X server puts the XKB group in bits 13-14 of the state, so both have to be
-   * masked out before the modifiers can be compared */
-  return LockMask | Mod2Mask | (3u << 13);
-}
-
-
-
-/* the key has to be grabbed for every lock key combination, otherwise it is
- * simply not delivered while CapsLock or NumLock is on */
-static const guint dropdown_grab_lock_variants[] = {
-  0, LockMask, Mod2Mask, LockMask | Mod2Mask
-};
-
-
-
-static void
-terminal_window_dropdown_grab_key_variants (GdkDisplay *display,
-                                            guint       keycode,
-                                            guint       mods,
-                                            gboolean    grab)
-{
-  guint i;
-
-  for (i = 0; i < G_N_ELEMENTS (dropdown_grab_lock_variants); i++)
-    {
-      guint m = mods | dropdown_grab_lock_variants[i];
-      if (grab)
-        XGrabKey (GDK_DISPLAY_XDISPLAY (display), (gint) keycode, (gint) m,
-                  GDK_ROOT_WINDOW (), TRUE, GrabModeAsync, GrabModeAsync);
-      else
-        XUngrabKey (GDK_DISPLAY_XDISPLAY (display), (gint) keycode, (gint) m,
-                    GDK_ROOT_WINDOW ());
-    }
-}
-
-
-
-static GdkFilterReturn
-terminal_window_dropdown_grab_filter (GdkXEvent *gdk_xevent,
-                                      GdkEvent *event,
-                                      gpointer   user_data)
-{
-  TerminalWindowDropdown *dropdown = TERMINAL_WINDOW_DROPDOWN (user_data);
-  XEvent *xevent = (XEvent *) gdk_xevent;
-
-  /* only the raw X event is meaningful here: an event delivered by the passive
-   * grab on the root window has no matching GdkWindow, so GDK never turns it
-   * into a GDK_KEY_PRESS and its type stays GDK_NOTHING */
-  if (xevent->type != KeyPress)
-    return GDK_FILTER_CONTINUE;
-
-  if (xevent->xkey.keycode == dropdown->grab_key
-      && (xevent->xkey.state & ~terminal_window_dropdown_grab_lock_masks ()) == dropdown->grab_mods)
-    {
-      terminal_window_dropdown_toggle (dropdown, NULL, FALSE);
-      return GDK_FILTER_REMOVE;
-    }
-
-  return GDK_FILTER_CONTINUE;
-}
-
-
-
-/* Grabs the shortcut on the X server root window, the same way Guake grabs its
- * show/hide key with the Keybinder library. X11 only: a Wayland client never
- * sees the keys of other windows. */
-static void
-terminal_window_dropdown_grab_toggle_key (TerminalWindowDropdown *dropdown)
-{
-  TerminalWindow *window = TERMINAL_WINDOW (dropdown);
-  GdkDisplay *display;
-  GdkKeymap *keymap;
-  GdkKeymapKey *entries;
-  gchar *accel;
-  guint key, mods, keycode;
-  gint n_entries;
-  int code;
-
-  g_object_get (terminal_window_get_preferences (window), "dropdown-toggle-key", &accel, NULL);
-  key = 0;
-  mods = 0;
-  if (accel != NULL)
-    gtk_accelerator_parse (accel, &key, &mods);
-  g_free (accel);
-
-  if (key == 0)
-    return;
-
-  keymap = gdk_keymap_get_for_display (gtk_widget_get_display (GTK_WIDGET (dropdown)));
-  if (keymap == NULL)
-    return;
-
-  entries = NULL;
-  n_entries = 0;
-  if (!gdk_keymap_get_entries_for_keyval (keymap, key, &entries, &n_entries)
-      || entries == NULL || n_entries == 0)
-    {
-      g_free (entries);
-      return;
-    }
-
-  keycode = entries[0].keycode;
-  g_free (entries);
-
-  display = gtk_widget_get_display (GTK_WIDGET (dropdown));
-  gdk_x11_display_error_trap_push (display);
-  terminal_window_dropdown_grab_key_variants (display, keycode, mods, TRUE);
-  /* another client already grabs this combination */
-  code = gdk_x11_display_error_trap_pop (display);
-  if (code != 0)
-    {
-      terminal_window_dropdown_grab_key_variants (display, keycode, mods, FALSE);
-      g_warning ("Unable to grab the drop-down shortcut, another application is using it");
-      return;
-    }
-
-  dropdown->grab_key = keycode;
-  dropdown->grab_mods = mods;
-  dropdown->grab_filter = terminal_window_dropdown_grab_filter;
-  gdk_window_add_filter (NULL, dropdown->grab_filter, dropdown);
-}
-
-
-
-static void
-terminal_window_dropdown_ungrab_toggle_key (TerminalWindowDropdown *dropdown)
-{
-  GdkDisplay *display;
-
-  if (dropdown->grab_key == 0)
-    return;
-
-  display = gtk_widget_get_display (GTK_WIDGET (dropdown));
-  gdk_window_remove_filter (NULL, dropdown->grab_filter, dropdown);
-  terminal_window_dropdown_grab_key_variants (display, dropdown->grab_key,
-                                              dropdown->grab_mods, FALSE);
-  dropdown->grab_key = 0;
-  dropdown->grab_mods = 0;
-}
-#endif /* ENABLE_X11 */
 
 
 
@@ -1483,11 +1323,6 @@ terminal_window_dropdown_new (const gchar *role,
 
   /* setup full screen */
   window->is_fullscreen = fullscreen && window->fullscreen_supported;
-
-#ifdef ENABLE_X11
-  /* global shortcut to show and hide the window, X11 only */
-  terminal_window_dropdown_grab_toggle_key (TERMINAL_WINDOW_DROPDOWN (window));
-#endif
 
   return GTK_WIDGET (window);
 }
