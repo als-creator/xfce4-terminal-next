@@ -582,18 +582,18 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Behavior */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));
 
-  button = gtk_check_button_new_with_mnemonic (_("Use the _drop-down terminal"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-drop-down",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Open the terminal as a drop-down panel that slides in"
-                                         " from the top edge, the same as"
-                                         " \"xfce4-terminal --drop-down\".\n"
-                                         "The panel works in an X11 as well as in a Wayland"
-                                         " session; the Drop-down page of this dialog explains"
-                                         " how to show and hide it in each of them."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
+  /* the panel is a separate, explicitly started mode: "xfce4-terminal
+   * --drop-down" (usually via the session autostart); an ordinary launch
+   * always opens an ordinary window, so there is no switch for this here */
+
+  label = gtk_label_new (_("The panel is started separately with"
+                           " \"xfce4-terminal-local --drop-down\" (for example"
+                           " from the session autostart). An ordinary launch"
+                           " always opens an ordinary window."));
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
+  gtk_widget_show (label);
 
   /* next row */
   row++;

@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Xfce Apps\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 13:11+0600\n"
+"POT-Creation-Date: 2026-10-14 13:26+0600\n"
 "PO-Revision-Date: 2013-07-03 18:42+0000\n"
 "Last-Translator: Andrei Stepanov, 2022-2024,2026\n"
 "Language-Team: Russian (http://app.transifex.com/xfce/xfce-apps/language/"
@@ -748,21 +748,15 @@ msgstr "Выпадающий"
 msgid "Behavior"
 msgstr "Поведение"
 
-#: terminal/terminal-preferences-dialog.c:585
-msgid "Use the _drop-down terminal"
-msgstr "Использовать _выпадающий терминал"
-
 #: terminal/terminal-preferences-dialog.c:589
 msgid ""
-"Open the terminal as a drop-down panel that slides in from the top edge, the "
-"same as \"xfce4-terminal --drop-down\".\n"
-"The panel works in an X11 as well as in a Wayland session; the Drop-down "
-"page of this dialog explains how to show and hide it in each of them."
+"The panel is started separately with \"xfce4-terminal-local --drop-down\" "
+"(for example from the session autostart). An ordinary launch always opens an "
+"ordinary window."
 msgstr ""
-"Открывать терминал как выпадающую панель, выезжающую сверху, так же, как "
-"\"xfce4-terminal --drop-down\".\n"
-"Панель работает и в сеансе X11, и в сеансе Wayland; страница \"Выпадающий\" "
-"объясняет, как показывать и скрывать её в каждом из них."
+"Выпадающая панель запускается отдельно командой \"xfce4-terminal-local --"
+"drop-down\" (например, из автозапуска сессии). Обычный запуск всегда "
+"открывает обычное окно."
 
 #: terminal/terminal-preferences-dialog.c:601
 msgid "_Keep window open when it loses focus"
@@ -798,8 +792,8 @@ msgid ""
 msgstr ""
 "Не закрывать выпадающее окно и не убирать его значок: когда оболочка "
 "последней вкладки завершается, вместо закрытия окна открывается новая "
-"вкладка, а само окно скрывается. Явное закрытие окна по-прежнему "
-"завершает приложение."
+"вкладка, а само окно скрывается. Явное закрытие окна по-прежнему завершает "
+"приложение."
 
 #: terminal/terminal-preferences-dialog.c:655
 msgid "Toggle the window when _started again"
@@ -1375,7 +1369,7 @@ msgid "Window"
 msgstr "Окно"
 
 #: terminal/terminal-preferences-dialog.c:1784
-#: terminal/terminal-preferences.c:1289
+#: terminal/terminal-preferences.c:1275
 msgid "Terminal"
 msgstr "Терминал"
 

@@ -1291,17 +1291,11 @@ terminal_app_process (TerminalApp *app,
     {
       attr = lp->data;
 
-      /* the drop-down setting plays the role of "xfce4-terminal --drop-down",
-       * so an explicit --drop-down on the command line stays in charge */
-      if (!attr->drop_down)
-        {
-          gboolean drop_down = FALSE;
-
-          g_object_get (G_OBJECT (app->preferences), "misc-drop-down", &drop_down, NULL);
-          if (drop_down)
-            attr->drop_down = TRUE;
-        }
-
+      /* An ordinary launch always opens an ordinary window: the drop-down
+       * panel is created only by an explicit --drop-down (the option is kept
+       * in TerminalWindowAttr), so "Open Terminal Here" in Thunar and the like
+       * never end up in the panel.  The toggle of the panel itself works
+       * through --drop-down as well, see terminal_window_dropdown_toggle(). */
       terminal_app_open_window (app, attr);
       terminal_window_attr_free (attr);
     }

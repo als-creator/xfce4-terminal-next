@@ -21,7 +21,7 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=22
+pkgrel=23
 pkgdesc="Xfce Terminal with native split panes and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
@@ -121,10 +121,16 @@ tmux (правый клик -> Start tmux Session, или меню Terminal -> S
   xfconf-query -c xfce4-terminal -p /misc-tmux-command -s "tmux attach -t X"
 
 выпадающий терминал:
-  Включается настройкой misc-drop-down
-  (xfconf-query -c xfce4-terminal -p /misc-drop-down -n -t bool -s true)
-  или ключом --drop-down. F1 (настройка dropdown-toggle-key) показывает
-  и скрывает панель.
+  Это отдельный режим, включается только явным ключом:
+    xfce4-terminal-local --drop-down
+  Обычный запуск (меню, Thunar "Открыть терминал здесь", ярлык) всегда
+  открывает обычное окно и в панель не попадает. Настройки, которая
+  делала бы любой запуск выпадающим, в форке больше нет.
+
+  Панель удобно поднимать из автозапуска сессии:
+    ~/.config/autostart/xfce4-terminal-local-dropdown.desktop
+  с Exec=xfce4-terminal-local --drop-down
+  Тогда F1 (настройка dropdown-toggle-key) показывает и скрывает панель.
 
   Настройка dropdown-keep-alive "Всегда показывать значок в трее
   (не завершать процесс)" (включена по умолчанию, только X11) заменяет

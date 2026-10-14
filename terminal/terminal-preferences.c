@@ -118,7 +118,6 @@ enum
   PROP_MISC_SHOW_UNSAFE_PASTE_DIALOG,
   PROP_MISC_RIGHT_CLICK_ACTION,
   PROP_MISC_HYPERLINKS_ENABLED,
-  PROP_MISC_DROP_DOWN,
   PROP_MISC_PANES_LAYOUTS,
   PROP_MISC_PANES_LAYOUTS_ENABLED,
   PROP_MISC_TMUX_COMMAND,
@@ -1133,19 +1132,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           NULL,
                           "MiscHyperlinksEnabled",
                           TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-drop-down:
-   *
-   * Whether a terminal started without an explicit window type behaves like
-   * "xfce4-terminal --drop-down", i.e. it slides in from the top edge.
-   **/
-  preferences_props[PROP_MISC_DROP_DOWN] =
-    g_param_spec_boolean ("misc-drop-down",
-                          NULL,
-                          "MiscDropDown",
-                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**

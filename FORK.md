@@ -94,14 +94,19 @@ needs those keys.
 * `GtkStatusIcon` only exists on X11, so the setting has no effect on Wayland,
   which matches upstream.
 
-### Drop-down terminal as a setting
+### Drop-down terminal as a separate mode
 
-* *Drop-down → Use the drop-down terminal* makes the application
-  start as a drop-down panel, like `xfce4-terminal --drop-down` does. An
-  explicit `--drop-down` on the command line still wins.
+* The panel is a mode of its own, started explicitly with
+  `xfce4-terminal --drop-down` (from a session autostart, a launcher, or a
+  system shortcut). There is no setting that turns ordinary launches into a
+  panel: an ordinary start — including *Open Terminal Here* in Thunar, which
+  calls the terminal without any flags — always opens an ordinary window, and
+  an ordinary window never lands in the panel. Guake has the same split by
+  design: it is a daemon with its own client, and its window is never the
+  "normal" terminal of the desktop.
 * *Drop-down → Toggle the window when started again* (`dropdown-parameters-once`)
-  makes a second start show or hide the panel instead of opening a new tab in
-  it, which is what a system shortcut needs.
+  makes a second `--drop-down` start show or hide the panel instead of opening
+  a new tab in it, which is what a system shortcut needs.
 * <kbd>F1</kbd> shows and hides a drop-down window (a normal window keeps the
   upstream binding and opens the help).
 
@@ -121,8 +126,9 @@ shortcuts dialog is honoured.
 
 * closing a pane whose child process exits collapses the split and keeps the
   tree consistent, instead of leaving a grey area behind;
-* the last tab of the drop-down window is replaced by a fresh one instead of the
-  window (and the status icon) being destroyed, see above;
+* the last tab of the drop-down window is replaced by a fresh one and the panel
+  is hidden instead of the window (and the status icon) being destroyed, see
+  above;
 * the keyboard grab probe of the drop-down window is only run on X11, on other
   backends it failed forever and kept rescheduling itself.
 
