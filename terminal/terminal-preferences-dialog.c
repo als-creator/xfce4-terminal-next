@@ -690,6 +690,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
+  /* next row */
+  row++;
+
   /* the panel is controlled by a system shortcut, the terminal keeps no key
    * grab of its own: a grab is X11-only and upstream has none either */
 
