@@ -2137,3 +2137,79 @@ msgstr "Настроить терминал Xfce"
 #: xfce4-terminal-settings.desktop.in:5
 msgid "terminal;settings;preferences;configuration;configure;"
 msgstr "terminal;settings;preferences;configuration;configure;терминал;консоль;настройки;конфигурация;настроить;"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Use a _system shortcut to show and hide the panel"
+msgstr "Использовать _системную горячую клавишу для панели"
+
+#: terminal/terminal-preferences-dialog.c
+msgid ""
+"Registers \"%s\" as an application shortcut (F1 by default). It works in an"
+" X11 session as well as in a Wayland one, because the desktop handles the "
+"key, not the terminal."
+msgstr ""
+"Регистрирует «%s» как горячую клавишу приложения (по умолчанию F1). "
+"Работает и в сеансе X11, и в Wayland, потому что клавишу обрабатывает "
+"рабочий стол, а не терминал."
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Change _shortcut..."
+msgstr "Сменить _горячую клавишу..."
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Press the new key combination and confirm it."
+msgstr "Нажмите новую комбинацию клавиш и подтвердите выбор."
+
+#: terminal/terminal-preferences-dialog.c
+msgid "not set"
+msgstr "не задана"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Press the shortcut for the drop-down panel"
+msgstr "Нажмите горячую клавишу панели"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Press the key combination, Escape cancels"
+msgstr "Нажмите комбинацию клавиш, Escape — отмена"
+
+#: terminal/terminal-preferences-dialog.c
+#, c-format
+msgid ""
+"The combination %s is already used by \"%s\". Use it for the drop-down panel "
+"anyway?"
+msgstr ""
+"Комбинация %s уже занята командой «%s». Всё равно отдать её панели?"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Replace the shortcut?"
+msgstr "Заменить горячую клавишу?"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Combination already in use"
+msgstr "Комбинация уже занята"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "_Use it"
+msgstr "_Использовать"
+
+#: terminal/terminal-preferences-dialog.c
+msgid ""
+"Without a system shortcut the panel is only shown by \"xfce4-terminal-local "
+"--drop-down\"; a shortcut assigned by hand in the keyboard shortcut settings "
+"works as well and is recognised here."
+msgstr ""
+"Без системной горячей клавиши панель показывается только командой "
+"«xfce4-terminal-local --drop-down»; клавиша, назначенная вручную в "
+"настройках горячих клавиш, тоже работает и распознаётся здесь."
+
+#: terminal/terminal-preferences-dialog.c
+msgid "Start _hidden"
+msgstr "Запускать _скрытой"
+
+#: terminal/terminal-preferences-dialog.c
+msgid ""
+"The panel is started with the session but stays out of sight: it does not "
+"cover the desktop at login and appears on the shortcut."
+msgstr ""
+"Панель запускается вместе с сеансом, но остаётся скрытой: не закрывает "
+"рабочий стол при входе и появляется по горячей клавише."

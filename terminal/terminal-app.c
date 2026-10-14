@@ -1210,7 +1210,18 @@ terminal_app_open_window (TerminalApp *app,
 
   /* show the window */
   if (attr->drop_down)
-    terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), attr->startup_id, reuse_window);
+    {
+      gboolean start_hidden;
+
+      g_object_get (G_OBJECT (app->preferences), "dropdown-start-hidden", &start_hidden, NULL);
+
+      /* A panel that the session starts (autostart) stays out of sight when
+       * the user asked for it: it waits for the shortcut instead of covering
+       * the desktop at login.  Only a freshly created panel can do this, a
+       * reused one is the result of an explicit request to use the panel. */
+      if (!start_hidden || reuse_window)
+        terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), attr->startup_id, reuse_window);
+    }
   else
     {
       /* save window geometry to prevent overriding */

@@ -23,6 +23,7 @@
 #include "terminal-enum-types.h"
 #include "terminal-preferences-dialog.h"
 #include "terminal-private.h"
+#include "terminal-shortcuts.h"
 #include "terminal-util.h"
 #include "terminal-widget.h"
 #include "terminal-window.h"
@@ -41,6 +42,14 @@ terminal_preferences_dialog_new_section (GtkWidget **frame,
                                          GtkWidget **label,
                                          gint *row,
                                          const gchar *header);
+static void
+terminal_preferences_dialog_shortcut_update (TerminalPreferencesDialog *dialog);
+static void
+terminal_preferences_dialog_shortcut_toggled (GtkToggleButton *button,
+                                              gpointer         user_data);
+static void
+terminal_preferences_dialog_shortcut_change (GtkButton *button,
+                                             gpointer   user_data);
 static void
 terminal_preferences_dialog_background_notify (TerminalPreferencesDialog *dialog);
 static void
@@ -128,6 +137,9 @@ struct _TerminalPreferencesDialog
   GtkBox *dropdown_vbox;
   GtkNotebook *dropdown_notebook;
   GtkWidget *file_chooser;
+  GtkWidget *shortcut_check;
+  GtkWidget *shortcut_key_label;
+  GtkWidget *shortcut_change_button;
   gint n_presets;
 
   gulong bg_image_signal_id;
@@ -665,28 +677,68 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  label = gtk_label_new_with_mnemonic (_("Global _toggle key (X11 only):"));
-  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-  gtk_widget_show (label);
+  /* next row */
+  row++;
 
-  entry = gtk_entry_new ();
-  g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-toggle-key",
-                          G_OBJECT (entry), "text",
+  button = gtk_check_button_new_with_mnemonic (_("Start _hidden"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-start-hidden",
+                          G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (entry, _("Grabbed by the terminal itself, so the shortcut"
-                                        " works only in an X11 session; leave the field"
-                                        " empty to disable it. The panel itself works in"
-                                        " X11 as well as in a Wayland session, but a"
-                                        " Wayland client never sees the keys of the other"
-                                        " windows: there, assign a system shortcut to"
-                                        " \"xfce4-terminal-local --drop-down\" and enable"
-                                        " the toggle option above, and the shortcut will"
-                                        " show and hide the panel."));
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
-  gtk_widget_set_hexpand (entry, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
-  gtk_widget_show (entry);
+  gtk_widget_set_tooltip_text (button, _("The panel is started with the session but stays"
+                                         " out of sight: it does not cover the desktop at"
+                                         " login and appears on the shortcut."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  /* the panel is controlled by a system shortcut, the terminal keeps no key
+   * grab of its own: a grab is X11-only and upstream has none either */
+
+  button = gtk_check_button_new_with_mnemonic (_("Use a _system shortcut to show and hide the panel"));
+  dialog->shortcut_check = button;
+  {
+    gchar *tip = g_strdup_printf (_("Registers \"%s\" as an application shortcut"
+                                    " (F1 by default). It works in an X11 session as well"
+                                    " as in a Wayland one, because the desktop handles the"
+                                    " key, not the terminal."),
+                                  TERMINAL_SHORTCUT_COMMAND);
+    gtk_widget_set_tooltip_text (button, tip);
+    g_free (tip);
+  }
+  g_signal_connect (button, "toggled",
+                    G_CALLBACK (terminal_preferences_dialog_shortcut_toggled), dialog);
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
+  gtk_widget_show (button);
+
+  /* next row */
+  row++;
+
+  button = gtk_button_new_with_mnemonic (_("Change _shortcut..."));
+  dialog->shortcut_change_button = button;
+  gtk_widget_set_tooltip_text (button, _("Press the new key combination and confirm it."));
+  g_signal_connect (button, "clicked",
+                    G_CALLBACK (terminal_preferences_dialog_shortcut_change), dialog);
+  gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
+  gtk_widget_show (button);
+
+  dialog->shortcut_key_label = gtk_label_new ("");
+  gtk_label_set_xalign (GTK_LABEL (dialog->shortcut_key_label), 0.0f);
+  gtk_grid_attach (GTK_GRID (grid), dialog->shortcut_key_label, 2, row, 1, 1);
+  gtk_widget_show (dialog->shortcut_key_label);
+
+  /* the state comes from the desktop configuration, not from our own settings */
+  terminal_preferences_dialog_shortcut_update (dialog);
+
+  /* next row */
+  row++;
+
+  label = gtk_label_new (_("Without a system shortcut the panel is only shown by"
+                           " \"xfce4-terminal-local --drop-down\"; a shortcut assigned by"
+                           " hand in the keyboard shortcut settings works as well and is"
+                           " recognised here."));
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
+  gtk_widget_show (label);
 
   /* section: Appearance & Animation */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Appearance and Animation"));
@@ -1800,6 +1852,202 @@ terminal_pango_attr_list_bold (void)
       pango_attr_list_insert (attr_list, pango_attr_weight_new (PANGO_WEIGHT_BOLD));
     }
   return attr_list;
+}
+
+
+
+/* The key is read from a window of our own instead of a server wide grab: a
+ * Wayland client is not allowed to grab keys at all, and a dialog that has the
+ * focus sees the combination just as well. */
+static gboolean
+terminal_preferences_dialog_grab_key_press (GtkWidget *widget,
+                                            GdkEventKey *event,
+                                            gpointer   user_data)
+{
+  GtkWidget *dialog = GTK_WIDGET (user_data);
+  guint keyval = event->keyval;
+  guint mods = event->state & gtk_accelerator_get_default_mod_mask ();
+  gchar *name;
+
+  if (keyval == GDK_KEY_Escape)
+    {
+      gtk_dialog_response (GTK_DIALOG (dialog), GTK_RESPONSE_CANCEL);
+      return GDK_EVENT_STOP;
+    }
+
+  /* modifiers on their own are not a shortcut, wait for a real key */
+  switch (keyval)
+    {
+    case GDK_KEY_Shift_L: case GDK_KEY_Shift_R:
+    case GDK_KEY_Control_L: case GDK_KEY_Control_R:
+    case GDK_KEY_Alt_L: case GDK_KEY_Alt_R:
+    case GDK_KEY_Super_L: case GDK_KEY_Super_R:
+    case GDK_KEY_Meta_L: case GDK_KEY_Meta_R:
+    case GDK_KEY_Hyper_L: case GDK_KEY_Hyper_R:
+    case GDK_KEY_ISO_Level3_Shift: case GDK_KEY_ISO_Level3_Latch:
+    case GDK_KEY_ISO_Level3_Lock: case GDK_KEY_ISO_Next_Group:
+    case GDK_KEY_ISO_Prev_Group: case GDK_KEY_ISO_First_Group:
+    case GDK_KEY_ISO_Last_Group: case GDK_KEY_Mode_switch:
+    case GDK_KEY_Caps_Lock: case GDK_KEY_Shift_Lock:
+    case GDK_KEY_Num_Lock: case GDK_KEY_Scroll_Lock:
+      return GDK_EVENT_STOP;
+    default:
+      break;
+    }
+
+  name = gtk_accelerator_name (keyval, mods);
+  if (G_UNLIKELY (name == NULL || *name == '\0'))
+    {
+      g_free (name);
+      return GDK_EVENT_STOP;
+    }
+
+  g_object_set_data_full (G_OBJECT (dialog), "binding", name, g_free);
+  gtk_dialog_response (GTK_DIALOG (dialog), GTK_RESPONSE_ACCEPT);
+
+  return GDK_EVENT_STOP;
+}
+
+static gchar *
+terminal_preferences_dialog_grab_key (GtkWindow *parent)
+{
+  GtkWidget *dialog;
+  GtkWidget *content;
+  GtkWidget *label;
+  gchar *binding = NULL;
+
+  dialog = gtk_dialog_new_with_buttons (_("Press the shortcut for the drop-down panel"), parent,
+                                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                        NULL);
+  content = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+  label = gtk_label_new (_("Press the key combination, Escape cancels"));
+  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
+  gtk_widget_set_margin_start (label, 12);
+  gtk_widget_set_margin_end (label, 12);
+  gtk_widget_set_margin_top (label, 12);
+  gtk_widget_set_margin_bottom (label, 12);
+  gtk_container_add (GTK_CONTAINER (content), label);
+  gtk_widget_show_all (dialog);
+
+  g_signal_connect (dialog, "key-press-event",
+                    G_CALLBACK (terminal_preferences_dialog_grab_key_press), dialog);
+
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+    binding = g_strdup (g_object_get_data (G_OBJECT (dialog), "binding"));
+
+  gtk_widget_destroy (dialog);
+
+  return binding;
+}
+
+static void
+terminal_preferences_dialog_shortcut_update (TerminalPreferencesDialog *dialog)
+{
+  gchar *binding;
+  gchar *text = NULL;
+  guint key = 0, mods = 0;
+
+  binding = terminal_shortcuts_get_drop_down_binding ();
+  if (binding != NULL)
+    {
+      gtk_accelerator_parse (binding, &key, &mods);
+      text = gtk_accelerator_get_label (key, mods);
+    }
+
+  gtk_label_set_text (GTK_LABEL (dialog->shortcut_key_label),
+                      text != NULL ? text : _("not set"));
+  gtk_widget_set_tooltip_text (dialog->shortcut_change_button, text);
+
+  g_signal_handlers_block_by_func (dialog->shortcut_check,
+                                   terminal_preferences_dialog_shortcut_toggled, dialog);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (dialog->shortcut_check), binding != NULL);
+  g_signal_handlers_unblock_by_func (dialog->shortcut_check,
+                                     terminal_preferences_dialog_shortcut_toggled, dialog);
+
+  g_free (text);
+  g_free (binding);
+}
+
+static void
+terminal_preferences_dialog_shortcut_toggled (GtkToggleButton *button,
+                                              gpointer         user_data)
+{
+  TerminalPreferencesDialog *dialog = TERMINAL_PREFERENCES_DIALOG (user_data);
+  gchar *binding;
+
+  if (gtk_toggle_button_get_active (button))
+    {
+      if (terminal_shortcuts_get_drop_down_binding () != NULL)
+        return;
+
+      binding = terminal_preferences_dialog_grab_key (GTK_WINDOW (dialog));
+      if (binding == NULL)
+        {
+          /* cancelled: put the checkmark back where it was */
+          terminal_preferences_dialog_shortcut_update (dialog);
+          return;
+        }
+
+      terminal_shortcuts_set_drop_down_binding (binding);
+      g_free (binding);
+    }
+  else
+    {
+      terminal_shortcuts_remove_drop_down_binding ();
+    }
+
+  terminal_preferences_dialog_shortcut_update (dialog);
+}
+
+static void
+terminal_preferences_dialog_shortcut_change (GtkButton *button,
+                                             gpointer   user_data)
+{
+  TerminalPreferencesDialog *dialog = TERMINAL_PREFERENCES_DIALOG (user_data);
+  gchar *binding;
+  gchar *conflict;
+
+  binding = terminal_preferences_dialog_grab_key (GTK_WINDOW (dialog));
+  if (binding == NULL)
+    return;
+
+  conflict = terminal_shortcuts_get_conflict (binding);
+  if (conflict != NULL)
+    {
+      GtkWidget *confirm;
+      gchar *question;
+      gint choice;
+
+      question = g_strdup_printf (_("The combination %s is already used by \"%s\"."
+                                    " Use it for the drop-down panel anyway?"),
+                                  binding, conflict);
+      confirm = xfce_message_dialog_new (GTK_WINDOW (dialog),
+                                         _("Replace the shortcut?"),
+                                         "dialog-warning",
+                                         _("Combination already in use"),
+                                         question,
+                                         _("_Use it"), NULL);
+      g_free (question);
+
+      choice = gtk_dialog_run (GTK_DIALOG (confirm));
+      gtk_widget_destroy (confirm);
+
+      if (choice != GTK_RESPONSE_ACCEPT)
+        {
+          g_free (conflict);
+          g_free (binding);
+          terminal_preferences_dialog_shortcut_update (dialog);
+          return;
+        }
+    }
+  g_free (conflict);
+
+  terminal_shortcuts_remove_drop_down_binding ();
+  terminal_shortcuts_set_drop_down_binding (binding);
+  g_free (binding);
+
+  terminal_preferences_dialog_shortcut_update (dialog);
 }
 
 
