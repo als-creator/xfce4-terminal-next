@@ -128,8 +128,13 @@ and never reaches the event, so <kbd>Ctrl+Shift+O</kbd> looks exactly like
 <kbd>Ctrl+O</kbd> and the accelerator that wants shift misses. The handler asks
 the X server for the real state of the physical keys (`XQueryKeymap()`) and
 restores the shift, so <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep their
-own meanings. The query runs only for layout dependent key presses that carry
-another modifier, and only on X11; on Wayland the previous behaviour stays.
+own meanings. Depending on the direction of the switch the key press carries
+either the cyrillic symbol (the group went to the non-latin one) or the latin
+one (the group went back); both are handled. The query runs only for key
+presses of a letter that carry another modifier, and only on X11; on Wayland
+the previous behaviour stays. Verified with a live stand
+(`tests/keys-live-test.sh`) on a private display: the shift is really swallowed
+there and the accelerator still fires.
 
 ### Fixes on top of upstream
 
