@@ -64,17 +64,39 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 `tests/stand-wm.sh`, он и `keys-live-test.sh` отказываются работать на `:0`).
 `DISPLAY` из окружения для них брать нельзя: там может оказаться сессия
 пользователя, и тогда окно стенда перехватит фокус, а `setxkbmap` сменит
-раскладку пользователю. Синтетические стенды без окна (`test-keys`,
-`test-panes`) дисплей не трогают.
+раскладку пользователю. Это правило уже стоило вытеснения пользовательского
+`xfwm4` на `:0`: стенды ставили `DISPLAY="${DISPLAY:-:99}"` и запускали
+`xfwm4 --replace` там, где оказывался дисплей агента. Теперь `DISPLAY`
+задаётся жёстко — `export DISPLAY=":99"`, с отказом при `:0`.
+Синтетические стенды без окна (`test-keys`, `test-panes`) дисплей не трогают.
+
+Общая часть стендов выпадающего окна — `tests/stand-lib.sh`:
+подъём Xvfb и `xfwm4` (с `--replace` и одной повторной попыткой), выбор
+окна по роли (`WM_WINDOW_ROLE`: `xfce4-terminal-dropdown` у панели,
+`xfce4-terminal-*` у обычного окна; служебное окно 10×10 роли не имеет),
+отправка клавиш с ожиданием эффекта до 12 с (панель сворачивается с
+анимацией) и с повтором. Предикат эффекта исполняется через `eval`.
+
+Панель переключается **не клавишей F1**, а вызовом D-Bus
+`org.xfce.Terminal5.ToggleDropDown`: собственный перехват клавиши у
+терминала удалён (он X11-only и в апстриме его нет), а на Wayland клавишу
+всё равно обрабатывает рабочий стол. Стенды зовут `stand_toggle_panel`.
 
 | Что | Как |
 | --- | --- |
 | Нормализация раскладки | `mkdir -p tests/bin && gcc -o tests/bin/test-keys tests/test-keys.c terminal/terminal-keys.c -Iterminal $(pkg-config --cflags --libs gtk+-3.0 gdk-x11-3.0 x11)` и `DISPLAY=:99 tests/bin/test-keys` — 48 проверок |
 | Панели | `python3 tests/build-test.py` и `DISPLAY=:99 tests/bin/test-panes` — 67 проверок |
 | Переводы | `msgfmt -c --statistics -o /dev/null po/ru.po` |
-| Разделение режимов | `tests/stand-wm.sh` и в `dbus-run-session` → `tests/split-test.sh` |
-| Выпадающее окно | `tests/guake-test.sh` (Ctrl+D скрывает панель, F1 возвращает), `tests/guake-hide-test.sh`, `tests/guake-off-test.sh` (настройка выключена — апстрим) |
-| Обычное окно | `tests/plain-test.sh` (Ctrl+D закрывает и выходит) |
+| Разделение режимов | `dbus-run-session -- bash tests/split-test.sh` — 5 проверок |
+| Выпадающее окно | `dbus-run-session -- bash tests/guake-test.sh` — 5 проверок (Ctrl+D прячет, ToggleDropDown возвращает, закрытие окна завершает) |
+| Панель с keep-open | `dbus-run-session -- bash tests/guake-hide-test.sh` — 6 проверок |
+| Панель без keep-alive | `dbus-run-session -- bash tests/guake-off-test.sh` — 2 проверки, строгое поведение апстрима |
+| Обычное окно | `dbus-run-session -- bash tests/plain-test.sh` — 2 проверки |
+| Системная горячая клавиша | `dbus-run-session -- bash tests/shortcuts-test.sh` — 13 проверок |
+| Значок и меню трея | `bash tests/sni-test.sh` — 14 проверок, свой StatusNotifierWatcher на изолированной шине |
+| D-Bus переключение панели | `bash tests/dropdown-dbus-test.sh` |
+| Скрытый старт панели | `bash tests/dropdown-hidden-test.sh` |
+| Падение при закрытии панели | `bash tests/crash-check.sh` — ASan-сборка, сплиты и закрытие вкладок |
 | Хоткеи на нелатинской раскладке | `tests/keys-live-test.sh` на `:99` с `grp:ctrl_shift_toggle`: `Ctrl+Shift+H` и `Ctrl+Shift+Tab` срабатывают, `Ctrl+H`/`Ctrl+Tab` — нет; печатает `KEY … h=1/0 tab=1/0` |
 
 Стенды выпадающего окна и разделения режимов работают на изолированном
