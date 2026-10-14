@@ -3239,13 +3239,11 @@ terminal_window_save_panes_layouts (TerminalWindow *window)
 
   g_return_if_fail (TERMINAL_IS_WINDOW (window));
 
-  /* the option is off: forget what was remembered, so that turning it on again
-   * does not bring back a session from a time when it was on */
+  /* the option is off: leave the stored record alone and do not update it, so
+   * that nothing can be restored and the layout is still there if the option
+   * is switched on again */
   if (!terminal_window_panes_layouts_enabled (window))
-    {
-      g_object_set (G_OBJECT (window->priv->preferences), "misc-panes-layouts", NULL, NULL);
-      return;
-    }
+    return;
 
   npages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
   layouts = g_ptr_array_new_with_free_func (g_free);

@@ -47,9 +47,10 @@ panes come back the way they were left. A pane is `.`, a split is `H50,.,.`
 The record is written when the tree changes (split, pane or tab closed) and once
 more just before the window is closed, so panes whose shell ended by itself do
 not come back. *Settings → Session → Remember the pane layout of tabs* turns the
-whole thing off: nothing is written, nothing is restored, and the stored record
-is dropped, so the terminal always starts with a single pane in the home
-directory. The option is on by default.
+whole thing off: nothing is written and nothing is restored, so the terminal
+always starts with a single pane in the home directory. The record that is
+already stored is left alone, so switching the option back on brings the layout
+of the last session back. The option is on by default.
 
 ### Tabs come back in their directories
 

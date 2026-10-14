@@ -20,7 +20,7 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=20
+pkgrel=21
 pkgdesc="Xfce Terminal with native split panes, tray mode and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
@@ -102,9 +102,9 @@ xfce4-terminal-local (локальная сборка)
   Отключается галочкой:
     Правки -> Настройки -> вкладка "Общие", раздел "Сессия" ->
     галочка "Запоминать раскладку панелей вкладок"
-  (галочка снята -> ничего не запоминается и не восстанавливается,
-  сохранённая запись стирается, терминал открывается одной панелью
-  в домашнем каталоге).
+  (галочка снята -> ничего не запоминается и не восстанавливается, терминал
+  открывается одной панелью в домашнем каталоге; уже сохранённая раскладка
+  не стирается и вернётся, если галочку снова поставить).
 
 tmux (правый клик -> Start tmux Session, или меню Terminal -> Split):
   Start tmux Session   Ctrl+Shift+M
