@@ -3237,6 +3237,12 @@ terminal_window_save_panes_layouts (TerminalWindow *window)
                          terminal_panes_get_session_layout (TERMINAL_PANES (child)));
     }
 
+  /* the property is a string vector, so the array has to be NULL terminated:
+   * xfconf copies the strings with g_strdupv(), which walks the array until it
+   * finds the terminator. Without it xfconf reads past the end of the array
+   * (the memory there is arbitrary) and the process crashes. */
+  g_ptr_array_add (layouts, NULL);
+
   g_object_set (G_OBJECT (window->priv->preferences), "misc-panes-layouts", layouts->pdata, NULL);
   g_ptr_array_unref (layouts);
 }
