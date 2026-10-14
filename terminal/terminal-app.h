@@ -54,6 +54,9 @@ terminal_app_process (TerminalApp *app,
                       gint argc,
                       GError **error);
 
+gboolean
+terminal_app_toggle_drop_down (TerminalApp *app);
+
 void
 terminal_app_load_accels (TerminalApp *app);
 

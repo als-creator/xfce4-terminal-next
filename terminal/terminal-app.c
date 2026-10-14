@@ -1304,3 +1304,55 @@ terminal_app_process (TerminalApp *app,
 
   return TRUE;
 }
+
+
+
+/**
+ * terminal_app_toggle_drop_down:
+ * @app: the #TerminalApp.
+ *
+ * Show/hide the drop-down panel, or create it when it does not exist yet.
+ *
+ * Unlike the launch path (terminal_app_open_window()) this does not compare
+ * screens: the panel is a singleton of the running instance and on Wayland
+ * the screen comparison can never select it.  The method is what a desktop
+ * or compositor shortcut should call, so the panel can be toggled without
+ * grabbing a key (which is X11-only) and without a new process.
+ *
+ * Return value: %TRUE when the panel was toggled or created, %FALSE on
+ * failure to create a new panel.
+ **/
+gboolean
+terminal_app_toggle_drop_down (TerminalApp *app)
+{
+  GSList *lp;
+  gchar *argv[3];
+  GError *error = NULL;
+
+  g_return_val_if_fail (TERMINAL_IS_APP (app), FALSE);
+
+  for (lp = app->windows; lp != NULL; lp = lp->next)
+    {
+      if (TERMINAL_IS_WINDOW_DROPDOWN (lp->data))
+        {
+          terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (lp->data), NULL, FALSE);
+          return TRUE;
+        }
+    }
+
+  /* No panel yet: create it via the regular --drop-down path, so that the
+   * panel gets role, icon, geometry and keep-alive handling from the same
+   * code as an explicit launch. */
+  argv[0] = (gchar *) PACKAGE_NAME;
+  argv[1] = (gchar *) "--drop-down";
+  argv[2] = NULL;
+
+  if (!terminal_app_process (app, argv, 2, &error))
+    {
+      g_warning ("Failed to create the drop-down window: %s", error->message);
+      g_error_free (error);
+      return FALSE;
+    }
+
+  return TRUE;
+}

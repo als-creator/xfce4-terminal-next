@@ -40,6 +40,9 @@ static const gchar terminal_gdbus_introspection_xml[] =
         "<arg type='ay' name='display-name' direction='in'/>"
         "<arg type='aay' name='argv' direction='in'/>"
       "</method>"
+      "<method name='" TERMINAL_DBUS_METHOD_TOGGLE_DROP_DOWN "'>"
+        "<arg type='b' name='toggled' direction='out'/>"
+      "</method>"
     "</interface>"
   "</node>";
 // clang-format on
@@ -123,6 +126,15 @@ terminal_gdbus_method_call (GDBusConnection *connection,
       g_free (display_name);
       g_free (display_name2);
       g_strfreev (argv);
+    }
+  else if (g_strcmp0 (method_name, TERMINAL_DBUS_METHOD_TOGGLE_DROP_DOWN) == 0)
+    {
+      /* The panel belongs to the instance that owns this service, so no user
+       * or display check is done here: the method is also meant to be called
+       * under Wayland, where DISPLAY is not set at all. */
+      gboolean toggled = terminal_app_toggle_drop_down (app);
+
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", toggled));
     }
   else
     {
