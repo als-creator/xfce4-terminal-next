@@ -37,9 +37,11 @@
 #include <gtk-layer-shell.h>
 #endif
 
+#include <gtk/gtk.h>
 #include <libxfce4ui/libxfce4ui.h>
 
 #include "terminal-private.h"
+#include "terminal-status-notifier.h"
 #include "terminal-util.h"
 #include "terminal-window-dropdown.h"
 
@@ -88,6 +90,19 @@ terminal_window_dropdown_status_icon_popup_menu (GtkStatusIcon *status_icon,
                                                  guint button,
                                                  guint32 timestamp,
                                                  TerminalWindowDropdown *dropdown);
+static void
+terminal_window_dropdown_notifier_activate (gpointer user_data);
+static void
+terminal_window_dropdown_notifier_context_menu (gpointer user_data);
+static void
+terminal_window_dropdown_notifier_preferences (gpointer user_data);
+static void
+terminal_window_dropdown_notifier_close_window (gpointer user_data);
+static void
+terminal_window_dropdown_notifier_free (TerminalWindowDropdown *dropdown);
+static void
+terminal_window_dropdown_activate_action (TerminalWindowDropdown *dropdown,
+                                          guint action_id);
 static gboolean
 terminal_window_dropdown_can_grab (gpointer data);
 static void
@@ -148,6 +163,9 @@ struct _TerminalWindowDropdown
   gdouble rel_position;
   gdouble rel_position_vertical;
 
+  /* StatusNotifierItem is the tray item of an X11 and of a Wayland session,
+   * GtkStatusIcon stays as the X11 fallback for desktops with no watcher */
+  TerminalStatusNotifier *notifier;
   GtkStatusIcon *status_icon;
 
   /* last screen and monitor */
@@ -556,6 +574,86 @@ terminal_window_dropdown_init (TerminalWindowDropdown *dropdown)
 
 
 static void
+terminal_window_dropdown_activate_action (TerminalWindowDropdown *dropdown,
+                                          guint action_id)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (dropdown);
+  const XfceGtkActionEntry *entry;
+  GtkWidget *menu;
+  GtkWidget *item;
+
+  entry = terminal_window_get_action_entry (window, action_id);
+  if (entry == NULL)
+    return;
+
+  /* an action entry names an action of the widget hierarchy, so the action
+   * itself is taken from a menu item built for it */
+  menu = gtk_menu_new ();
+  item = xfce_gtk_menu_item_new_from_action_entry (entry, G_OBJECT (window), GTK_MENU_SHELL (menu));
+
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  if (GTK_IS_MENU_ITEM (item))
+    gtk_menu_item_activate (GTK_MENU_ITEM (item));
+  G_GNUC_END_IGNORE_DEPRECATIONS
+
+  gtk_widget_destroy (menu);
+}
+
+
+
+static void
+terminal_window_dropdown_notifier_preferences (gpointer user_data)
+{
+  terminal_window_dropdown_activate_action (TERMINAL_WINDOW_DROPDOWN (user_data),
+                                           TERMINAL_WINDOW_ACTION_PREFERENCES);
+}
+
+
+
+static void
+terminal_window_dropdown_notifier_close_window (gpointer user_data)
+{
+  terminal_window_dropdown_activate_action (TERMINAL_WINDOW_DROPDOWN (user_data),
+                                           TERMINAL_WINDOW_ACTION_CLOSE_WINDOW);
+}
+
+
+
+static void
+terminal_window_dropdown_notifier_activate (gpointer user_data)
+{
+  TerminalWindowDropdown *dropdown = TERMINAL_WINDOW_DROPDOWN (user_data);
+
+  if (gdk_window_is_visible (gtk_widget_get_window (GTK_WIDGET (dropdown))))
+    terminal_window_dropdown_hide (dropdown);
+  else
+    terminal_window_dropdown_show (dropdown, 0, TRUE);
+}
+
+
+
+static void
+terminal_window_dropdown_notifier_context_menu (gpointer user_data)
+{
+  /* the menu is com.canonical.dbusmenu and the host draws it, a host that asks
+   * for a context menu anyway has nothing to show here */
+}
+
+
+
+static void
+terminal_window_dropdown_notifier_free (TerminalWindowDropdown *dropdown)
+{
+  if (dropdown->notifier != NULL)
+    {
+      terminal_status_notifier_free (dropdown->notifier);
+      dropdown->notifier = NULL;
+    }
+}
+
+
+
+static void
 terminal_window_dropdown_finalize (GObject *object)
 {
   TerminalWindowDropdown *dropdown = TERMINAL_WINDOW_DROPDOWN (object);
@@ -573,6 +671,8 @@ terminal_window_dropdown_finalize (GObject *object)
   if (dropdown->monitor_removed_idle_id != 0)
     g_source_remove (dropdown->monitor_removed_idle_id);
 #endif
+
+  terminal_window_dropdown_notifier_free (dropdown);
 
   if (dropdown->status_icon != NULL)
     g_object_unref (G_OBJECT (dropdown->status_icon));
@@ -592,7 +692,14 @@ icon_theme_changed (GtkIconTheme *icon_theme,
                     TerminalWindowDropdown *dropdown)
 {
   const gchar *icon_name = gtk_window_get_icon_name (GTK_WINDOW (dropdown));
-  if (icon_name != NULL)
+  if (icon_name == NULL)
+    return;
+
+  /* the notifier takes a themed name only, an absolute path is a file */
+  if (dropdown->notifier != NULL && !g_path_is_absolute (icon_name))
+    terminal_status_notifier_set_icon (dropdown->notifier, icon_name);
+
+  if (dropdown->status_icon != NULL)
     {
       G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       if (g_path_is_absolute (icon_name))
@@ -646,36 +753,58 @@ terminal_window_dropdown_set_property (GObject *object,
       return;
 
     case PROP_DROPDOWN_KEEP_ALIVE:
-      /*
-       * FIXME: GtkStatusIcon is X11 only
-       * See also https://gitlab.xfce.org/apps/xfce4-terminal/-/issues/197
-       */
-      if (!WINDOWING_IS_X11 ())
-        return;
-
       if (g_value_get_boolean (value))
         {
           /* icon_name will be NULL initially after creation; will update it later */
           icon_name = gtk_window_get_icon_name (GTK_WINDOW (object));
-          if (dropdown->status_icon == NULL && icon_name != NULL)
+          if (dropdown->notifier == NULL && dropdown->status_icon == NULL && icon_name != NULL)
             {
-              G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-              dropdown->status_icon = g_path_is_absolute (icon_name)
-                                        ? gtk_status_icon_new_from_file (icon_name)
-                                        : gtk_status_icon_new_from_icon_name (icon_name);
-              gtk_status_icon_set_title (dropdown->status_icon, _("Drop-down Terminal"));
-              gtk_status_icon_set_tooltip_text (dropdown->status_icon, _("Toggle Drop-down Terminal"));
-              G_GNUC_END_IGNORE_DEPRECATIONS
-              g_signal_connect (G_OBJECT (dropdown->status_icon), "button-press-event",
-                                G_CALLBACK (terminal_window_dropdown_status_icon_press_event), dropdown);
-              g_signal_connect (G_OBJECT (dropdown->status_icon), "popup-menu",
-                                G_CALLBACK (terminal_window_dropdown_status_icon_popup_menu), dropdown);
-              g_signal_connect_object (gtk_icon_theme_get_default (), "changed",
-                                       G_CALLBACK (icon_theme_changed), dropdown, 0);
+              if (terminal_status_notifier_is_supported ())
+                {
+                  const TerminalStatusNotifierMenuItem items[] = {
+                    { "preferences", _("Preferences"), terminal_window_dropdown_notifier_preferences },
+                    { "close-window", _("Close Window"), terminal_window_dropdown_notifier_close_window },
+                  };
+                  TerminalStatusNotifierInfo info = { 0 };
+
+                  info.id = PACKAGE_NAME;
+                  info.icon_name = g_path_is_absolute (icon_name) ? "" : icon_name;
+                  info.title = _("Drop-down Terminal");
+                  info.tooltip = _("Toggle Drop-down Terminal");
+                  info.activate = terminal_window_dropdown_notifier_activate;
+                  info.context_menu = terminal_window_dropdown_notifier_context_menu;
+                  info.menu_items = items;
+                  info.n_menu_items = G_N_ELEMENTS (items);
+                  info.user_data = dropdown;
+
+                  dropdown->notifier = terminal_status_notifier_new (&info);
+                }
+              else if (WINDOWING_IS_X11 ())
+                {
+                  /* no StatusNotifierWatcher on the bus (GNOME without the
+                   * extension, a bare window manager): the tray icon of
+                   * upstream still works in an X11 session there */
+                  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+                  dropdown->status_icon = g_path_is_absolute (icon_name)
+                                            ? gtk_status_icon_new_from_file (icon_name)
+                                            : gtk_status_icon_new_from_icon_name (icon_name);
+                  gtk_status_icon_set_title (dropdown->status_icon, _("Drop-down Terminal"));
+                  gtk_status_icon_set_tooltip_text (dropdown->status_icon, _("Toggle Drop-down Terminal"));
+                  G_GNUC_END_IGNORE_DEPRECATIONS
+                  g_signal_connect (G_OBJECT (dropdown->status_icon), "button-press-event",
+                                    G_CALLBACK (terminal_window_dropdown_status_icon_press_event), dropdown);
+                  g_signal_connect (G_OBJECT (dropdown->status_icon), "popup-menu",
+                                    G_CALLBACK (terminal_window_dropdown_status_icon_popup_menu), dropdown);
+                }
+
+              if (dropdown->notifier != NULL || dropdown->status_icon != NULL)
+                g_signal_connect_object (gtk_icon_theme_get_default (), "changed",
+                                         G_CALLBACK (icon_theme_changed), dropdown, 0);
             }
         }
       else
         {
+          terminal_window_dropdown_notifier_free (dropdown);
           g_clear_object (&dropdown->status_icon);
         }
       return;

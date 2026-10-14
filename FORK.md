@@ -79,9 +79,9 @@ needs those keys.
 
 * The fork replaces upstream's *Show status icon in notification area* setting
   with *Drop-down → Always show the status icon (do not quit the process)*
-  (`dropdown-keep-alive`, on by default). It is the same upstream status icon
-  (`GtkStatusIcon`, X11 only), with a new meaning: the icon stays as long as the
-  process lives.
+  (`dropdown-keep-alive`, on by default). The icon is a StatusNotifierItem
+  instead of upstream's `GtkStatusIcon`, so it works in a Wayland session too,
+  and it stays as long as the process lives.
 * With it enabled the panel is kept alive like Guake does: when the shell of its
   last tab ends (e.g. <kbd>Ctrl+D</kbd>), a fresh tab is opened and the panel is
   hidden instead of the window (and the icon) being destroyed, so the process
@@ -91,8 +91,30 @@ needs those keys.
 * With the setting off the behaviour is exactly upstream's: no icon, and the
   window and the application go away with their last tab. A normal (non
   drop-down) window always keeps upstream behaviour.
-* `GtkStatusIcon` only exists on X11, so the setting has no effect on Wayland,
-  which matches upstream.
+
+### Tray icon: StatusNotifierItem with a GtkStatusIcon fallback
+
+The icon is a StatusNotifierItem (`org.kde.StatusNotifierItem` on the session
+bus, `terminal-status-notifier.c`), which is what Xfce, KDE and the GNOME
+extension of AppIndicator understand, in an X11 session as well as in a
+Wayland one. It is a plain D-Bus interface, so nothing KDE is linked in: the
+dependencies of the package do not change.
+
+* left click (`Activate`) shows or hides the panel, the menu is
+  `com.canonical.dbusmenu` (`/MenuBar`) with *Preferences* and *Close Window*
+  and is drawn by the host — a menu of our own would need a popup that does
+  not exist under Wayland;
+* `terminal_status_notifier_is_supported()` looks for
+  `org.kde.StatusNotifierWatcher` on the bus. Without one (GNOME without the
+  extension, a bare window manager) and in an X11 session the icon falls back
+  to upstream's `GtkStatusIcon`, so the tray never simply disappears;
+* the watcher may show up after the panel does (a panel plugin, a session
+  start), so the item registers itself as soon as it appears, and registers
+  again if a new watcher replaces the old one.
+
+The stand `tests/sni-test.sh` runs a `StatusNotifierWatcher` of its own on a
+private bus and checks the registration, the item properties, the menu layout,
+`Activate` and a menu click.
 
 ### Drop-down terminal as a separate mode
 
@@ -252,5 +274,5 @@ meson compile -C build
 
 ## Translations
 
-Russian is complete (458 messages, no fuzzy), since the fork is used with
+Russian is complete (460 messages, no fuzzy), since the fork is used with
 `LANG=ru_RU.UTF-8`.
