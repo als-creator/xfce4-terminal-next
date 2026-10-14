@@ -44,6 +44,13 @@ The pane tree of every tab is serialized and restored on the next start, so the
 panes come back the way they were left. A pane is `.`, a split is `H50,.,.`
 (orientation, divider position in percent, then the two sides).
 
+The record is written when the tree changes (split, pane or tab closed) and once
+more just before the window is closed, so panes whose shell ended by itself do
+not come back. *Settings → Session → Remember the pane layout of tabs* turns the
+whole thing off: nothing is written, nothing is restored, and the stored record
+is dropped, so the terminal always starts with a single pane in the home
+directory. The option is on by default.
+
 ### Tabs come back in their directories
 
 The saved record of a tab carries the directory of every pane after the layout,

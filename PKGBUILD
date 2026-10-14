@@ -3,10 +3,12 @@
 # Локальная сборка xfce4-terminal с нативными сплитами.
 #
 # Особенности (в отличие от системного пакета xfce4-terminal):
-#   * нативные сплиты: Ctrl+Shift+O / Ctrl+Shift+E, закрытие Ctrl+Shift+F4
+#   * нативные сплиты: Ctrl+Shift+H / Ctrl+Shift+E, закрытие Ctrl+Shift+X
 #   * навигация по панелям: Alt+стрелки, Ctrl+Tab / Ctrl+Shift+Tab
 #   * guake-режим: иконка в трее, закрытие окна скрывает его вместо выхода
 #   * tmux-команда (Ctrl+Shift+M), редактируется в настройках
+#   * вкладки запоминаются вместе с рабочими каталогами панелей
+#     (отключается галочкой Настройки -> Сессия)
 #
 # Изоляция от системного терминала:
 #   * бинарник называется xfce4-terminal-local -> НЕ перекрывает /usr/bin
@@ -18,7 +20,7 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=19
+pkgrel=20
 pkgdesc="Xfce Terminal with native split panes, tray mode and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
@@ -84,13 +86,25 @@ xfce4-terminal-local (локальная сборка)
 ====================================
 
 Сплиты (правый клик в терминале -> Split, или меню Terminal -> Split):
-  Split Horizontally        Ctrl+Shift+O     панели рядом
+  Split Horizontally        Ctrl+Shift+H     панели рядом
   Split Vertically          Ctrl+Shift+E     панели друг над другом
-  Close Pane                Ctrl+Shift+F4
+  Close Pane                Ctrl+Shift+X
 
 Навигация по панелям (только хоткеи, в меню не выведены):
   Focus Pane Up/Down/Left/Right   Alt+стрелки
   Next / Previous Pane            Ctrl+Tab / Ctrl+Shift+Tab
+
+Восстановление сессии:
+  Терминал запоминает, на какие панели разбита каждая вкладка, вместе с
+  рабочим каталогом каждой панели, и восстанавливает их при следующем
+  запуске. Запись делается при каждом изменении и перед закрытием окна.
+
+  Отключается галочкой:
+    Правки -> Настройки -> вкладка "Общие", раздел "Сессия" ->
+    галочка "Запоминать раскладку панелей вкладок"
+  (галочка снята -> ничего не запоминается и не восстанавливается,
+  сохранённая запись стирается, терминал открывается одной панелью
+  в домашнем каталоге).
 
 tmux (правый клик -> Start tmux Session, или меню Terminal -> Split):
   Start tmux Session   Ctrl+Shift+M

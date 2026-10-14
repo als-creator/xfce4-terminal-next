@@ -370,6 +370,8 @@ terminal_window_restore_panes_layout (TerminalWindow *window,
                                        const gchar     *layout);
 static void
 terminal_window_save_panes_layouts (TerminalWindow *window);
+static gboolean
+terminal_window_panes_layouts_enabled (TerminalWindow *window);
 static gchar *
 terminal_window_saved_pane_directory (const gchar *record,
                                       guint        nth);
@@ -1327,10 +1329,18 @@ terminal_window_init (TerminalWindow *window)
                                                window);
 
   /* the tabs that exist at startup get their panes back from the saved layout;
-   * later tabs are new ones and start with a single pane */
-  g_object_get (G_OBJECT (window->priv->preferences), "misc-panes-layouts",
-                &window->priv->panes_layouts, NULL);
-  window->priv->panes_layout_index = 0;
+   * later tabs are new ones and start with a single pane. A negative index means
+   * that there is nothing to put back, which is also how the idle handler ends
+   * the restore phase. */
+  if (terminal_window_panes_layouts_enabled (window))
+    {
+      g_object_get (G_OBJECT (window->priv->preferences), "misc-panes-layouts",
+                    &window->priv->panes_layouts, NULL);
+      window->priv->panes_layout_index = 0;
+    }
+  else
+    window->priv->panes_layout_index = -1;
+
   window->priv->panes_layout_idle = g_idle_add (terminal_window_panes_layout_restore_idle, window);
 
   gtk_window_add_accel_group (GTK_WINDOW (window), window->priv->accel_group);
@@ -1537,6 +1547,11 @@ terminal_window_delete_event (GtkWidget *widget,
                                                     G_CALLBACK (title_popover_close), window);
             }
         }
+
+      /* remember the way the tabs are split right now: panes whose shell ended
+       * by itself and panes that were closed by hand are already gone from the
+       * tree, while nothing else saves after the handlers below are gone */
+      terminal_window_save_panes_layouts (window);
 
       /* avoid a lot of page remove calls */
       g_signal_handlers_disconnect_by_func (G_OBJECT (window->priv->notebook),
@@ -3200,6 +3215,22 @@ terminal_window_saved_pane_directory (const gchar *record,
 
 
 /* store the layout of every tab, so the panes come back after a restart */
+/* whether the split layout of the tabs is remembered and put back */
+static gboolean
+terminal_window_panes_layouts_enabled (TerminalWindow *window)
+{
+  gboolean enabled = TRUE;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), TRUE);
+
+  g_object_get (G_OBJECT (window->priv->preferences),
+                "misc-panes-layouts-enabled", &enabled, NULL);
+
+  return enabled;
+}
+
+
+
 static void
 terminal_window_save_panes_layouts (TerminalWindow *window)
 {
@@ -3207,6 +3238,14 @@ terminal_window_save_panes_layouts (TerminalWindow *window)
   gint npages, i;
 
   g_return_if_fail (TERMINAL_IS_WINDOW (window));
+
+  /* the option is off: forget what was remembered, so that turning it on again
+   * does not bring back a session from a time when it was on */
+  if (!terminal_window_panes_layouts_enabled (window))
+    {
+      g_object_set (G_OBJECT (window->priv->preferences), "misc-panes-layouts", NULL, NULL);
+      return;
+    }
 
   npages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
   layouts = g_ptr_array_new_with_free_func (g_free);

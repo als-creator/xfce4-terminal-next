@@ -564,6 +564,23 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
 
 
+  /* section: Session */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Session"));
+
+  button = gtk_check_button_new_with_mnemonic (_("Remember the _pane layout of tabs"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-panes-layouts-enabled",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Remember how the tabs are split into panes, together with the"
+                                         " directory of every pane, and put them back when the terminal"
+                                         " starts again.\n"
+                                         "Turn this off to always start with a single pane in the home"
+                                         " directory."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+
+
 
   /*
    * Drop-down

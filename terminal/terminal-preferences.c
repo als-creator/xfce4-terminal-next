@@ -120,6 +120,7 @@ enum
   PROP_MISC_TRAY_ICON,
   PROP_MISC_DROP_DOWN,
   PROP_MISC_PANES_LAYOUTS,
+  PROP_MISC_PANES_LAYOUTS_ENABLED,
   PROP_MISC_TMUX_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
@@ -1158,6 +1159,19 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                         "MiscPanesLayouts",
                         G_TYPE_STRV,
                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-panes-layouts-enabled:
+   *
+   * Whether the way the tabs are split into panes is remembered, together with
+   * the directory of every pane, and put back when the terminal starts again.
+   **/
+  preferences_props[PROP_MISC_PANES_LAYOUTS_ENABLED] =
+    g_param_spec_boolean ("misc-panes-layouts-enabled",
+                          NULL,
+                          "MiscPanesLayoutsEnabled",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-tmux-command:
