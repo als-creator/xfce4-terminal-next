@@ -122,6 +122,15 @@ Only key presses that really are layout dependent are remapped, so nothing
 changes on a latin layout, and a rebound accelerator from the keyboard
 shortcuts dialog is honoured.
 
+When <kbd>Ctrl+Shift</kbd> is the layout switch itself
+(<kbd>grp:ctrl_shift_toggle</kbd>), xkb consumes the shift: it changes the group
+and never reaches the event, so <kbd>Ctrl+Shift+O</kbd> looks exactly like
+<kbd>Ctrl+O</kbd> and the accelerator that wants shift misses. The handler asks
+the X server for the real state of the physical keys (`XQueryKeymap()`) and
+restores the shift, so <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep their
+own meanings. The query runs only for layout dependent key presses that carry
+another modifier, and only on X11; on Wayland the previous behaviour stays.
+
 ### Fixes on top of upstream
 
 * closing a pane whose child process exits collapses the split and keeps the
@@ -130,7 +139,12 @@ shortcuts dialog is honoured.
   is hidden instead of the window (and the status icon) being destroyed, see
   above;
 * the keyboard grab probe of the drop-down window is only run on X11, on other
-  backends it failed forever and kept rescheduling itself.
+  backends it failed forever and kept rescheduling itself;
+* <kbd>Ctrl+Shift+&lt;key&gt;</kbd> keeps working on a non-latin layout when
+  <kbd>Ctrl+Shift</kbd> is the layout switch: xkb swallows the shift there, and
+  the layout normalization of the fork now looks up the real state of the
+  physical key instead of trusting the event (upstream has no layout support at
+  all, so its latin accelerators simply stay dead on such layouts).
 
 ## Upstream-ready branches
 

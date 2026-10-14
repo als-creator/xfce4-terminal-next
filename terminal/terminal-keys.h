@@ -29,6 +29,14 @@ gboolean terminal_keys_normalize_layout_accel (GdkEventKey  *event,
                                                guint32      *keyval,
                                                guint        *mods);
 
+/* Internal: the body of the function above with the state of the shift key
+ * passed in, so the tests can cover a swallowed Ctrl+Shift layout switch
+ * without a running X server. */
+gboolean terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
+                                                   gboolean      shift_held,
+                                                   guint32      *keyval,
+                                                   guint        *mods);
+
 gboolean terminal_keys_accel_matches (const gchar *accel,
                                       guint32      keyval,
                                       guint        mods);
