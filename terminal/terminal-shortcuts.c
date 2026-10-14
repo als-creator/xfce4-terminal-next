@@ -48,6 +48,22 @@ terminal_shortcuts_property (const gchar *binding)
   return g_string_free (property, FALSE);
 }
 
+gboolean
+terminal_shortcuts_is_xfce_session (void)
+{
+  const gchar *desktop = g_getenv ("XDG_CURRENT_DESKTOP");
+
+  if (desktop == NULL || *desktop == '\0')
+    desktop = g_getenv ("XDG_SESSION_DESKTOP");
+
+  if (desktop == NULL)
+    return FALSE;
+
+  return g_strrstr (desktop, "XFCE") != NULL || g_strrstr (desktop, "Xfce") != NULL;
+}
+
+
+
 gchar *
 terminal_shortcuts_get_drop_down_binding (void)
 {

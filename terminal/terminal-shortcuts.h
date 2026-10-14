@@ -33,6 +33,11 @@ G_BEGIN_DECLS
 #define TERMINAL_SHORTCUT_CHANNEL "xfce4-keyboard-shortcuts"
 #define TERMINAL_SHORTCUT_COMMAND "xfce4-terminal-local --drop-down"
 
+/* Whether the running session is Xfce, the only desktop that reads the
+ * xfce4-keyboard-shortcuts channel this module writes. */
+gboolean
+terminal_shortcuts_is_xfce_session (void);
+
 gchar *
 terminal_shortcuts_get_drop_down_binding (void);
 

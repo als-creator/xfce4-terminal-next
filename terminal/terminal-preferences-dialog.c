@@ -51,6 +51,9 @@ static void
 terminal_preferences_dialog_shortcut_change (GtkButton *button,
                                              gpointer   user_data);
 static void
+terminal_preferences_dialog_copy_command (GtkButton *button,
+                                          gpointer   user_data);
+static void
 terminal_preferences_dialog_background_notify (TerminalPreferencesDialog *dialog);
 static void
 terminal_preferences_dialog_background_set (TerminalPreferencesDialog *dialog,
@@ -696,43 +699,72 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* the panel is controlled by a system shortcut, the terminal keeps no key
    * grab of its own: a grab is X11-only and upstream has none either */
 
-  button = gtk_check_button_new_with_mnemonic (_("Use a _system shortcut to show and hide the panel"));
-  dialog->shortcut_check = button;
-  {
-    gchar *tip = g_strdup_printf (_("Registers \"%s\" as an application shortcut"
-                                    " (F1 by default). It works in an X11 session as well"
-                                    " as in a Wayland one, because the desktop handles the"
-                                    " key, not the terminal."),
-                                  TERMINAL_SHORTCUT_COMMAND);
-    gtk_widget_set_tooltip_text (button, tip);
-    g_free (tip);
-  }
-  g_signal_connect (button, "toggled",
-                    G_CALLBACK (terminal_preferences_dialog_shortcut_toggled), dialog);
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
-  gtk_widget_show (button);
+  if (terminal_shortcuts_is_xfce_session ())
+    {
+      button = gtk_check_button_new_with_mnemonic (_("Use a _system shortcut to show and hide the panel"));
+      dialog->shortcut_check = button;
+      {
+        gchar *tip = g_strdup_printf (_("Registers \"%s\" as an application shortcut"
+                                        " (F1 by default). It works in an X11 session as well"
+                                        " as in a Wayland one, because the desktop handles the"
+                                        " key, not the terminal."),
+                                      TERMINAL_SHORTCUT_COMMAND);
+        gtk_widget_set_tooltip_text (button, tip);
+        g_free (tip);
+      }
+      g_signal_connect (button, "toggled",
+                        G_CALLBACK (terminal_preferences_dialog_shortcut_toggled), dialog);
+      gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
+      gtk_widget_show (button);
 
-  /* next row */
-  row++;
+      /* next row */
+      row++;
 
-  button = gtk_button_new_with_mnemonic (_("Change _shortcut..."));
-  dialog->shortcut_change_button = button;
-  gtk_widget_set_tooltip_text (button, _("Press the new key combination and confirm it."));
-  g_signal_connect (button, "clicked",
-                    G_CALLBACK (terminal_preferences_dialog_shortcut_change), dialog);
-  gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
-  gtk_widget_show (button);
+      button = gtk_button_new_with_mnemonic (_("Change _shortcut..."));
+      dialog->shortcut_change_button = button;
+      gtk_widget_set_tooltip_text (button, _("Press the new key combination and confirm it."));
+      g_signal_connect (button, "clicked",
+                        G_CALLBACK (terminal_preferences_dialog_shortcut_change), dialog);
+      gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
+      gtk_widget_show (button);
 
-  dialog->shortcut_key_label = gtk_label_new ("");
-  gtk_label_set_xalign (GTK_LABEL (dialog->shortcut_key_label), 0.0f);
-  gtk_grid_attach (GTK_GRID (grid), dialog->shortcut_key_label, 2, row, 1, 1);
-  gtk_widget_show (dialog->shortcut_key_label);
+      dialog->shortcut_key_label = gtk_label_new ("");
+      gtk_label_set_xalign (GTK_LABEL (dialog->shortcut_key_label), 0.0f);
+      gtk_grid_attach (GTK_GRID (grid), dialog->shortcut_key_label, 2, row, 1, 1);
+      gtk_widget_show (dialog->shortcut_key_label);
 
-  /* the state comes from the desktop configuration, not from our own settings */
-  terminal_preferences_dialog_shortcut_update (dialog);
+      /* the state comes from the desktop configuration, not from our settings */
+      terminal_preferences_dialog_shortcut_update (dialog);
 
-  /* next row */
-  row++;
+      /* next row */
+      row++;
+    }
+  else
+    {
+      /* The shortcut settings of this desktop are not the Xfce ones, so the
+       * check box would look as if it worked and quietly do nothing: give the
+       * command to assign by hand instead. */
+      label = gtk_label_new (_("This desktop does not use the Xfce shortcut settings, so the"
+                               " panel shortcut has to be assigned by hand. Bind this"
+                               " command in the keyboard shortcuts of your desktop:"));
+      gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+      gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
+      gtk_grid_attach (GTK_GRID (grid), label, 0, row, 2, 1);
+      gtk_widget_show (label);
+
+      /* next row */
+      row++;
+
+      button = gtk_button_new_with_mnemonic (_("_Copy command"));
+      gtk_widget_set_tooltip_text (button, TERMINAL_SHORTCUT_COMMAND);
+      g_signal_connect (button, "clicked",
+                        G_CALLBACK (terminal_preferences_dialog_copy_command), dialog);
+      gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
+      gtk_widget_show (button);
+
+      /* next row */
+      row++;
+    }
 
   label = gtk_label_new (_("Without a system shortcut the panel is only shown by"
                            " \"xfce4-terminal-local --drop-down\"; a shortcut assigned by"
@@ -2002,6 +2034,19 @@ terminal_preferences_dialog_shortcut_toggled (GtkToggleButton *button,
 
   terminal_preferences_dialog_shortcut_update (dialog);
 }
+
+static void
+terminal_preferences_dialog_copy_command (GtkButton *button,
+                                          gpointer   user_data)
+{
+  GtkClipboard *clipboard;
+
+  clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
+  gtk_clipboard_set_text (clipboard, TERMINAL_SHORTCUT_COMMAND, -1);
+  gtk_clipboard_store (clipboard);
+}
+
+
 
 static void
 terminal_preferences_dialog_shortcut_change (GtkButton *button,

@@ -2221,3 +2221,17 @@ msgstr "Настройки"
 #: terminal/terminal-window-dropdown.c
 msgid "Close Window"
 msgstr "Закрыть окно"
+
+#: terminal/terminal-preferences-dialog.c
+msgid ""
+"This desktop does not use the Xfce shortcut settings, so the panel shortcut "
+"has to be assigned by hand. Bind this command in the keyboard shortcuts of "
+"your desktop:"
+msgstr ""
+"Этот рабочий стол не использует настройки горячих клавиш Xfce, поэтому клавишу "
+"панели нужно назначить вручную. Свяжите эту команду в горячих клавишах вашего "
+"рабочего стола:"
+
+#: terminal/terminal-preferences-dialog.c
+msgid "_Copy command"
+msgstr "_Скопировать команду"
