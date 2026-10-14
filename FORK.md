@@ -1,7 +1,7 @@
 # xfce4-terminal-local
 
 A fork of [xfce4-terminal](https://gitlab.xfce.org/apps/xfce4-terminal) with
-split panes, guake-style residency and a few fixes. Everything is built on top
+split panes and a few fixes. Everything is built on top
 of upstream master; no upstream file is rewritten from scratch.
 
 This document exists so that a reviewer can see what the fork does without
@@ -75,19 +75,27 @@ Note that the accelerators above are consumed by the terminal and therefore do
 not reach tmux. Rebind them in the keyboard shortcuts dialog if a tmux binding
 needs those keys.
 
-### Status icon and guake-style residency
+### Drop-down status icon and residency
 
-* *Settings → Status Icon → Show a status icon in the notification area*
-  (on by default in the fork). With it enabled the process stays alive when the
-  last window is closed, closing a window hides it, and the application is quit
-  from the tray menu.
-* `GtkStatusIcon` only exists on X11, so the whole tray mode switches itself off
-  on Wayland — otherwise the application could hide its windows with no way to
-  reach it again.
+* The fork replaces upstream's *Show status icon in notification area* setting
+  with *Drop-down → Always show the status icon (do not quit the process)*
+  (`dropdown-keep-alive`, on by default). It is the same upstream status icon
+  (`GtkStatusIcon`, X11 only), with a new meaning: the icon stays as long as the
+  process lives.
+* With it enabled the panel is kept alive like Guake does: when the shell of its
+  last tab ends (e.g. <kbd>Ctrl+D</kbd>), a fresh tab is opened instead of the
+  window (and the icon) being destroyed, so the process stays. Closing the
+  window on purpose (*Close Window* in the icon menu, the window's own close
+  button) still quits the application.
+* With the setting off the behaviour is exactly upstream's: no icon, and the
+  window and the application go away with their last tab. A normal (non
+  drop-down) window always keeps upstream behaviour.
+* `GtkStatusIcon` only exists on X11, so the setting has no effect on Wayland,
+  which matches upstream.
 
 ### Drop-down terminal as a setting
 
-* *Settings → Status Icon → Use the drop-down terminal* makes the application
+* *Drop-down → Use the drop-down terminal* makes the application
   start as a drop-down panel, like `xfce4-terminal --drop-down` does. An
   explicit `--drop-down` on the command line still wins.
 * *Drop-down → Toggle the window when started again* (`dropdown-parameters-once`)
@@ -112,9 +120,8 @@ shortcuts dialog is honoured.
 
 * closing a pane whose child process exits collapses the split and keeps the
   tree consistent, instead of leaving a grey area behind;
-* the last tab of a window is never dropped from the notebook: a fresh tab is
-  created in an idle, so the window is never left empty;
-* the status icon keeps the application alive, see above;
+* the last tab of the drop-down window is replaced by a fresh one instead of the
+  window (and the status icon) being destroyed, see above;
 * the keyboard grab probe of the drop-down window is only run on X11, on other
   backends it failed forever and kept rescheduling itself.
 

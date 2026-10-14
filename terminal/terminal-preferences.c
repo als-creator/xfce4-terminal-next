@@ -71,6 +71,7 @@ enum
   PROP_DROPDOWN_KEEP_OPEN_DEFAULT,
   PROP_DROPDOWN_KEEP_ABOVE,
   PROP_DROPDOWN_TOGGLE_FOCUS,
+  PROP_DROPDOWN_KEEP_ALIVE,
   PROP_DROPDOWN_TOGGLE_KEY,
   PROP_DROPDOWN_WIDTH,
   PROP_DROPDOWN_HEIGHT,
@@ -117,7 +118,6 @@ enum
   PROP_MISC_SHOW_UNSAFE_PASTE_DIALOG,
   PROP_MISC_RIGHT_CLICK_ACTION,
   PROP_MISC_HYPERLINKS_ENABLED,
-  PROP_MISC_TRAY_ICON,
   PROP_MISC_DROP_DOWN,
   PROP_MISC_PANES_LAYOUTS,
   PROP_MISC_PANES_LAYOUTS_ENABLED,
@@ -685,6 +685,20 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
+  /**
+   * TerminalPreferences:dropdown-keep-alive:
+   *
+   * Always show the drop-down window's status icon and keep the process
+   * alive: the shell of the last tab ending opens a fresh tab instead of
+   * taking the window (and the application) down with it.
+   **/
+  preferences_props[PROP_DROPDOWN_KEEP_ALIVE] =
+    g_param_spec_boolean ("dropdown-keep-alive",
+                          NULL,
+                          "DropdownKeepAlive",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
 
   /**
    * TerminalPreferences:dropdown-width:
@@ -1122,19 +1136,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
-   * TerminalPreferences:misc-tray-icon:
-   *
-   * Whether to keep a status icon in the notification area that keeps the
-   * application running when the last window is closed.
-   **/
-  preferences_props[PROP_MISC_TRAY_ICON] =
-    g_param_spec_boolean ("misc-tray-icon",
-                          NULL,
-                          "MiscTrayIcon",
-                          TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
    * TerminalPreferences:misc-drop-down:
    *
    * Whether a terminal started without an explicit window type behaves like
@@ -1170,7 +1171,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-panes-layouts-enabled",
                           NULL,
                           "MiscPanesLayoutsEnabled",
-                          TRUE,
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**

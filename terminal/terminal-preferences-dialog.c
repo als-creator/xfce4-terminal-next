@@ -550,20 +550,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
 
 
-  /* section: Status Icon */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Status Icon"));
-
-  button = gtk_check_button_new_with_mnemonic (_("Show a status icon in the notification area"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tray-icon",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Keep the application running in the notification area;"
-                                         " closing a window hides it instead of quitting."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
-
-
   /* section: Session */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Session"));
 
@@ -643,6 +629,25 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
+
+  /* see terminal_window_dropdown_set_property() */
+  if (WINDOWING_IS_X11 ())
+    {
+      /* next row */
+      row++;
+
+      button = gtk_check_button_new_with_mnemonic (_("_Always show the status icon (do not quit the process)"));
+      g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-keep-alive",
+                              G_OBJECT (button), "active",
+                              G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+      gtk_widget_set_tooltip_text (button, _("Keep the drop-down window and its status icon alive:"
+                                             " when the shell of the last tab ends, a fresh"
+                                             " tab is opened instead of the window being closed."
+                                             " Closing the window explicitly still quits the"
+                                             " application."));
+      gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+      gtk_widget_show (button);
+    }
 
   /* next row */
   row++;

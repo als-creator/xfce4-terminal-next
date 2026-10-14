@@ -106,11 +106,6 @@ terminal_app_save_yourself (XfceSessionClient *client,
 static void
 terminal_app_open_window (TerminalApp *app,
                           TerminalWindowAttr *attr);
-static void
-terminal_app_update_tray (TerminalApp *app);
-static void
-terminal_app_tray_set_enabled (TerminalApp *app,
-                               gboolean enabled);
 
 
 
@@ -127,10 +122,6 @@ struct _TerminalApp
   GtkAccelMap *accel_map;
 
   gboolean session_shutting_down;
-
-  /* status icon that keeps the application running (guake-like behaviour) */
-  GtkStatusIcon *tray_icon;
-  GtkWidget *tray_menu;
 };
 
 
@@ -167,11 +158,6 @@ terminal_app_init (TerminalApp *app)
   app->preferences = terminal_preferences_get ();
   g_signal_connect_swapped (G_OBJECT (app->preferences), "notify::shortcuts-no-menukey",
                             G_CALLBACK (terminal_app_update_accels), app);
-  g_signal_connect_swapped (G_OBJECT (app->preferences), "notify::misc-tray-icon",
-                            G_CALLBACK (terminal_app_update_tray), app);
-
-  /* create the status icon if requested */
-  terminal_app_update_tray (app);
 
   /* remember the original menu bar accel */
   g_object_get (G_OBJECT (gtk_settings_get_default ()),
@@ -215,20 +201,7 @@ terminal_app_finalize (GObject *object)
   g_slist_free (app->windows);
 
   g_signal_handlers_disconnect_by_func (G_OBJECT (app->preferences), G_CALLBACK (terminal_app_update_accels), app);
-  g_signal_handlers_disconnect_by_func (G_OBJECT (app->preferences), G_CALLBACK (terminal_app_update_tray), app);
   g_object_unref (G_OBJECT (app->preferences));
-
-  if (app->tray_icon != NULL)
-    {
-      gtk_status_icon_set_visible (app->tray_icon, FALSE);
-      g_object_unref (G_OBJECT (app->tray_icon));
-      app->tray_icon = NULL;
-    }
-  if (app->tray_menu != NULL)
-    {
-      gtk_widget_destroy (app->tray_menu);
-      app->tray_menu = NULL;
-    }
 
   if (app->initial_menu_bar_accel != NULL)
     g_free (app->initial_menu_bar_accel);
@@ -786,200 +759,8 @@ terminal_app_window_destroyed (GtkWidget *window,
         xfce_session_client_remove_window (app->session_client, role);
     }
 
-  if (G_UNLIKELY (app->windows == NULL && app->tray_icon == NULL))
+  if (G_UNLIKELY (app->windows == NULL))
     gtk_main_quit ();
-}
-
-
-
-static void
-terminal_app_tray_show_hide (TerminalApp *app)
-{
-  GSList *lp;
-  gboolean any_visible = FALSE;
-
-  /* if any window is currently visible, hide them all; otherwise show them */
-  for (lp = app->windows; lp != NULL; lp = lp->next)
-    {
-      if (gtk_widget_get_visible (GTK_WIDGET (lp->data)))
-        {
-          any_visible = TRUE;
-          break;
-        }
-    }
-
-  for (lp = app->windows; lp != NULL; lp = lp->next)
-    {
-      if (any_visible)
-        {
-          gtk_widget_hide (GTK_WIDGET (lp->data));
-        }
-      else
-        {
-          /* Safety net: a window must never be presented without a tab, or it
-           * shows as a grey empty frame. Mirrors guake, which re-adds a tab
-           * before showing the window again. */
-          if (terminal_window_get_n_tabs (TERMINAL_WINDOW (lp->data)) == 0)
-            terminal_window_add_fresh_tab (TERMINAL_WINDOW (lp->data));
-
-          gtk_widget_show (GTK_WIDGET (lp->data));
-          gtk_window_present (GTK_WINDOW (lp->data));
-        }
-    }
-}
-
-
-
-static void
-terminal_app_tray_open (GtkMenuItem *item,
-                        TerminalApp *app)
-{
-  TerminalWindowAttr *attr;
-
-  /* open a fresh window without inheriting from an existing one */
-  attr = terminal_window_attr_new ();
-  terminal_app_open_window (app, attr);
-  terminal_window_attr_free (attr);
-}
-
-
-
-static void
-terminal_app_tray_quit (GtkMenuItem *item,
-                        TerminalApp *app)
-{
-  GSList *list, *lp;
-
-  /* drop the tray first, so destroying the last window ends the application */
-  terminal_app_tray_set_enabled (app, FALSE);
-
-  list = g_slist_copy (app->windows);
-  for (lp = list; lp != NULL; lp = lp->next)
-    gtk_widget_destroy (GTK_WIDGET (lp->data));
-  g_slist_free (list);
-
-  /* in case there were no windows at all */
-  gtk_main_quit ();
-}
-
-
-
-static void
-terminal_app_tray_popup_menu (GtkStatusIcon *icon,
-                              guint button,
-                              guint activate_time,
-                              TerminalApp *app)
-{
-  gtk_menu_popup (GTK_MENU (app->tray_menu), NULL, NULL,
-                  gtk_status_icon_position_menu, icon,
-                  button, activate_time);
-}
-
-
-
-static void
-terminal_app_tray_activate (GtkStatusIcon *icon,
-                            TerminalApp *app)
-{
-  terminal_app_tray_show_hide (app);
-}
-
-
-
-static void
-terminal_app_tray_set_enabled (TerminalApp *app,
-                               gboolean enabled)
-{
-  GtkWidget *item;
-
-  if (enabled == (app->tray_icon != NULL))
-    return;
-
-  if (enabled)
-    {
-      app->tray_icon = gtk_status_icon_new_from_icon_name ("utilities-terminal");
-      gtk_status_icon_set_tooltip_text (app->tray_icon, _("Terminal"));
-      gtk_status_icon_set_visible (app->tray_icon, TRUE);
-
-      app->tray_menu = gtk_menu_new ();
-
-      item = gtk_menu_item_new_with_mnemonic (_("_Open Terminal"));
-      g_signal_connect (G_OBJECT (item), "activate",
-                        G_CALLBACK (terminal_app_tray_open), app);
-      gtk_menu_shell_append (GTK_MENU_SHELL (app->tray_menu), item);
-
-      item = gtk_menu_item_new_with_mnemonic (_("_Show Windows"));
-      g_signal_connect (G_OBJECT (item), "activate",
-                        G_CALLBACK (terminal_app_tray_activate), app);
-      gtk_menu_shell_append (GTK_MENU_SHELL (app->tray_menu), item);
-
-      item = gtk_separator_menu_item_new ();
-      gtk_menu_shell_append (GTK_MENU_SHELL (app->tray_menu), item);
-
-      item = gtk_menu_item_new_with_mnemonic (_("_Quit"));
-      g_signal_connect (G_OBJECT (item), "activate",
-                        G_CALLBACK (terminal_app_tray_quit), app);
-      gtk_menu_shell_append (GTK_MENU_SHELL (app->tray_menu), item);
-
-      gtk_widget_show_all (app->tray_menu);
-
-      g_signal_connect (G_OBJECT (app->tray_icon), "popup-menu",
-                        G_CALLBACK (terminal_app_tray_popup_menu), app);
-      g_signal_connect (G_OBJECT (app->tray_icon), "activate",
-                        G_CALLBACK (terminal_app_tray_activate), app);
-    }
-  else
-    {
-      if (app->tray_icon != NULL)
-        {
-          gtk_status_icon_set_visible (app->tray_icon, FALSE);
-          g_object_unref (G_OBJECT (app->tray_icon));
-          app->tray_icon = NULL;
-        }
-      if (app->tray_menu != NULL)
-        {
-          gtk_widget_destroy (app->tray_menu);
-          app->tray_menu = NULL;
-        }
-
-      if (app->windows == NULL)
-        {
-          /* nothing keeps the application alive */
-          gtk_main_quit ();
-        }
-      else
-        {
-          GSList *lp;
-
-          /* make sure no window is left hidden without a way to restore it */
-          for (lp = app->windows; lp != NULL; lp = lp->next)
-            {
-              if (!gtk_widget_get_visible (GTK_WIDGET (lp->data)))
-                {
-                  gtk_widget_show (GTK_WIDGET (lp->data));
-                  gtk_window_present (GTK_WINDOW (lp->data));
-                }
-            }
-        }
-    }
-}
-
-
-
-static void
-terminal_app_update_tray (TerminalApp *app)
-{
-  gboolean enabled = FALSE;
-
-  g_object_get (G_OBJECT (app->preferences), "misc-tray-icon", &enabled, NULL);
-
-  /* GtkStatusIcon is x11 only: without a tray there is nothing to click, and
-   * keeping the application alive behind a hidden window would leave no way to
-   * quit it at all, so the whole tray mode stays off on other backends */
-  if (!WINDOWING_IS_X11 ())
-    enabled = FALSE;
-
-  terminal_app_tray_set_enabled (app, enabled);
 }
 
 

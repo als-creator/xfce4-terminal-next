@@ -285,9 +285,9 @@ terminal_window_action_split_horizontal (TerminalWindow *window);
 static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window);
 static gboolean
-terminal_window_add_fresh_tab_idle (gpointer user_data);
-static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
+static gboolean
+terminal_window_add_fresh_tab_idle (gpointer user_data);
 static gboolean
 terminal_window_action_close_pane (TerminalWindow *window);
 static gboolean
@@ -1514,28 +1514,6 @@ terminal_window_delete_event (GtkWidget *widget,
   /* disconnect remove signal if we're closing the window */
   if (response == CONFIRMED_CLOSE_WINDOW)
     {
-      gboolean tray_icon = FALSE;
-
-      /* when the status icon keeps the application alive, just hide the
-       * window instead of destroying it (except for drop-down windows) */
-      if (!TERMINAL_IS_WINDOW_DROPDOWN (window))
-        {
-          g_object_get (G_OBJECT (window->priv->preferences),
-                        "misc-tray-icon", &tray_icon, NULL);
-
-          /* the tray only exists on x11, and without it there would be no way
-           * to quit an application that keeps itself alive (see
-           * terminal_app_update_tray()) */
-          if (!WINDOWING_IS_X11 ())
-            tray_icon = FALSE;
-        }
-
-      if (tray_icon)
-        {
-          gtk_widget_hide (widget);
-          return TRUE;
-        }
-
       /* disconnect handlers for closing Set Title dialog */
       if (window->priv->title_popover != NULL)
         {
@@ -1702,23 +1680,18 @@ terminal_window_activate_layout_accel (TerminalWindow *window,
   for (e = 0; e < (gint) G_N_ELEMENTS (action_entries); e++)
     {
       const XfceGtkActionEntry *entry = &action_entries[e];
-      const gchar *name;
-      const gchar *slash;
       GtkAccelKey current;
       gboolean matched;
 
       if (entry->callback == NULL || entry->accel_path == NULL)
         continue;
 
-      /* the accelerator map is keyed by the action name, i.e. the last
-       * component of the accel path */
-      slash = strrchr (entry->accel_path, '/');
-      name = slash != NULL ? slash + 1 : entry->accel_path;
-
       /* prefer the accelerator the user has bound in the keyboard shortcuts
-       * dialog, fall back to the one from the action entry */
+       * dialog, fall back to the one from the action entry; the accelerator
+       * map is keyed by the full accel path, e.g.
+       * "<Actions>/terminal-window/split-horizontal" */
       memset (&current, 0, sizeof (current));
-      matched = gtk_accel_map_lookup_entry (name, &current)
+      matched = gtk_accel_map_lookup_entry (entry->accel_path, &current)
                 && current.accel_key != 0
                 && current.accel_key == keyval
                 && (current.accel_mods & mask) == mods;
@@ -2235,38 +2208,34 @@ terminal_window_notebook_page_removed (GtkNotebook *notebook,
   npages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
   if (G_UNLIKELY (npages == 0))
     {
-      gboolean tray_icon = FALSE;
-
-      /* When the status icon keeps the application alive, dropping the very
-       * last tab must not take the process down: keep the window hidden and
-       * ready, exactly like guake does (it never leaves the notebook empty).
-       * Creating a fresh tab here also means Ctrl+D on the last tab behaves
-       * like "new empty terminal" instead of killing the window. */
-      if (!TERMINAL_IS_WINDOW_DROPDOWN (window))
+      if (TERMINAL_IS_WINDOW_DROPDOWN (window)
+          && !gtk_widget_in_destruction (GTK_WIDGET (window)))
         {
+          gboolean keep_alive = FALSE;
+
           g_object_get (G_OBJECT (window->priv->preferences),
-                        "misc-tray-icon", &tray_icon, NULL);
+                        "dropdown-keep-alive", &keep_alive, NULL);
 
-          /* the tray only exists on x11, and without it there would be no way
-           * to quit an application that keeps itself alive (see
-           * terminal_app_update_tray()) */
-          if (!WINDOWING_IS_X11 ())
-            tray_icon = FALSE;
+          if (keep_alive)
+            {
+              /* the active screen is the one going away; forget it, otherwise
+               * add_panes() would size the fresh tab after that dead screen
+               * instead of after the monitor geometry */
+              window->priv->active = NULL;
+
+              /* Guake-like behaviour of the drop-down window: its shell ending
+               * must not take the panel (and the status icon) away, so a fresh
+               * tab is opened instead.  It is done in an idle because the
+               * notebook is still removing the page here. */
+              g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+                               terminal_window_add_fresh_tab_idle,
+                               g_object_ref (window),
+                               g_object_unref);
+              return;
+            }
         }
 
-      if (tray_icon)
-        {
-          /* Do not add the replacement tab from inside the page-removed
-           * handler: the notebook is in the middle of removing a page and
-           * inserting another one there leaves it half-torn-down (the new page
-           * never gets a proper allocation and renders as grey). Defer it to
-           * an idle so the removal completes first. */
-          g_idle_add (terminal_window_add_fresh_tab_idle, window);
-          gtk_widget_hide (GTK_WIDGET (window));
-          return;
-        }
-
-      /* no tabs and no status icon: destroy the window as before */
+      /* no tabs, destroy the window */
       gtk_widget_destroy (GTK_WIDGET (window));
       return;
     }
@@ -3352,31 +3321,6 @@ terminal_window_action_split_vertical (TerminalWindow *window)
 
 
 
-/* Replaces the last tab that was closed while the status icon keeps the
- * application alive. Runs from an idle so the notebook has finished removing
- * the old page first, otherwise the inserted page stays unallocated and the
- * window renders as a grey area. */
-static gboolean
-terminal_window_add_fresh_tab_idle (gpointer user_data)
-{
-  TerminalWindow *window = TERMINAL_WINDOW (user_data);
-
-  /* the window may have been destroyed, or a new tab may already exist,
-   * while we were waiting for the idle to run */
-  if (window == NULL || GTK_IS_WINDOW (window) == FALSE)
-    return G_SOURCE_REMOVE;
-
-  if (terminal_window_get_active (window) != NULL
-      || gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook)) > 0)
-    return G_SOURCE_REMOVE;
-
-  terminal_window_add_fresh_tab (window);
-
-  return G_SOURCE_REMOVE;
-}
-
-
-
 guint
 terminal_window_get_n_tabs (TerminalWindow *window)
 {
@@ -3387,20 +3331,49 @@ terminal_window_get_n_tabs (TerminalWindow *window)
 
 
 
-void
+static void
 terminal_window_add_fresh_tab (TerminalWindow *window)
 {
   TerminalScreen *fresh;
+  glong columns, rows;
 
   g_return_if_fail (TERMINAL_IS_WINDOW (window));
 
   if (terminal_window_get_n_tabs (window) > 0)
     return;
 
-  fresh = terminal_screen_new (terminal_tab_attr_new (),
-                               window->priv->grid_width,
-                               window->priv->grid_height);
+  columns = window->priv->grid_width;
+  rows = window->priv->grid_height;
+  if (columns <= 0 || rows <= 0)
+    {
+      /* priv->grid_* is not set for drop-down windows (see
+       * terminal_app_process()); the upstream defaults are used so that VTE
+       * starts the shell.  terminal_window_add_panes() sizes the tab from the
+       * monitor geometry right afterwards, exactly like the first tab. */
+      columns = 80;
+      rows = 24;
+    }
+
+  fresh = terminal_screen_new (terminal_tab_attr_new (), columns, rows);
   terminal_window_add (window, fresh);
+
+  /* the shell is only started explicitly, see terminal_window_action_new_tab() */
+  terminal_screen_launch_child (fresh);
+}
+
+
+
+static gboolean
+terminal_window_add_fresh_tab_idle (gpointer user_data)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (user_data);
+
+  /* the window may have gone away in the meantime */
+  if (window->priv->notebook != NULL
+      && !gtk_widget_in_destruction (GTK_WIDGET (window)))
+    terminal_window_add_fresh_tab (window);
+
+  return G_SOURCE_REMOVE;
 }
 
 

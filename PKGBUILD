@@ -21,7 +21,7 @@
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
 pkgrel=21
-pkgdesc="Xfce Terminal with native split panes, tray mode and tmux integration (isolated local build)"
+pkgdesc="Xfce Terminal with native split panes and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
 license=('GPL2')
@@ -69,7 +69,7 @@ package() {
 [Desktop Entry]
 Name=Xfce4 Terminal (Split Panes)
 GenericName=Terminal Emulator
-Comment=Terminal with native split panes, tray mode and tmux integration
+Comment=Terminal with native split panes and tmux integration
 Exec=/usr/local/bin/xfce4-terminal-local %F
 Icon=org.xfce.terminal
 Type=Application
@@ -119,15 +119,21 @@ tmux (правый клик -> Start tmux Session, или меню Terminal -> S
     tmux attach -t deploy
   xfconf-query -c xfce4-terminal -p /misc-tmux-command -s "tmux attach -t X"
 
-guake-режим:
-  Включается настройкой misc-tray-icon
-  (xfconf-query -c xfce4-terminal -p /misc-tray-icon -n -t bool -s true).
+выпадающий терминал:
+  Включается настройкой misc-drop-down
+  (xfconf-query -c xfce4-terminal -p /misc-drop-down -n -t bool -s true)
+  или ключом --drop-down. F1 (настройка dropdown-toggle-key) показывает
+  и скрывает панель. Значок в области уведомлений - апстримная настройка
+  Настройка dropdown-keep-alive "Всегда показывать значок в трее
+  (не завершать процесс)" (включена по умолчанию, только X11) заменяет
+  апстримную "Show status icon in notification area". Значок апстримный:
+  клик показывает/скрывает панель, меню значка - "Настройки" и "Закрыть окно".
 
-  После включения:
-    * закрытие окна скрывает его, а не закрывает
-    * Ctrl+D на последней вкладке создаёт новую пустую вкладку,
-      процесс продолжает жить
-    * выход - только через меню значка в трее -> Quit
+  При включённой настройке панель живёт как в Guake: когда шелл последней
+  вкладки завершается (Ctrl+D), вкладка пересоздаётся, а не уничтожается
+  вместе с окном, поэтому процесс и значок остаются. Явное закрытие окна
+  (пункт "Закрыть окно" в меню значка или кнопка закрытия) по-прежнему
+  завершает программу. При выключенной настройке - поведение апстрима.
 
 Запуск:   xfce4-terminal-local
 Меню:     "Xfce4 Terminal (Split Panes)"
