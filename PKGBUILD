@@ -21,7 +21,7 @@
 # Удаление:   sudo pacman -Rns xfce4-terminal-local
 pkgname=xfce4-terminal-local
 pkgver=1.2.0
-pkgrel=23
+pkgrel=24
 pkgdesc="Xfce Terminal with native split panes and tmux integration (isolated local build)"
 arch=('x86_64')
 url="https://gitlab.xfce.org/apps/xfce4-terminal"
@@ -36,7 +36,7 @@ build() {
     cd "$startdir/src"
 
     # meson/ninja живут только в локальном venv
-    export PATH="/tmp/opencode/venv/bin:$PATH"
+    export PATH="/mnt/Data/Projects/xfce4-terminal/.venv/bin:$PATH"
 
     # Уникальное D-Bus-имя: иначе бинарник проксирует вызовы
     # запущенному системному терминалу вместо собственного запуска
@@ -54,7 +54,7 @@ build() {
 
 package() {
     cd "$startdir/src"
-    export PATH="/tmp/opencode/venv/bin:$PATH"
+    export PATH="/mnt/Data/Projects/xfce4-terminal/.venv/bin:$PATH"
 
     DESTDIR="$pkgdir" ninja -C build install
 
