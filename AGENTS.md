@@ -4,23 +4,76 @@
 терминал. Ветка форка — `feature/split-panes`, ветки для возможных PR —
 `upstream/*` (считаются от чистого `master`, который совпадает с апстримом).
 
+## Что где лежит
+
+Общее правило — в глобальном `AGENTS.md` (артефакты проекта не в `/tmp`), здесь
+конкретика:
+
+| Что | Где |
+| --- | --- |
+| Инструменты сборки (`meson`, `ninja`) | `.venv/` в папке проекта (в `.gitignore`) |
+| Каталог сборки meson | `build/` в папке проекта (в `.gitignore`) |
+| Стенды и их исходники, тестовые бинарники | `tests/` (`tests/bin/` для бинарников; каталог в `.gitignore`) |
+| Переводы | `po/ru.po`, шаблон `po/xfce4-terminal.pot` (не отслеживается) |
+| Каталог сборки Arch-пакета | домашний каталог пользователя, корень (`~`) |
+| Готовый пакет | корень репозитория (`*.pkg.tar.zst`, в `.gitignore`) |
+| Логи и `HOME` стендов на время прогона | `/tmp/opencode/xtest` (короткоживущее, можно терять) |
+
 ## Сборка
 
 ```
 cd /mnt/Data/Projects/xfce4-terminal
-PATH=/tmp/opencode/venv/bin:$PATH meson compile -C build
+PATH=$PWD/.venv/bin:$PATH meson compile -C build
 ```
 
-`meson` и `ninja` есть только в `/tmp/opencode/venv/bin`. Полная пересборка с
-нуля: `meson setup /tmp/opencode/build-pr .` и `meson compile -C /tmp/opencode/build-pr`.
+Если `.venv` пропал:
+
+```
+python3 -m venv .venv && .venv/bin/pip install meson ninja
+PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
+```
+
+Переконфигурация обязательна: в `build.ninja` вбиты абсолютные пути к `meson` и
+`ninja`, и после пересоздания `.venv` старые пути мертвы.
+
+## После правок
+
+Порядок один и тот же для любой задачи, добавленной функции или исправления:
+**сначала собрать, потом тест, и только затем отчёт.** Непроверенную правку за
+готовую не выдавать.
+
+1. Сборка: `PATH=$PWD/.venv/bin:$PATH meson compile -C build`.
+2. Стенды, которых касается правка:
+   - нормализация раскладки — `tests/bin/test-keys` (22 проверки);
+   - панели — `python3 tests/build-test.py` и `tests/bin/test-panes` (67 проверок);
+   - выпадающее окно и разделение режимов — `tests/stand-wm.sh`, затем
+     `dbus-run-session -- tests/split-test.sh` (и `guake-*.sh`/`plain-test.sh`).
+3. Новые строки интерфейса — перевести в `po/ru.po` и проверить
+   `msgfmt -c --statistics -o /dev/null po/ru.po`.
+4. Если стенд не запускается в окружении (например, нет `Xvfb` или дисплея) —
+   сказать об этом прямо, а не считать фичу проверенной.
 
 ## Тесты
 
+Исходники стендов и сами скрипты лежат в `tests/` (каталог в `.gitignore`, в
+дифф форка не попадает). Рабочие каталоги, `HOME` и логи стендов пишутся в
+`/tmp/opencode/xtest` — этот каталог временный и может исчезнуть, поэтому сами
+скрипты храним только в `tests/`.
+
 | Что | Как |
 | --- | --- |
-| Нормализация раскладки | `gcc -o /tmp/opencode/test-keys tests/test-keys.c terminal/terminal-keys.c -Iterminal $(pkg-config --cflags --libs gtk+-3.0)` и `DISPLAY=:0.0 /tmp/opencode/test-keys` — 22 проверки |
-| Панели | `python3 tests/build-test.py` и `DISPLAY=:0.0 /tmp/opencode/test-panes` — 67 проверок |
+| Нормализация раскладки | `mkdir -p tests/bin && gcc -o tests/bin/test-keys tests/test-keys.c terminal/terminal-keys.c -Iterminal $(pkg-config --cflags --libs gtk+-3.0 gdk-x11-3.0 x11)` и `DISPLAY=:0.0 tests/bin/test-keys` — 27 проверок |
+| Панели | `python3 tests/build-test.py` и `DISPLAY=:0.0 tests/bin/test-panes` — 67 проверок |
 | Переводы | `msgfmt -c --statistics -o /dev/null po/ru.po` |
+| Разделение режимов | `tests/stand-wm.sh` и в `dbus-run-session` → `tests/split-test.sh` |
+| Выпадающее окно | `tests/guake-test.sh` (Ctrl+D скрывает панель, F1 возвращает), `tests/guake-hide-test.sh`, `tests/guake-off-test.sh` (настройка выключена — апстрим) |
+| Обычное окно | `tests/plain-test.sh` (Ctrl+D закрывает и выходит) |
+
+Стенды выпадающего окна и разделения режимов работают на изолированном
+дисплее `:99` и не перехватывают фокус у пользователя: их поднимает
+`tests/stand-wm.sh` (нужен пакет `xorg-server-xvfb`), оконный менеджер
+(`xfwm4 --sm-client-disable --daemon`) — сами скрипты. Запускать внутри
+`dbus-run-session`, чтобы у стенда была своя шина.
 
 Пересобрать стенд панелей нужно после изменений в `terminal-panes.c`/`.h`.
 
@@ -31,7 +84,7 @@ PATH=/tmp/opencode/venv/bin:$PATH meson compile -C build
 
 ```
 rm -f po/xfce4-terminal.pot
-PATH=/tmp/opencode/venv/bin:$PATH meson compile -C build xfce4-terminal-pot
+PATH=$PWD/.venv/bin:$PATH meson compile -C build xfce4-terminal-pot
 msgmerge --no-fuzzy-matching --update po/ru.po po/xfce4-terminal.pot
 ```
 
@@ -39,17 +92,22 @@ msgmerge --no-fuzzy-matching --update po/ru.po po/xfce4-terminal.pot
 
 ## Arch-пакет
 
+Каталог сборки — **домашний каталог пользователя, прямо в корне** (`~`): там
+лежат `src/`, `PKGBUILD` и готовый `*.pkg.tar.zst`. В `/tmp` не собираем: это
+tmpfs, его содержимое теряется при перезагрузке вместе с исходниками и пакетом.
+
 ```
-cd /tmp/opencode/pkgbuild && rm -rf src && mkdir -p src
+cd ~ && rm -rf src && mkdir -p src
 git -C /mnt/Data/Projects/xfce4-terminal archive HEAD | tar -C src -xf -
-cp /mnt/Data/Projects/xfce4-terminal/PKGBUILD .
-cp /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-local.install .
-PATH=/tmp/opencode/venv/bin:$PATH makepkg -f --noconfirm --nodeps
+cp /mnt/Data/Projects/xfce4-terminal/PKGBUILD ~/
+cp /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-local.install ~/
+PATH=/mnt/Data/Projects/xfce4-terminal/.venv/bin:$PATH makepkg -f --noconfirm --nodeps
 ```
 
 `pkgrel` поднимать на единицу при каждой пересборке; готовый пакет копируется в
-корень репозитория, предыдущий удаляется. Установка в `/usr/local`, бинарник
-`xfce4-terminal-local`, D-Bus `org.xfce.Terminal5Local`.
+корень репозитория (`/mnt/Data/Projects/xfce4-terminal/`), предыдущий удаляется.
+Установка в `/usr/local`, бинарник `xfce4-terminal-local`, D-Bus
+`org.xfce.Terminal5Local`.
 
 ## Стиль кода XFCE
 
