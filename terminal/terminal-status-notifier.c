@@ -332,6 +332,11 @@ terminal_status_notifier_method_call (GDBusConnection       *connection,
  * Event().  A menu drawn by the host is the one thing that needs no X11 and
  * no position guess, so it is also the only one that works under Wayland. */
 
+static void
+terminal_status_notifier_menu_item_properties (TerminalStatusNotifier *notifier,
+                                               gint id,
+                                               GVariantBuilder *properties);
+
 static GVariant *
 terminal_status_notifier_menu_layout_item (TerminalStatusNotifier *notifier,
                                            guint index)
@@ -340,10 +345,7 @@ terminal_status_notifier_menu_layout_item (TerminalStatusNotifier *notifier,
   GVariantBuilder children;
 
   g_variant_builder_init (&properties, g_variant_type_checked_ ("a{sv}"));
-  g_variant_builder_add (&properties, "{sv}", "label",
-                         g_variant_new_string (notifier->menu_labels[index]));
-  g_variant_builder_add (&properties, "{sv}", "enabled", g_variant_new_boolean (TRUE));
-  g_variant_builder_add (&properties, "{sv}", "visible", g_variant_new_boolean (TRUE));
+  terminal_status_notifier_menu_item_properties (notifier, (gint) index + 1, &properties);
 
   g_variant_builder_init (&children, g_variant_type_checked_ ("av"));
 
@@ -375,6 +377,24 @@ terminal_status_notifier_menu_layout (TerminalStatusNotifier *notifier,
     }
 
   return g_variant_new ("(ia{sv}av)", parent_id, &properties, &children);
+}
+
+
+
+/* The properties of a menu item: a host reads them with GetLayout and then
+ * asks again with GetGroupProperties, so both have to answer the same. */
+static void
+terminal_status_notifier_menu_item_properties (TerminalStatusNotifier *notifier,
+                                               gint id,
+                                               GVariantBuilder *properties)
+{
+  g_variant_builder_add (properties, "{sv}", "enabled", g_variant_new_boolean (TRUE));
+  g_variant_builder_add (properties, "{sv}", "visible", g_variant_new_boolean (TRUE));
+  g_variant_builder_add (properties, "{sv}", "type", g_variant_new_string ("standard"));
+
+  if (id >= 1 && (guint) id <= notifier->n_menu_items)
+    g_variant_builder_add (properties, "{sv}", "label",
+                           g_variant_new_string (notifier->menu_labels[id - 1]));
 }
 
 
@@ -435,7 +455,30 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
     }
   else if (g_strcmp0 (method_name, "GetGroupProperties") == 0)
     {
-      g_dbus_method_invocation_return_value (invocation, g_variant_new ("@a(ia{sv})", NULL, 0));
+      GVariantBuilder items;
+      GVariantBuilder properties;
+      GVariant *ids_variant;
+      gsize n_ids, i;
+
+      /* the signature is (aias): the ids come as a variant, the requested
+       * property names are ignored because every item gets the full set */
+      ids_variant = g_variant_get_child_value (parameters, 0);
+      n_ids = g_variant_n_children (ids_variant);
+
+      g_variant_builder_init (&items, g_variant_type_checked_ ("a(ia{sv})"));
+      for (i = 0; i < n_ids; i++)
+        {
+          GVariant *item;
+          gint id = g_variant_get_int32 (g_variant_get_child_value (ids_variant, i));
+
+          g_variant_builder_init (&properties, g_variant_type_checked_ ("a{sv}"));
+          terminal_status_notifier_menu_item_properties (notifier, id, &properties);
+          item = g_variant_new ("(ia{sv})", id, &properties);
+          g_variant_builder_add_value (&items, item);
+        }
+      g_variant_unref (ids_variant);
+
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(a(ia{sv}))", &items));
     }
   else if (g_strcmp0 (method_name, "GetProperty") == 0)
     {
@@ -448,6 +491,15 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
         {
           g_dbus_method_invocation_return_value (invocation,
                                                  g_variant_new ("(v)", g_variant_new_string (notifier->menu_labels[id - 1])));
+        }
+      else if (g_strcmp0 (name, "type") == 0)
+        {
+          g_dbus_method_invocation_return_value (invocation,
+                                                 g_variant_new ("(v)", g_variant_new_string ("standard")));
+        }
+      else if (g_strcmp0 (name, "enabled") == 0 || g_strcmp0 (name, "visible") == 0)
+        {
+          g_dbus_method_invocation_return_value (invocation, g_variant_new ("(v)", g_variant_new_boolean (TRUE)));
         }
       else
         {
@@ -559,7 +611,7 @@ terminal_status_notifier_new (const TerminalStatusNotifierInfo *info)
   if (info->n_menu_items > 0 && info->menu_items != NULL)
     {
       notifier->info.menu_items = g_new (TerminalStatusNotifierMenuItem, info->n_menu_items);
-      memcpy (notifier->info.menu_items, info->menu_items,
+      memcpy ((gpointer) notifier->info.menu_items, info->menu_items,
               info->n_menu_items * sizeof (TerminalStatusNotifierMenuItem));
     }
   notifier->id = g_strdup (info->id);
@@ -660,7 +712,7 @@ terminal_status_notifier_free (TerminalStatusNotifier *notifier)
     g_object_unref (notifier->connection);
 
   g_strfreev (notifier->menu_labels);
-  g_free (notifier->info.menu_items);
+  g_free ((gpointer) notifier->info.menu_items);
   g_free (notifier->bus_name);
   g_free (notifier->id);
   g_free (notifier->icon_name);
@@ -717,7 +769,11 @@ terminal_status_notifier_menu_set_label (TerminalStatusNotifier *notifier,
   g_variant_builder_init (&properties, g_variant_type_checked_ ("a{sv}"));
   g_variant_builder_add (&properties, "{sv}", "label",
                          g_variant_new_string (notifier->menu_labels[item_index]));
-  g_variant_builder_add (&updated, "(i@a{sv})", (gint) item_index + 1, &properties);
+  {
+    GVariant *item = g_variant_new ("(ia{sv})", (gint) item_index + 1, &properties);
+
+    g_variant_builder_add_value (&updated, item);
+  }
 
   g_dbus_connection_emit_signal (notifier->connection, NULL, MENU_PATH,
                                  "com.canonical.dbusmenu", "ItemsPropertiesUpdated",
