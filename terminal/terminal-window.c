@@ -327,7 +327,7 @@ terminal_window_set_active_screen (TerminalWindow *window,
                                    TerminalScreen *screen);
 static void
 terminal_window_setup_screen (TerminalWindow *window,
-                              TerminalWidget *widget);
+                              TerminalScreen *screen);
 static TerminalPanes *
 terminal_window_screen_get_panes (TerminalScreen *screen);
 static GtkWidget *
@@ -2118,7 +2118,7 @@ terminal_window_notebook_page_added (GtkNotebook *notebook,
     {
       TerminalScreen *screen = TERMINAL_SCREEN (lp->data);
 
-      terminal_window_setup_screen (window, TERMINAL_WIDGET (screen));
+      terminal_window_setup_screen (window, screen);
 
       /* release to the grid size applies */
       gtk_widget_realize (GTK_WIDGET (screen));
@@ -2366,10 +2366,8 @@ terminal_window_get_current_panes (TerminalWindow *window)
  **/
 static void
 terminal_window_setup_screen (TerminalWindow *window,
-                              TerminalWidget *widget)
+                              TerminalScreen *screen)
 {
-  TerminalScreen *screen = TERMINAL_SCREEN (widget);
-
   /* connect the screen signals */
   g_signal_connect (G_OBJECT (screen), "get-context-menu",
                     G_CALLBACK (terminal_window_get_context_menu), window);
@@ -3091,7 +3089,7 @@ terminal_window_restore_panes_subtree (TerminalWindow     *window,
 
   /* the right side is a new pane, split off with the stored divider position */
   new_screen = TERMINAL_SCREEN (g_object_new (TERMINAL_TYPE_SCREEN, NULL));
-  terminal_window_setup_screen (window, TERMINAL_WIDGET (new_screen));
+  terminal_window_setup_screen (window, new_screen);
 
   if (window->priv->font || window->priv->zoom != TERMINAL_ZOOM_LEVEL_DEFAULT)
     terminal_screen_update_font (new_screen);
@@ -3292,7 +3290,7 @@ terminal_window_action_split (TerminalWindow *window,
       g_free (directory);
     }
 
-  terminal_window_setup_screen (window, TERMINAL_WIDGET (new_screen));
+  terminal_window_setup_screen (window, new_screen);
 
   /* match zoom and font */
   if (window->priv->font || window->priv->zoom != TERMINAL_ZOOM_LEVEL_DEFAULT)
