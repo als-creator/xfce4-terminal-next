@@ -85,9 +85,9 @@ needs those keys.
 * With it enabled the panel is kept alive like Guake does: when the shell of its
   last tab ends (e.g. <kbd>Ctrl+D</kbd>), a fresh tab is opened and the panel is
   hidden instead of the window (and the icon) being destroyed, so the process
-  stays; the next toggle (<kbd>F1</kbd>) shows the fresh tab. Closing the window
-  on purpose (*Close Window* in the icon menu, the window's own close button)
-  still quits the application.
+  stays; the next toggle (the panel shortcut, see below) shows the fresh tab.
+  Closing the window on purpose (*Close Window* in the icon menu, the window's
+  own close button) still quits the application.
 * With the setting off the behaviour is exactly upstream's: no icon, and the
   window and the application go away with their last tab. A normal (non
   drop-down) window always keeps upstream behaviour.
@@ -107,8 +107,47 @@ needs those keys.
 * *Drop-down → Toggle the window when started again* (`dropdown-parameters-once`)
   makes a second `--drop-down` start show or hide the panel instead of opening
   a new tab in it, which is what a system shortcut needs.
-* <kbd>F1</kbd> shows and hides a drop-down window (a normal window keeps the
-  upstream binding and opens the help).
+
+### Panel shortcut: a system shortcut, no key grab
+
+Upstream has no global shortcut for the panel at all: it is shown by running
+`--drop-down` again or by its status icon. The fork used to grab a key on the X
+server root window (`XGrabKey()`, default <kbd>F1</kbd>), which is X11 only — a
+Wayland client never sees the keys of other windows — and it was the only X11
+piece the fork added to the panel. The grab is gone:
+
+* *Drop-down → Use a system shortcut to show and hide the panel* registers
+  `xfce4-terminal-local --drop-down` as an application shortcut in the
+  `xfce4-keyboard-shortcuts` channel, exactly what *Settings → Keyboard
+  Shortcuts → Application Shortcuts* writes, and *Change shortcut…* asks for
+  the combination in a dialog of its own (a Wayland client cannot grab keys,
+  so the key is read from the focused dialog instead of from the server);
+* unchecking the box removes the entry again, a combination that is already
+  taken by another command is reported before it is replaced;
+* the checkbox and the shown combination are read back from the desktop
+  configuration, so a shortcut bound by hand is recognised and reported as one,
+  not registered twice.
+
+The shortcut is the only way to show the panel on Wayland, and on X11 it also
+removes the double toggle a grab plus a system shortcut would produce.
+
+### Panel starts out of sight
+
+* *Drop-down → Start hidden* (`dropdown-start-hidden`, off by default) creates
+  the panel without showing it, so a session autostart does not cover the
+  desktop at login; the shortcut shows it afterwards. Reusing an existing panel
+  is a request to use the panel and always shows it.
+
+### Showing and hiding the panel over D-Bus
+
+* `org.xfce.Terminal5Local.ToggleDropDown` (new) shows or hides the panel in
+  the running instance, creating it if it does not exist yet, without starting
+  a new process. It is what a compositor or desktop shortcut should call, where
+  running the binary again would be the alternative. Unlike `Launch` it does
+  not compare `DISPLAY`: the method is local to the instance that owns the
+  service, and under Wayland `DISPLAY` is not set at all.
+* The panel is looked up by type only, without the screen comparison the launch
+  path does for bug #9957 — on Wayland there are no screens to compare.
 
 ### Accelerators under non-latin keyboard layouts
 
@@ -151,6 +190,16 @@ there and the accelerator still fires.
 
 ### Fixes on top of upstream
 
+* the pane layout was stored as a `G_TYPE_STRV` built from a `GPtrArray`
+  without a `NULL` terminator, so xfconf copied it with `g_strdupv()` and read
+  past the end of the array: closing the last pane of the panel crashed with
+  SIGSEGV in `terminal_window_save_panes_layouts()`. The array is terminated
+  now, like `terminal_panes_session_cdirs()` right above it;
+* `terminal_window_setup_screen()` took a `TerminalWidget *` and was called
+  with `TERMINAL_WIDGET (screen)`, but `TerminalScreen` derives from
+  `GtkOverlay`, not from `TerminalWidget`: every split and every restored pane
+  logged `invalid cast from 'TerminalScreen' to 'TerminalWidget'` and passed
+  `NULL` on. The parameter is a `TerminalScreen *` now;
 * closing a pane whose child process exits collapses the split and keeps the
   tree consistent, instead of leaving a grey area behind;
 * the last tab of the drop-down window is replaced by a fresh one and the panel
@@ -203,5 +252,5 @@ meson compile -C build
 
 ## Translations
 
-Russian is complete (444 messages, no fuzzy), since the fork is used with
+Russian is complete (458 messages, no fuzzy), since the fork is used with
 `LANG=ru_RU.UTF-8`.
