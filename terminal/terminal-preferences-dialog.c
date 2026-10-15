@@ -35,6 +35,22 @@ terminal_preferences_dialog_finalize (GObject *object);
 static void
 terminal_preferences_dialog_response (GtkDialog *dialog,
                                       gint response);
+/* number of check boxes built for the page that is going up, compared with
+ * the page that came out: see terminal_preferences_dialog_check_buttons () */
+static gint check_buttons = 0;
+
+static void
+terminal_preferences_dialog_check_layout (GtkWidget *widget);
+static void
+terminal_preferences_dialog_check_layout_on_map (GtkWidget *widget,
+                                                 gpointer   data);
+static GtkWidget *
+terminal_preferences_dialog_check_button_new (const gchar *mnemonic);
+static void
+terminal_preferences_dialog_check_buttons (GtkWidget *page,
+                                            gint        built);
+static PangoAttrList *
+terminal_pango_attr_list_small (void);
 static void
 terminal_preferences_dialog_new_section (GtkWidget **frame,
                                          GtkWidget **vbox,
@@ -221,7 +237,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   GtkWidget *image;
   GtkWidget *frame;
   GtkWidget *label;
-  GtkWidget *vbox;
+  GtkWidget *vbox = NULL;
   GtkWidget *box;
   GtkWidget *infobar;
   GtkWidget *grid;
@@ -271,6 +287,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * General
    */
   label = gtk_label_new (_("General"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   gtk_widget_show (label);
@@ -319,7 +341,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Command */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Command"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Run command as login shell"));
+  button = terminal_preferences_dialog_check_button_new (_("_Run command as login shell"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "command-login-shell",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -334,7 +356,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Run a custom command instead of my shell"));
+  button = terminal_preferences_dialog_check_button_new (_("_Run a custom command instead of my shell"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "run-custom-command",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -371,7 +393,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Working directory:"));
+  button = terminal_preferences_dialog_check_button_new (_("_Working directory:"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "use-default-working-dir",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -398,7 +420,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Scrolling */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Scrolling"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Scroll on output"));
+  button = terminal_preferences_dialog_check_button_new (_("_Scroll on output"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "scrolling-on-output",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -408,7 +430,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
-  button = gtk_check_button_new_with_mnemonic (_("_Scroll on keystroke"));
+  button = terminal_preferences_dialog_check_button_new (_("_Scroll on keystroke"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "scrolling-on-keystroke",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -422,7 +444,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
       || (vte_get_major_version () == 0 && vte_get_minor_version () > 69)
       || (vte_get_major_version () == 0 && vte_get_minor_version () == 69 && vte_get_micro_version () >= 90))
     {
-      button = gtk_check_button_new_with_mnemonic (_("_Enable kinetic scrolling"));
+      button = terminal_preferences_dialog_check_button_new (_("_Enable kinetic scrolling"));
       g_object_bind_property (G_OBJECT (dialog->preferences), "kinetic-scrolling",
                               G_OBJECT (button), "active",
                               G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -472,7 +494,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
   gtk_widget_show (button);
 
-  button = gtk_check_button_new_with_mnemonic (_("_Unlimited Scrollback"));
+  button = terminal_preferences_dialog_check_button_new (_("_Unlimited Scrollback"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "scrolling-unlimited",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -483,7 +505,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Enable overlay scrolling (Requires restart)"));
+  button = terminal_preferences_dialog_check_button_new (_("_Enable overlay scrolling (Requires restart)"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "overlay-scrolling",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -514,7 +536,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_label_set_mnemonic_widget (GTK_LABEL (label), combo);
   gtk_widget_show (combo);
 
-  button = gtk_check_button_new_with_mnemonic (_("Cursor blinks"));
+  button = terminal_preferences_dialog_check_button_new (_("Cursor blinks"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-cursor-blinks",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -527,14 +549,14 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Clipboard */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Clipboard"));
 
-  button = gtk_check_button_new_with_mnemonic (_("Automatically copy selection to clipboard"));
+  button = terminal_preferences_dialog_check_button_new (_("Automatically copy selection to clipboard"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-copy-on-select",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
-  button = gtk_check_button_new_with_mnemonic (_("Show unsafe paste dialog"));
+  button = terminal_preferences_dialog_check_button_new (_("Show unsafe paste dialog"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-show-unsafe-paste-dialog",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -568,7 +590,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Session */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Session"));
 
-  button = gtk_check_button_new_with_mnemonic (_("Remember the _pane layout of tabs"));
+  button = terminal_preferences_dialog_check_button_new (_("Remember the _pane layout of tabs"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-panes-layouts-enabled",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -587,6 +609,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * Drop-down
    */
   label = gtk_label_new (_("Drop-down"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   dialog->dropdown_label = GTK_LABEL (label);
@@ -597,23 +625,32 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Behavior */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));
 
-  /* the panel is a separate, explicitly started mode: "xfce4-terminal
-   * --drop-down" (usually via the session autostart); an ordinary launch
-   * always opens an ordinary window, so there is no switch for this here */
+  /* The drop-down window is an explicitly started mode, so it is worth one
+   * compact line only: whatever is set below, it can always be added to the
+   * autostart by hand and given a shortcut, on any desktop. */
+  {
+    GtkWidget *info = gtk_info_bar_new ();
+    GtkWidget *info_label;
 
-  label = gtk_label_new (_("The panel is started separately with"
-                           " \"xfce4-terminal-local --drop-down\" (for example"
-                           " from the session autostart). An ordinary launch"
-                           " always opens an ordinary window."));
-  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
-  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
-  gtk_widget_show (label);
+    gtk_info_bar_set_message_type (GTK_INFO_BAR (info), GTK_MESSAGE_INFO);
+    gtk_info_bar_set_show_close_button (GTK_INFO_BAR (info), TRUE);
+    info_label = gtk_label_new (_("Whatever the settings below, you can always add"
+                                  " \"xfce4-terminal-local --drop-down\" to the"
+                                  " autostart by hand and give it a shortcut —"
+                                  " this works on any desktop."));
+    gtk_label_set_xalign (GTK_LABEL (info_label), 0.0f);
+    gtk_label_set_line_wrap (GTK_LABEL (info_label), TRUE);
+    gtk_label_set_attributes (GTK_LABEL (info_label), terminal_pango_attr_list_small ());
+    gtk_container_add (GTK_CONTAINER (gtk_info_bar_get_content_area (GTK_INFO_BAR (info))), info_label);
+    gtk_widget_show (info_label);
+    gtk_grid_attach (GTK_GRID (grid), info, 0, row, 3, 1);
+    gtk_widget_show (info);
+  }
 
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Keep window open when it loses focus"));
+  button = terminal_preferences_dialog_check_button_new (_("_Keep window open when it loses focus"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-keep-open-default",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -623,7 +660,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Use app shortcut to focus the window"));
+  button = terminal_preferences_dialog_check_button_new (_("_Use app shortcut to focus the window"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-toggle-focus",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -638,7 +675,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Always keep window above"));
+  button = terminal_preferences_dialog_check_button_new (_("_Always keep window above"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-keep-above",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -651,7 +688,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
       /* next row */
       row++;
 
-      button = gtk_check_button_new_with_mnemonic (_("_Always show the status icon (do not quit the process)"));
+      button = terminal_preferences_dialog_check_button_new (_("_Always show the status icon (do not quit the process)"));
       g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-keep-alive",
                               G_OBJECT (button), "active",
                               G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -667,7 +704,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("Toggle the window when _started again"));
+  button = terminal_preferences_dialog_check_button_new (_("Toggle the window when _started again"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-parameters-once",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -680,46 +717,49 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  /* next row */
-  row++;
-
-  button = gtk_check_button_new_with_mnemonic (_("Start _hidden"));
+  button = terminal_preferences_dialog_check_button_new (_("Start _hidden"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-start-hidden",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("The panel is started with the session but stays"
-                                         " out of sight: it does not cover the desktop at"
-                                         " login and appears on the shortcut."));
+  gtk_widget_set_tooltip_text (button, _("The drop-down terminal window is started with the"
+                                         " session but stays out of sight: it does not cover"
+                                         " the desktop at login and appears on the shortcut."));
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
   /* next row */
   row++;
 
-  /* the panel is controlled by a system shortcut, the terminal keeps no key
-   * grab of its own: a grab is X11-only and upstream has none either */
+  /* the drop-down terminal window is controlled by a system shortcut, the
+   * terminal keeps no key grab of its own: a grab is X11-only and upstream has
+   * none either */
 
   if (terminal_shortcuts_is_xfce_session ())
     {
-      button = gtk_check_button_new_with_mnemonic (_("Use a _system shortcut to show and hide the panel"));
+      button = terminal_preferences_dialog_check_button_new (_("Use a _system shortcut to hide and show the terminal"));
       dialog->shortcut_check = button;
       {
-        gchar *tip = g_strdup_printf (_("Registers \"%s\" as an application shortcut"
-                                        " (F1 by default). It works in an X11 session as well"
-                                        " as in a Wayland one, because the desktop handles the"
-                                        " key, not the terminal."),
+        /* Everything this check box cannot say in one line lives in the
+         * tooltip: that keeps the tab short and the text readable. */
+        gchar *tip = g_strdup_printf (_("Show or hide the drop-down terminal window with a"
+                                        " shortcut of the desktop (F1 by default); the desktop"
+                                        " handles the key, so this works in an X11 session as"
+                                        " well as in a Wayland one. Without a system shortcut"
+                                        " the drop-down terminal window is only shown by"
+                                        " \"xfce4-terminal-local --drop-down\"; a shortcut assigned"
+                                        " by hand in the keyboard shortcut settings works as well"
+                                        " and is recognised here."),
                                       TERMINAL_SHORTCUT_COMMAND);
         gtk_widget_set_tooltip_text (button, tip);
         g_free (tip);
       }
       g_signal_connect (button, "toggled",
                         G_CALLBACK (terminal_preferences_dialog_shortcut_toggled), dialog);
-      gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
+      gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
       gtk_widget_show (button);
 
-      /* next row */
-      row++;
-
+      /* the key in use and the button that changes it share the row of the
+       * check box: the check box used to span three columns and covered them */
       button = gtk_button_new_with_mnemonic (_("Change _shortcut..."));
       dialog->shortcut_change_button = button;
       gtk_widget_set_tooltip_text (button, _("Press the new key combination and confirm it."));
@@ -745,7 +785,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
        * check box would look as if it worked and quietly do nothing: give the
        * command to assign by hand instead. */
       label = gtk_label_new (_("This desktop does not use the Xfce shortcut settings, so the"
-                               " panel shortcut has to be assigned by hand. Bind this"
+                               " terminal shortcut has to be assigned by hand. Bind this"
                                " command in the keyboard shortcuts of your desktop:"));
       gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
       gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
@@ -765,15 +805,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
       /* next row */
       row++;
     }
-
-  label = gtk_label_new (_("Without a system shortcut the panel is only shown by"
-                           " \"xfce4-terminal-local --drop-down\"; a shortcut assigned by"
-                           " hand in the keyboard shortcut settings works as well and is"
-                           " recognised here."));
-  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
-  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
-  gtk_widget_show (label);
 
   /* section: Appearance & Animation */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Appearance and Animation"));
@@ -867,7 +898,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Always show tabs"));
+  button = terminal_preferences_dialog_check_button_new (_("_Always show tabs"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-always-show-tabs",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -877,7 +908,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Show window borders"));
+  button = terminal_preferences_dialog_check_button_new (_("_Show window borders"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-show-borders",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -940,7 +971,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Move to monitor with pointer"));
+  button = terminal_preferences_dialog_check_button_new (_("_Move to monitor with pointer"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-move-to-active",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -953,6 +984,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * Appearance
    */
   label = gtk_label_new (_("Appearance"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   gtk_widget_show (label);
@@ -962,7 +999,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Font */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Font"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Use system font"));
+  button = terminal_preferences_dialog_check_button_new (_("_Use system font"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "font-use-system",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -986,7 +1023,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Allow bold text"));
+  button = terminal_preferences_dialog_check_button_new (_("_Allow bold text"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "font-allow-bold",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1206,7 +1243,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Opening new windows */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Opening New Windows"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Display menubar in new windows"));
+  button = terminal_preferences_dialog_check_button_new (_("_Display menubar in new windows"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-menubar-default",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1217,7 +1254,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* Next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Display toolbar in new windows"));
+  button = terminal_preferences_dialog_check_button_new (_("_Display toolbar in new windows"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-toolbar-default",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1228,7 +1265,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* Next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Display borders around new windows"));
+  button = terminal_preferences_dialog_check_button_new (_("_Display borders around new windows"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-borders-default",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1239,7 +1276,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* Next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Maximize new windows"));
+  button = terminal_preferences_dialog_check_button_new (_("_Maximize new windows"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-maximize-default",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1321,7 +1358,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Use custom styling to make tabs slim (restart required)"));
+  button = terminal_preferences_dialog_check_button_new (_("_Use custom styling to make tabs slim (restart required)"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-slim-tabs",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1334,6 +1371,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * Colors
    */
   label = gtk_label_new (_("Colors"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   gtk_widget_show (label);
@@ -1391,7 +1434,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Use system theme colors for text and background"));
+  button = terminal_preferences_dialog_check_button_new (_("_Use system theme colors for text and background"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "color-use-theme",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1401,7 +1444,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Vary the background color for each tab"));
+  button = terminal_preferences_dialog_check_button_new (_("_Vary the background color for each tab"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "color-background-vary",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1415,7 +1458,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
       /* next row */
       row++;
 
-      button = gtk_check_button_new_with_mnemonic (_("_Enable sixel graphics"));
+      button = terminal_preferences_dialog_check_button_new (_("_Enable sixel graphics"));
       g_object_bind_property (G_OBJECT (dialog->preferences), "enable-sixel",
                               G_OBJECT (button), "active",
                               G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1427,7 +1470,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Custom colors */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Custom Colors"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Cursor color:"));
+  button = terminal_preferences_dialog_check_button_new (_("_Cursor color:"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "color-cursor-use-default",
                           G_OBJECT (button), "active",
                           G_BINDING_INVERT_BOOLEAN | G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1461,7 +1504,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Text selection color:"));
+  button = terminal_preferences_dialog_check_button_new (_("_Text selection color:"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "color-selection-use-default",
                           G_OBJECT (button), "active",
                           G_BINDING_INVERT_BOOLEAN | G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1495,7 +1538,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Bold selection color:"));
+  button = terminal_preferences_dialog_check_button_new (_("_Bold selection color:"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "color-bold-use-default",
                           G_OBJECT (button), "active",
                           G_BINDING_INVERT_BOOLEAN | G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1539,7 +1582,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Show bold text in bright colors:"));
+  button = terminal_preferences_dialog_check_button_new (_("_Show bold text in bright colors:"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "color-bold-is-bright",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1566,6 +1609,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * Compatibility
    */
   label = gtk_label_new (_("Compatibility"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   gtk_widget_show (label);
@@ -1668,6 +1717,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * Advanced
    */
   label = gtk_label_new (_("Advanced"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   gtk_widget_show (label);
@@ -1729,7 +1784,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Shortcuts */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Shortcuts"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Disable all menu access keys (such as Alt + f)"));
+  button = terminal_preferences_dialog_check_button_new (_("_Disable all menu access keys (such as Alt + f)"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "shortcuts-no-mnemonics",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1739,7 +1794,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Disable menu shortcut key (F10 by default)"));
+  button = terminal_preferences_dialog_check_button_new (_("_Disable menu shortcut key (F10 by default)"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "shortcuts-no-menukey",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1750,7 +1805,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Misc */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Misc"));
 
-  button = gtk_check_button_new_with_mnemonic (_("_Use middle mouse click to close tabs"));
+  button = terminal_preferences_dialog_check_button_new (_("_Use middle mouse click to close tabs"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tab-close-middle-click",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1760,7 +1815,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("Underline urls on mouseover"));
+  button = terminal_preferences_dialog_check_button_new (_("Underline urls on mouseover"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-highlight-urls",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1770,7 +1825,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Use middle mouse click to open urls"));
+  button = terminal_preferences_dialog_check_button_new (_("_Use middle mouse click to open urls"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-middle-click-opens-uri",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1782,7 +1837,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("Enable OSC 8 Hyperlinks"));
+  button = terminal_preferences_dialog_check_button_new (_("Enable OSC 8 Hyperlinks"));
   gtk_widget_set_tooltip_text (button, _("These are the links displayed when you run the 'ls --hyperlink' command, or by any other means using the OSC 8 escape sequence."));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-hyperlinks-enabled",
                           G_OBJECT (button), "active",
@@ -1793,7 +1848,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Auto-hide mouse pointer"));
+  button = terminal_preferences_dialog_check_button_new (_("_Auto-hide mouse pointer"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-mouse-autohide",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1803,7 +1858,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Open new tab to the right of the active tab"));
+  button = terminal_preferences_dialog_check_button_new (_("_Open new tab to the right of the active tab"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-new-tab-adjacent",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1813,7 +1868,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Audible bell"));
+  button = terminal_preferences_dialog_check_button_new (_("_Audible bell"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-bell",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1823,7 +1878,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = gtk_check_button_new_with_mnemonic (_("_Visual bell"));
+  button = terminal_preferences_dialog_check_button_new (_("_Visual bell"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-bell-urgent",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
@@ -1857,6 +1912,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
    * Shortcuts
    */
   label = gtk_label_new (_("Shortcuts"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
   vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
   gtk_widget_show (label);
@@ -1873,6 +1934,151 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                                     (size_t) TERMINAL_WIDGET_ACTION_N);
   gtk_container_add (GTK_CONTAINER (frame), grid);
   gtk_widget_show (grid);
+
+  terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+  check_buttons = 0;
+
+  /* Overlapping widgets have bitten this dialog twice: a forgotten row
+   * increment gave two check boxes the same place, and the shortcut check box
+   * spanned three columns and covered the button beside it. The walk needs a
+   * mapped dialog and a visible page, so it waits for the first map and for
+   * every page the user brings up; it only runs when asked for, but a stand
+   * reads its report from stderr. */
+  if (g_getenv ("TERMINAL_DEBUG_UI") != NULL)
+    {
+      g_signal_connect (dialog, "map",
+                        G_CALLBACK (terminal_preferences_dialog_check_layout_on_map), NULL);
+      g_signal_connect_swapped (notebook, "switch-page",
+                                G_CALLBACK (terminal_preferences_dialog_check_layout_on_map), dialog);
+    }
+}
+
+
+
+static gint
+terminal_preferences_dialog_count_buttons (GtkWidget *widget)
+{
+  GList *children, *iter;
+  gint found = 0;
+
+  if (GTK_IS_CHECK_BUTTON (widget) || GTK_IS_RADIO_BUTTON (widget))
+    found++;
+
+  children = gtk_container_get_children (GTK_CONTAINER (widget));
+  for (iter = children; iter != NULL; iter = iter->next)
+    found += terminal_preferences_dialog_count_buttons (GTK_WIDGET (iter->data));
+  g_list_free (children);
+
+  return found;
+}
+
+
+
+/* GtkGrid drops the first widget of a cell without a word, so two check boxes
+ * of one page that were meant to sit in two rows do not overlap on the screen:
+ * one of them simply is not there. Comparing what was built with what ended
+ * up on the page is the only way to see it. */
+static void
+terminal_preferences_dialog_check_buttons (GtkWidget *page,
+                                            gint        built)
+{
+  gint found;
+
+  if (g_getenv ("TERMINAL_DEBUG_UI") == NULL || page == NULL || !GTK_IS_WIDGET (page))
+    return;
+
+  found = terminal_preferences_dialog_count_buttons (page);
+  if (found != built)
+    g_printerr ("layout-missing: %d check buttons built, %d on the page\n", built, found);
+}
+
+
+
+static GtkWidget *
+terminal_preferences_dialog_check_button_new (const gchar *mnemonic)
+{
+  check_buttons++;
+  return gtk_check_button_new_with_mnemonic (mnemonic);
+}
+
+
+
+static gboolean
+terminal_preferences_dialog_check_layout_idle (gpointer data)
+{
+  terminal_preferences_dialog_check_layout (GTK_WIDGET (data));
+  return G_SOURCE_REMOVE;
+}
+
+
+
+static void
+terminal_preferences_dialog_check_layout_on_map (GtkWidget *widget,
+                                                 gpointer   data)
+{
+  /* one idle turn later the page has its final geometry */
+  g_idle_add (terminal_preferences_dialog_check_layout_idle,
+              data != NULL ? data : widget);
+}
+
+
+
+/* Report any two widgets of the dialog that share pixels without one of them
+ * being an ancestor of the other. The grid cell itself is of no use here:
+ * GtkGrid quietly drops the first widget of a cell, so a clash shows up only
+ * in the geometry. */
+static void
+terminal_preferences_dialog_check_layout (GtkWidget *widget)
+{
+  GList *drawn = NULL, *a, *b, *children;
+
+  if (!gtk_widget_get_visible (widget) || !gtk_widget_get_realized (widget))
+    return;
+
+  children = gtk_container_get_children (GTK_CONTAINER (widget));
+  for (a = children; a != NULL; a = a->next)
+    terminal_preferences_dialog_check_layout (GTK_WIDGET (a->data));
+  g_list_free (children);
+
+  /* the children come first, bottom up, so every pair is seen once */
+  if (gtk_widget_get_window (widget) != NULL)
+    drawn = g_list_prepend (drawn, widget);
+
+  for (a = drawn; a != NULL; a = a->next)
+    for (b = a->next; b != NULL; b = b->next)
+      {
+        GtkWidget *first = GTK_WIDGET (a->data);
+        GtkWidget *second = GTK_WIDGET (b->data);
+        GtkAllocation r1, r2;
+
+        if (gtk_widget_is_ancestor (first, second) || gtk_widget_is_ancestor (second, first))
+          continue;
+
+        gtk_widget_get_allocation (first, &r1);
+        gtk_widget_get_allocation (second, &r2);
+        if (r1.x < r2.x + r2.width && r2.x < r1.x + r1.width
+            && r1.y < r2.y + r2.height && r2.y < r1.y + r1.height)
+          g_printerr ("layout-overlap: %s at %d,%d %dx%d and %s at %d,%d %dx%d\n",
+                      G_OBJECT_TYPE_NAME (first), r1.x, r1.y, r1.width, r1.height,
+                      G_OBJECT_TYPE_NAME (second), r2.x, r2.y, r2.width, r2.height);
+      }
+
+  g_list_free (drawn);
+}
+
+
+
+static PangoAttrList *
+terminal_pango_attr_list_small (void)
+{
+  static PangoAttrList *attr_list = NULL;
+  if (G_UNLIKELY (attr_list == NULL))
+    {
+      attr_list = pango_attr_list_new ();
+      pango_attr_list_insert (attr_list, pango_attr_scale_new (PANGO_SCALE_SMALL));
+      pango_attr_list_insert (attr_list, pango_attr_style_new (PANGO_STYLE_ITALIC));
+    }
+  return attr_list;
 }
 
 
