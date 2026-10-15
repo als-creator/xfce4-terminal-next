@@ -210,6 +210,41 @@ previous behaviour stays. Verified with a live stand
 (`tests/keys-live-test.sh`) on a private display: the shift is really swallowed
 there and the accelerator still fires.
 
+### Clipboard slots
+
+The system clipboard holds one string. Copying a second thing before pasting
+the first one loses the first one, and that happens a lot when a path from one
+pane is needed while pasting a line from another. The fork keeps three slots of
+its own next to the system clipboard:
+
+* <kbd>Ctrl+Alt+C</kbd> puts the **selection** into the current slot and moves
+  on to the next slot (three slots, in turns). With nothing selected nothing is
+  copied and the slot number does not move.
+* <kbd>Ctrl+Alt+V</kbd> pastes what is in the current slot. The cursor stays
+  where it is, so the text lands in the command line the way an ordinary paste
+  puts it there.
+
+The point of three slots is to take one string, go to another tab for a second
+one and come back: <kbd>Ctrl+Alt+C</kbd> puts the first into slot 1,
+<kbd>Ctrl+Alt+C</kbd> in the other tab puts the second into slot 2, and
+<kbd>Ctrl+Alt+V</kbd> back in the first tab brings up the first string while a
+second press brings up the second.
+
+The same two things are in the menu by name — «Copy to Clipboard Slot 1/2/3» and
+«Paste from Clipboard Slot 1/2/3» — in «Edit» and in the context menu, so a slot
+can be picked without counting presses. The current slot is marked in the
+«Edit» list, and a slot that holds nothing is greyed out there.
+
+The slots belong to the application and not to a window: a string copied in one
+window is pasted in another. They live in memory, so they are gone when the
+last terminal window is closed — unlike the system clipboard, nothing of them is
+kept on disk.
+
+The copy goes through the system clipboard, because Vte offers no other way to
+read the selection. A trailing dot or bracket that belongs to the sentence
+rather than to a URL is not part of a link either — that only matters for the
+link list of «Copy As...».
+
 ### Fixes on top of upstream
 
 * the pane layout was stored as a `G_TYPE_STRV` built from a `GPtrArray`
