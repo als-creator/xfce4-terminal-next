@@ -1222,8 +1222,6 @@ terminal_app_open_window (TerminalApp *app,
        * that is how upstream opens it.  DESKTOP_STARTUP_ID, which main.c
        * turns into --startup-id, is what tells the two apart.  A reused panel
        * is an explicit request as well. */
-      g_printerr ("DBG show check: start_hidden=%d startup=%s\n", start_hidden,
-                  attr->startup_id != NULL ? attr->startup_id : "(null)");
       if (!start_hidden || reuse_window || attr->startup_id == NULL)
         terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), attr->startup_id, reuse_window);
     }

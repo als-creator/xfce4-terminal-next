@@ -296,6 +296,10 @@ terminal_status_notifier_method_call (GDBusConnection       *connection,
 {
   TerminalStatusNotifier *notifier = user_data;
 
+  if (g_getenv ("TERMINAL_DEBUG_MENU") != NULL)
+    g_printerr ("item call: %s(%s)\n", method_name,
+                parameters != NULL ? g_variant_print (parameters, TRUE) : "");
+
   if (g_strcmp0 (method_name, "Activate") == 0
       || g_strcmp0 (method_name, "SecondaryActivate") == 0)
     {
@@ -418,7 +422,15 @@ terminal_status_notifier_menu_get_property (GDBusConnection  *connection,
     return g_variant_new_string ("normal");
 
   if (g_strcmp0 (property_name, "IconThemePath") == 0)
-    return g_variant_new ("@as", NULL, 0);
+    {
+      GVariantBuilder paths;
+
+      /* An empty as has to be built: "@as" asks for a ready made variant and
+       * aborts the process on NULL.  A tray host reads this property when it
+       * registers the item, so the failure happened right at startup. */
+      g_variant_builder_init (&paths, g_variant_type_checked_ ("as"));
+      return g_variant_new ("as", &paths);
+    }
 
   g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_PROPERTY,
                "Unknown property '%s'", property_name);
@@ -439,6 +451,15 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
                                            gpointer               user_data)
 {
   TerminalStatusNotifier *notifier = user_data;
+
+  /* What a tray host really sends is worth seeing: the modules differ in
+   * whether a click on a menu item arrives as dbusmenu Event or as the plain
+   * ContextMenu of the item.  The log is written only when asked for, so that
+   * the panel can be started with TERMINAL_DEBUG_MENU=1 and the calls read off
+   * the terminal. */
+  if (g_getenv ("TERMINAL_DEBUG_MENU") != NULL)
+    g_printerr ("menu call: %s(%s)\n", method_name,
+                parameters != NULL ? g_variant_print (parameters, TRUE) : "");
 
   if (g_strcmp0 (method_name, "GetLayout") == 0)
     {

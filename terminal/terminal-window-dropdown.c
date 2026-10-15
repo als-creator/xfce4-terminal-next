@@ -751,7 +751,31 @@ terminal_window_dropdown_set_property (GObject *object,
           icon_name = gtk_window_get_icon_name (GTK_WINDOW (object));
           if (dropdown->notifier == NULL && dropdown->status_icon == NULL && icon_name != NULL)
             {
-              if (terminal_status_notifier_is_supported ())
+              const gchar *force = g_getenv ("TERMINAL_TRAY_SNI");
+              gboolean force_sni = force != NULL && g_strcmp0 (force, "0") != 0;
+
+              /* The tray icon of upstream works in an X11 session and comes
+               * with the upstream menu, so there is nothing to replace there.
+               * It cannot work on Wayland at all, and that is the one reason
+               * our own StatusNotifierItem with its dbusmenu exists.
+               * TERMINAL_TRAY_SNI=1 keeps the item in an X11 session too: the
+               * stands of that path use it, and it is a way to try the path on
+               * a desktop that would not take it otherwise. */
+              if (WINDOWING_IS_X11 () && !force_sni)
+                {
+                  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+                  dropdown->status_icon = g_path_is_absolute (icon_name)
+                                            ? gtk_status_icon_new_from_file (icon_name)
+                                            : gtk_status_icon_new_from_icon_name (icon_name);
+                  gtk_status_icon_set_title (dropdown->status_icon, _("Drop-down Terminal"));
+                  gtk_status_icon_set_tooltip_text (dropdown->status_icon, _("Toggle Drop-down Terminal"));
+                  G_GNUC_END_IGNORE_DEPRECATIONS
+                  g_signal_connect (G_OBJECT (dropdown->status_icon), "button-press-event",
+                                    G_CALLBACK (terminal_window_dropdown_status_icon_press_event), dropdown);
+                  g_signal_connect (G_OBJECT (dropdown->status_icon), "popup-menu",
+                                    G_CALLBACK (terminal_window_dropdown_status_icon_popup_menu), dropdown);
+                }
+              else if (terminal_status_notifier_is_supported ())
                 {
                   const TerminalStatusNotifierMenuItem items[] = {
                     { "preferences", _("Preferences"), terminal_window_dropdown_notifier_preferences },
@@ -770,23 +794,6 @@ terminal_window_dropdown_set_property (GObject *object,
                   info.user_data = dropdown;
 
                   dropdown->notifier = terminal_status_notifier_new (&info);
-                }
-              else if (WINDOWING_IS_X11 ())
-                {
-                  /* no StatusNotifierWatcher on the bus (GNOME without the
-                   * extension, a bare window manager): the tray icon of
-                   * upstream still works in an X11 session there */
-                  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-                  dropdown->status_icon = g_path_is_absolute (icon_name)
-                                            ? gtk_status_icon_new_from_file (icon_name)
-                                            : gtk_status_icon_new_from_icon_name (icon_name);
-                  gtk_status_icon_set_title (dropdown->status_icon, _("Drop-down Terminal"));
-                  gtk_status_icon_set_tooltip_text (dropdown->status_icon, _("Toggle Drop-down Terminal"));
-                  G_GNUC_END_IGNORE_DEPRECATIONS
-                  g_signal_connect (G_OBJECT (dropdown->status_icon), "button-press-event",
-                                    G_CALLBACK (terminal_window_dropdown_status_icon_press_event), dropdown);
-                  g_signal_connect (G_OBJECT (dropdown->status_icon), "popup-menu",
-                                    G_CALLBACK (terminal_window_dropdown_status_icon_popup_menu), dropdown);
                 }
 
               if (dropdown->notifier != NULL || dropdown->status_icon != NULL)
