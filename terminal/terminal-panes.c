@@ -81,7 +81,7 @@ static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
 /* the stylesheet and the provider that carries it, shared by every pane tree */
 static const gchar *CSS_ACTIVE_PANE =
   "paned.pane-active > separator {"
-  "  background-color: alpha(@accent_color, 0.85);"
+  "  background-color: @accent_color;"
   "  min-width: 2px;"
   "  min-height: 2px;"
   "}";

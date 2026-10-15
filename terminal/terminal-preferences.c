@@ -106,6 +106,7 @@ enum
   PROP_MISC_TAB_POSITION,
   PROP_MISC_HIGHLIGHT_URLS,
   PROP_MISC_HIGHLIGHT_ACTIVE_PANE,
+  PROP_MISC_CLIPBOARD_SLOTS,
   PROP_MISC_DIRECTORY_BOOKMARKS,
   PROP_MISC_LOG_SCREEN,
   PROP_MISC_LOG_FILE,
@@ -1055,6 +1056,16 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           "MiscHighlightActivePane",
                           TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots:
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS] =
+    g_param_spec_uint ("misc-clipboard-slots",
+                       NULL,
+                       "MiscClipboardSlots",
+                       2, 9, 3,
+                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-highlight-urls:

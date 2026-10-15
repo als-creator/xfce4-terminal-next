@@ -71,11 +71,44 @@ enum
 
 /* Clipboard slots: buffers of one's own, so that a second string can be taken
  * along without throwing the first one away. They belong to the application,
- * not to a window: a string copied in one window is pasted in another. */
-#define CLIPBOARD_SLOTS 3
+ * not to a window: a string copied in one window is pasted in another. How
+ * many there are is up to the setting, and what a window holds now it keeps
+ * when the setting grows. */
+#define CLIPBOARD_SLOTS_DEFAULT 3
+#define CLIPBOARD_SLOTS_MIN 2
+#define CLIPBOARD_SLOTS_MAX 9
 
-static gchar *clipboard_slots[CLIPBOARD_SLOTS];
+static gchar **clipboard_slots;
+static guint clipboard_slots_n = CLIPBOARD_SLOTS_DEFAULT;
 static guint clipboard_slot = 0;
+
+
+/* the number of slots, and the array sized for it; growing keeps what is
+ * already in the slots */
+static guint
+terminal_window_clipboard_slots (void)
+{
+  guint n = CLIPBOARD_SLOTS_DEFAULT;
+  GObject *preferences = G_OBJECT (terminal_preferences_get ());
+
+  g_object_get (preferences, "misc-clipboard-slots", &n, NULL);
+  n = CLAMP (n, (guint) CLIPBOARD_SLOTS_MIN, (guint) CLIPBOARD_SLOTS_MAX);
+
+  if (clipboard_slots == NULL || clipboard_slots_n != n)
+    {
+      guint i;
+
+      clipboard_slots = g_realloc (clipboard_slots, n * sizeof (gchar *));
+      for (i = clipboard_slots_n; i < n; i++)
+        clipboard_slots[i] = NULL;
+      clipboard_slots_n = n;
+
+      if (clipboard_slot >= n)
+        clipboard_slot = 0;
+    }
+
+  return n;
+}
 
 
 void
@@ -83,8 +116,15 @@ terminal_window_free_clipboard_slots (void)
 {
   guint i;
 
-  for (i = 0; i < CLIPBOARD_SLOTS; i++)
+  /* the array only appears when a slot is touched, and the application may be
+   * finalized before that ever happened */
+  if (clipboard_slots == NULL)
+    return;
+
+  for (i = 0; i < clipboard_slots_n; i++)
     g_clear_pointer (&clipboard_slots[i], g_free);
+  g_clear_pointer (&clipboard_slots, g_free);
+  clipboard_slots_n = CLIPBOARD_SLOTS_DEFAULT;
 }
 
 /* CSS for slim notebook tabs style */
@@ -452,6 +492,12 @@ terminal_window_update_terminal_menu (TerminalWindow *window,
 static void
 terminal_window_update_tabs_menu (TerminalWindow *window,
                                   GtkWidget *menu);
+static void
+terminal_window_add_slots_menu (TerminalWindow *window,
+                                GtkWidget     *menu);
+static gboolean
+terminal_window_action_slot_item (GtkMenuItem   *item,
+                                 TerminalWindow *window);
 static void
 terminal_window_update_help_menu (TerminalWindow *window,
                                   GtkWidget *menu);
@@ -3014,6 +3060,7 @@ terminal_window_get_context_menu (TerminalScreen *screen,
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (context_menu));
 
   terminal_window_menu_add_section (window, context_menu, MENU_SECTION_COPY | MENU_SECTION_PASTE, FALSE);
+  terminal_window_add_slots_menu (window, context_menu);
 
   xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SHOW_MENUBAR), G_OBJECT (window), gtk_widget_is_visible (window->menubar), GTK_MENU_SHELL (context_menu));
   xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_FULLSCREEN), G_OBJECT (window), window->is_fullscreen, GTK_MENU_SHELL (context_menu));
@@ -4325,6 +4372,48 @@ terminal_window_action_goto_bookmark (GtkMenuItem *item,
 }
 
 
+/* The numbered slots, both ways, for any menu that wants them: the context menu
+ * of the terminal and the "Edit" menu. The count comes from the setting, three
+ * slots by default. */
+static void
+terminal_window_add_slots_menu (TerminalWindow *window,
+                                GtkWidget     *menu)
+{
+  guint n = terminal_window_clipboard_slots ();
+  guint i;
+
+  xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+
+  for (i = 0; i < n; i++)
+    {
+      GtkWidget *item;
+      gchar *label;
+
+      label = g_strdup_printf (_("Copy to Clipboard Slot %u"), i + 1);
+      item = gtk_menu_item_new_with_mnemonic (label);
+      g_free (label);
+      g_object_set_data (G_OBJECT (item), "clipboard-slot", GINT_TO_POINTER ((gint) i));
+      g_signal_connect (G_OBJECT (item), "activate",
+                        G_CALLBACK (terminal_window_action_slot_item), window);
+      gtk_widget_set_sensitive (item, terminal_screen_has_selection (window->priv->active));
+      gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+      label = g_strdup_printf (_("Paste from Clipboard Slot %u"), i + 1);
+      item = gtk_menu_item_new_with_mnemonic (label);
+      g_free (label);
+      g_object_set_data (G_OBJECT (item), "clipboard-slot", GINT_TO_POINTER ((gint) i));
+      g_object_set_data (G_OBJECT (item), "clipboard-slot-paste", GINT_TO_POINTER (1));
+      g_signal_connect (G_OBJECT (item), "activate",
+                        G_CALLBACK (terminal_window_action_slot_item), window);
+      gtk_widget_set_sensitive (item, clipboard_slots[i] != NULL
+                                    && terminal_screen_get_input_enabled (window->priv->active));
+      gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+    }
+
+  xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+}
+
+
 /* Copying into a slot is a copy through the system clipboard: Vte offers no
  * other way to read the selection. The slot number moves on, so that copying
  * and pasting work in turns without picking a number first. */
@@ -4335,7 +4424,7 @@ terminal_window_slot_copy (TerminalWindow *window,
   GtkClipboard *clipboard;
   gchar *text;
 
-  if (slot >= CLIPBOARD_SLOTS || !terminal_screen_has_selection (window->priv->active))
+  if (slot >= terminal_window_clipboard_slots () || !terminal_screen_has_selection (window->priv->active))
     return;
 
   clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
@@ -4356,7 +4445,7 @@ terminal_window_action_copy_to_slot (TerminalWindow *window)
   g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
 
   terminal_window_slot_copy (window, clipboard_slot);
-  clipboard_slot = (clipboard_slot + 1) % CLIPBOARD_SLOTS;
+  clipboard_slot = (clipboard_slot + 1) % terminal_window_clipboard_slots ();
 
   return TRUE;
 }
@@ -4374,7 +4463,7 @@ terminal_window_action_slot_item (GtkMenuItem   *item,
   g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
 
   slot = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (item), "clipboard-slot"));
-  if (slot < 0 || (guint) slot >= CLIPBOARD_SLOTS)
+  if (slot < 0 || (guint) slot >= terminal_window_clipboard_slots ())
     return TRUE;
 
   if (g_object_get_data (G_OBJECT (item), "clipboard-slot-paste") != NULL)
@@ -4418,7 +4507,7 @@ terminal_window_action_paste_from_slot (GtkRadioAction *action,
   slot = (guint) gtk_radio_action_get_current_value (action);
   G_GNUC_END_IGNORE_DEPRECATIONS
 
-  text = slot < CLIPBOARD_SLOTS ? clipboard_slots[slot] : NULL;
+  text = slot < terminal_window_clipboard_slots () ? clipboard_slots[slot] : NULL;
   if (text == NULL)
     {
       GtkWidget *dialog;
@@ -6068,7 +6157,7 @@ terminal_window_menu_add_section (TerminalWindow *window,
         guint i;
 
         slot_menu = gtk_menu_new ();
-        for (i = 0; i < CLIPBOARD_SLOTS; i++)
+        for (i = 0; i < terminal_window_clipboard_slots (); i++)
           {
             gchar *name = g_strdup_printf ("paste-from-slot-%u", i + 1);
             gchar *label = g_strdup_printf (_("Slot %u"), i + 1);

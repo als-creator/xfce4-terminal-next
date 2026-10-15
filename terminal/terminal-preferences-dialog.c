@@ -243,6 +243,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   GtkWidget *grid;
   GtkWidget *background_grid;
   GtkWidget *entry;
+  GtkWidget *spin;
   GtkWidget *combo;
   gchar *current;
   gint row = 0;
@@ -1858,6 +1859,23 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 2, 1);
   gtk_widget_show (button);
+
+  /* next row */
+  row++;
+
+  label = gtk_label_new_with_mnemonic (_("Clipboard _slots:"));
+  gtk_widget_set_halign (label, GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+
+  spin = gtk_spin_button_new_with_range (2, 9, 1);
+  gtk_widget_set_tooltip_text (spin, _("How many slots of their own the terminal keeps "
+                                      "next to the system clipboard"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots",
+                          G_OBJECT (spin), "value",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), spin);
+  gtk_grid_attach (GTK_GRID (grid), spin, 1, row, 1, 1);
+  gtk_widget_show (spin);
 
   /* next row */
   row++;
