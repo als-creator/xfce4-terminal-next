@@ -1862,6 +1862,19 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
+  button = terminal_preferences_dialog_check_button_new (_("_Highlight the split with the keyboard"));
+  gtk_widget_set_tooltip_text (button, _("A thin accent line along the edge of the pane "
+                                        "that has the keyboard, so that it can be told "
+                                        "from the others in a split of many panes"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-highlight-active-pane",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 2, 1);
+  gtk_widget_show (button);
+
+  /* next row */
+  row++;
+
   button = terminal_preferences_dialog_check_button_new (_("Underline urls on mouseover"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-highlight-urls",
                           G_OBJECT (button), "active",

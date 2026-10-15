@@ -105,6 +105,7 @@ enum
   PROP_MISC_TAB_CLOSE_MIDDLE_CLICK,
   PROP_MISC_TAB_POSITION,
   PROP_MISC_HIGHLIGHT_URLS,
+  PROP_MISC_HIGHLIGHT_ACTIVE_PANE,
   PROP_MISC_DIRECTORY_BOOKMARKS,
   PROP_MISC_LOG_SCREEN,
   PROP_MISC_LOG_FILE,
@@ -1046,6 +1047,16 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
+   * TerminalPreferences:misc-highlight-active-pane:
+   **/
+  preferences_props[PROP_MISC_HIGHLIGHT_ACTIVE_PANE] =
+    g_param_spec_boolean ("misc-highlight-active-pane",
+                          NULL,
+                          "MiscHighlightActivePane",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
    * TerminalPreferences:misc-highlight-urls:
    **/
   preferences_props[PROP_MISC_HIGHLIGHT_URLS] =
@@ -1179,7 +1190,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-panes-layouts-enabled",
                           NULL,
                           "MiscPanesLayoutsEnabled",
-                          TRUE,
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1192,7 +1203,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-session-active-tab",
                           NULL,
                           "MiscSessionActiveTab",
-                          TRUE,
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1204,7 +1215,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-session-active-pane",
                           NULL,
                           "MiscSessionActivePane",
-                          TRUE,
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**

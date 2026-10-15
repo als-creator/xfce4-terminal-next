@@ -257,6 +257,8 @@ terminal_window_log_start (TerminalWindow *window);
 static void
 terminal_window_log_setting_changed (TerminalWindow *window);
 static void
+terminal_window_panes_highlight_changed (TerminalWindow *window);
+static void
 terminal_window_log_stop (TerminalWindow *window);
 static gboolean
 terminal_window_log_tick (gpointer user_data);
@@ -1456,6 +1458,10 @@ terminal_window_init (TerminalWindow *window)
   window->priv->panes_layout_idle = g_idle_add (terminal_window_panes_layout_restore_idle, window);
 
   gtk_window_add_accel_group (GTK_WINDOW (window), window->priv->accel_group);
+
+  /* the mark of the pane with the keyboard follows its setting, too */
+  g_signal_connect_swapped (G_OBJECT (window->priv->preferences), "notify::misc-highlight-active-pane",
+                            G_CALLBACK (terminal_window_panes_highlight_changed), window);
 
   /* the screen log follows the setting, whatever turned it on */
   g_signal_connect_swapped (G_OBJECT (window->priv->preferences), "notify::misc-log-screen",
@@ -4219,6 +4225,24 @@ terminal_window_log_tick (gpointer user_data)
 
 
 
+/* every pane tree of the window takes the new setting at once, the mark is on
+ * the split and the setting is a single checkbox */
+static void
+terminal_window_panes_highlight_changed (TerminalWindow *window)
+{
+  gint n_pages, n;
+
+  n_pages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
+  for (n = 0; n < n_pages; n++)
+    {
+      GtkWidget *page = gtk_notebook_get_nth_page (GTK_NOTEBOOK (window->priv->notebook), n);
+
+      if (page != NULL && TERMINAL_IS_PANES (page))
+        terminal_panes_update_active_style (TERMINAL_PANES (page));
+    }
+}
+
+
 static void
 terminal_window_log_setting_changed (TerminalWindow *window)
 {
@@ -4304,16 +4328,15 @@ terminal_window_action_goto_bookmark (GtkMenuItem *item,
 /* Copying into a slot is a copy through the system clipboard: Vte offers no
  * other way to read the selection. The slot number moves on, so that copying
  * and pasting work in turns without picking a number first. */
-static gboolean
-terminal_window_action_copy_to_slot (TerminalWindow *window)
+static void
+terminal_window_slot_copy (TerminalWindow *window,
+                           guint            slot)
 {
   GtkClipboard *clipboard;
   gchar *text;
 
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-
-  if (!terminal_screen_has_selection (window->priv->active))
-    return TRUE;
+  if (slot >= CLIPBOARD_SLOTS || !terminal_screen_has_selection (window->priv->active))
+    return;
 
   clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
   terminal_screen_copy_clipboard (window->priv->active);
@@ -4321,9 +4344,52 @@ terminal_window_action_copy_to_slot (TerminalWindow *window)
 
   if (text != NULL)
     {
-      g_free (clipboard_slots[clipboard_slot]);
-      clipboard_slots[clipboard_slot] = text;
-      clipboard_slot = (clipboard_slot + 1) % CLIPBOARD_SLOTS;
+      g_free (clipboard_slots[slot]);
+      clipboard_slots[slot] = text;
+    }
+}
+
+
+static gboolean
+terminal_window_action_copy_to_slot (TerminalWindow *window)
+{
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  terminal_window_slot_copy (window, clipboard_slot);
+  clipboard_slot = (clipboard_slot + 1) % CLIPBOARD_SLOTS;
+
+  return TRUE;
+}
+
+
+/* The same two things from the context menu, where the slot is picked by name:
+ * "Скопировать в ячейку 2" and "Вставить из ячейки 2" say exactly what they
+ * will do, which is what the cycling hotkeys cannot do. */
+static gboolean
+terminal_window_action_slot_item (GtkMenuItem   *item,
+                                 TerminalWindow *window)
+{
+  gint slot;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  slot = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (item), "clipboard-slot"));
+  if (slot < 0 || (guint) slot >= CLIPBOARD_SLOTS)
+    return TRUE;
+
+  if (g_object_get_data (G_OBJECT (item), "clipboard-slot-paste") != NULL)
+    {
+      const gchar *text = clipboard_slots[slot];
+
+      if (text != NULL)
+        {
+          gtk_clipboard_set_text (gtk_clipboard_get (GDK_SELECTION_CLIPBOARD), text, (gint) strlen (text));
+          terminal_screen_paste_clipboard (window->priv->active);
+        }
+    }
+  else
+    {
+      terminal_window_slot_copy (window, (guint) slot);
     }
 
   return TRUE;
@@ -6091,42 +6157,38 @@ terminal_window_update_file_menu (TerminalWindow *window,
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
   item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_DETACH_TAB), G_OBJECT (window), GTK_MENU_SHELL (menu));
   gtk_widget_set_sensitive (item, n_pages > 1);
-  /* the bookmarks of the settings, each one a directory to cd into */
+  /* the bookmarks of the settings, one flat item per directory: a submenu of
+   * our own here only brings the trouble that comes with it, and with a couple
+   * of bookmarks the flat list is the shorter way round anyway */
   bookmarks = g_object_get_data (G_OBJECT (window), "directory-bookmarks");
   if (bookmarks != NULL && *bookmarks != '\0')
     {
       gchar **dirs = g_strsplit (bookmarks, ":", -1);
-      GtkWidget *submenu;
       guint i;
+      gboolean any = FALSE;
 
-      submenu = gtk_menu_new ();
       for (i = 0; dirs[i] != NULL; i++)
         {
-          gchar *name;
           gchar *label;
 
           if (*dirs[i] == '\0')
             continue;
 
-          name = g_strdup_printf ("bookmark-%u", i);
           label = g_strdup_printf ("_cd %s", dirs[i]);
-
           item = gtk_menu_item_new_with_mnemonic (label);
+          g_free (label);
+
           g_object_set_data_full (G_OBJECT (item), "bookmark-path",
                                   g_strdup (dirs[i]), g_free);
           g_signal_connect (G_OBJECT (item), "activate",
                             G_CALLBACK (terminal_window_action_goto_bookmark), window);
-          gtk_menu_shell_append (GTK_MENU_SHELL (submenu), item);
-
-          g_free (name);
-          g_free (label);
+          gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+          any = TRUE;
         }
       g_strfreev (dirs);
 
-      item = gtk_menu_item_new_with_mnemonic (_("Go to _Directory Bookmark"));
-      gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
-      gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+      if (any)
+        xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
     }
 
   item = xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_TOGGLE_LOG), G_OBJECT (window), logging, GTK_MENU_SHELL (menu));

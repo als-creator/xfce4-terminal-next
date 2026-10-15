@@ -25,6 +25,7 @@
 #include <gtk/gtk.h>
 
 #include "terminal-panes.h"
+#include "terminal-preferences.h"
 
 
 
@@ -79,8 +80,10 @@ static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
 
 /* the stylesheet and the provider that carries it, shared by every pane tree */
 static const gchar *CSS_ACTIVE_PANE =
-  "paned.pane-active {"
-  "  border: 2px solid @accent_color;"
+  "paned.pane-active > separator {"
+  "  background-color: alpha(@accent_color, 0.85);"
+  "  min-width: 2px;"
+  "  min-height: 2px;"
   "}";
 static GtkCssProvider *panes_style_provider = NULL;
 
@@ -102,9 +105,10 @@ panes_update_active_style (TerminalPanes *panes)
       GtkWidget *screen = GTK_WIDGET (lp->data);
       GtkWidget *parent = gtk_widget_get_parent (screen);
 
-      /* Vte draws its own window and a stylesheet border does not reach it, so
-       * the mark goes on the paned that holds the screen: in the tree every
-       * screen but the first one of the tab lives in a paned of its own. */
+      /* a stylesheet border on the terminal itself is not drawn: Vte paints its
+       * own window over it. The divider is a normal widget, so the mark goes
+       * there — a thin accent line along the edge of the pane with the
+       * keyboard, instead of a frame that would ring two panes at once */
       if (parent != NULL && GTK_IS_PANED (parent))
         screen = parent;
 
@@ -117,6 +121,13 @@ panes_update_active_style (TerminalPanes *panes)
   g_slist_free (screens);
 }
 
+
+
+void
+terminal_panes_update_active_style (TerminalPanes *panes)
+{
+  panes_update_active_style (panes);
+}
 
 
 static void
