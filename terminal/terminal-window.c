@@ -69,6 +69,24 @@ enum
 
 #define NOTEBOOK_NAME PACKAGE_NAME "-notebook"
 
+/* Clipboard slots: buffers of one's own, so that a second string can be taken
+ * along without throwing the first one away. They belong to the application,
+ * not to a window: a string copied in one window is pasted in another. */
+#define CLIPBOARD_SLOTS 3
+
+static gchar *clipboard_slots[CLIPBOARD_SLOTS];
+static guint clipboard_slot = 0;
+
+
+void
+terminal_window_free_clipboard_slots (void)
+{
+  guint i;
+
+  for (i = 0; i < CLIPBOARD_SLOTS; i++)
+    g_clear_pointer (&clipboard_slots[i], g_free);
+}
+
 /* CSS for slim notebook tabs style */
 const gchar *CSS_SLIM_TABS =
   "#" NOTEBOOK_NAME " tab {\n"
@@ -226,6 +244,11 @@ static gboolean
 terminal_window_action_copy_html (TerminalWindow *window);
 static gboolean
 terminal_window_action_copy_as (TerminalWindow *window);
+static gboolean
+terminal_window_action_copy_to_slot (TerminalWindow *window);
+static gboolean
+terminal_window_action_paste_from_slot (GtkRadioAction *action,
+                                        TerminalWindow  *window);
 static gboolean
 terminal_window_action_paste (TerminalWindow *window);
 static gboolean
@@ -636,6 +659,26 @@ static XfceGtkActionEntry action_entries[] = {
     N_ ("Ask in which form the selection goes into the clipboard"),
     "edit-copy",
     G_CALLBACK (terminal_window_action_copy_as),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_COPY_TO_SLOT,
+    "<Actions>/terminal-window/copy-to-slot",
+    "<control><alt>c",
+    XFCE_GTK_MENU_ITEM,
+    N_ ("Copy to Clipboard Slot"),
+    N_ ("Put the selection into a slot of its own and go on to the next one"),
+    NULL,
+    G_CALLBACK (terminal_window_action_copy_to_slot),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_PASTE_FROM_SLOT,
+    "<Actions>/terminal-window/paste-from-slot",
+    "<control><alt>v",
+    XFCE_GTK_CHECK_MENU_ITEM,
+    N_ ("Paste from Clipboard Slot"),
+    NULL,
+    NULL,
+    G_CALLBACK (terminal_window_action_do_nothing),
   },
   {
     TERMINAL_WINDOW_ACTION_PASTE,
@@ -3428,7 +3471,8 @@ terminal_window_action_split (TerminalWindow *window,
   if (window->priv->scrollbar_visibility != TERMINAL_VISIBILITY_DEFAULT)
     terminal_screen_update_scrolling_bar (new_screen);
 
-
+  /* split the pane tree; this makes the new screen active */
+  terminal_panes_split_screen (panes, active, orientation, new_screen);
 
   /* connect the accels */
   terminal_screen_widget_append_accels (new_screen, window->priv->accel_group);
@@ -4073,6 +4117,80 @@ terminal_window_action_copy_as (TerminalWindow *window)
       terminal_screen_copy_clipboard (window->priv->active);
       break;
     }
+
+  return TRUE;
+}
+
+
+
+/* Copying into a slot is a copy through the system clipboard: Vte offers no
+ * other way to read the selection. The slot number moves on, so that copying
+ * and pasting work in turns without picking a number first. */
+static gboolean
+terminal_window_action_copy_to_slot (TerminalWindow *window)
+{
+  GtkClipboard *clipboard;
+  gchar *text;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  if (!terminal_screen_has_selection (window->priv->active))
+    return TRUE;
+
+  clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
+  terminal_screen_copy_clipboard (window->priv->active);
+  text = gtk_clipboard_wait_for_text (clipboard);
+
+  if (text != NULL)
+    {
+      g_free (clipboard_slots[clipboard_slot]);
+      clipboard_slots[clipboard_slot] = text;
+      clipboard_slot = (clipboard_slot + 1) % CLIPBOARD_SLOTS;
+    }
+
+  return TRUE;
+}
+
+
+
+/* Pasting from a slot puts the string into the system clipboard and pastes it
+ * from there, which is the same path as an ordinary paste. */
+static gboolean
+terminal_window_action_paste_from_slot (GtkRadioAction *action,
+                                        TerminalWindow  *window)
+{
+  guint slot;
+  gchar *text;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+  g_return_val_if_fail (GTK_IS_RADIO_ACTION (action), FALSE);
+
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  if (!gtk_toggle_action_get_active (GTK_TOGGLE_ACTION (action)))
+    {
+      G_GNUC_END_IGNORE_DEPRECATIONS
+      return TRUE;
+    }
+  slot = (guint) gtk_radio_action_get_current_value (action);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+
+  text = slot < CLIPBOARD_SLOTS ? clipboard_slots[slot] : NULL;
+  if (text == NULL)
+    {
+      GtkWidget *dialog;
+
+      dialog = gtk_message_dialog_new (GTK_WINDOW (window),
+                                       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                       GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE,
+                                       "%s", _("The clipboard slot is empty"));
+      gtk_dialog_run (GTK_DIALOG (dialog));
+      gtk_widget_destroy (dialog);
+
+      return TRUE;
+    }
+
+  gtk_clipboard_set_text (gtk_clipboard_get (GDK_SELECTION_CLIPBOARD), text, (gint) strlen (text));
+  terminal_screen_paste_clipboard (window->priv->active);
 
   return TRUE;
 }
@@ -5692,7 +5810,48 @@ terminal_window_menu_add_section (TerminalWindow *window,
       gtk_widget_set_sensitive (item, terminal_screen_get_input_enabled (window->priv->active));
       item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_PASTE_SELECTION), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       gtk_widget_set_sensitive (item, terminal_screen_get_input_enabled (window->priv->active));
-      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+
+      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
+
+      item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_COPY_TO_SLOT), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
+      gtk_widget_set_sensitive (item, terminal_screen_has_selection (window->priv->active));
+
+      /* the numbered slots are radio actions, so that the number travels in the
+       * value of the action and one handler serves all of them */
+      {
+        GtkRadioAction *radio_action;
+        GtkWidget *slot_menu;
+        guint i;
+
+        slot_menu = gtk_menu_new ();
+        for (i = 0; i < CLIPBOARD_SLOTS; i++)
+          {
+            gchar *name = g_strdup_printf ("paste-from-slot-%u", i + 1);
+            gchar *label = g_strdup_printf (_("Slot %u"), i + 1);
+
+            G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+            radio_action = gtk_radio_action_new (name, NULL, label, NULL, (gint) i);
+            gtk_radio_action_set_current_value (radio_action, (gint) clipboard_slot);
+            gtk_action_set_sensitive (GTK_ACTION (radio_action), clipboard_slots[i] != NULL);
+            G_GNUC_END_IGNORE_DEPRECATIONS
+
+            g_signal_connect (G_OBJECT (radio_action), "activate",
+                              G_CALLBACK (terminal_window_action_paste_from_slot), window);
+
+            G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+            gtk_menu_shell_append (GTK_MENU_SHELL (slot_menu), gtk_action_create_menu_item (GTK_ACTION (radio_action)));
+            G_GNUC_END_IGNORE_DEPRECATIONS
+
+            g_object_unref (radio_action);
+            g_free (name);
+            g_free (label);
+          }
+
+        item = gtk_menu_item_new_with_mnemonic (_("Paste from Clipboard _Slot"));
+        gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), slot_menu);
+        gtk_widget_set_sensitive (item, terminal_screen_get_input_enabled (window->priv->active));
+        gtk_menu_shell_append (GTK_MENU_SHELL (insert_to_menu), item);
+      }
     }
 
   if (sections & MENU_SECTION_SPLIT)
