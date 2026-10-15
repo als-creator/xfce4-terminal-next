@@ -189,13 +189,21 @@ main (int argc, char **argv)
 {
   TerminalOptions options;
   TerminalApp *app;
-  const gchar *startup_id;
+  gchar *startup_id;
   GdkDisplay *display;
   GError *error = NULL;
   gchar **nargv;
   gint nargc;
   gint n;
   const gchar *msg;
+
+  /* The session marks an autostart with DESKTOP_STARTUP_ID, and gtk_init()
+   * takes that variable out of the environment while it looks for its own
+   * options.  The panel has to tell a session start from a start by the user
+   * after that, so the value is read here and kept. */
+  startup_id = g_getenv ("DESKTOP_STARTUP_ID") != NULL
+                 ? g_strdup (g_getenv ("DESKTOP_STARTUP_ID"))
+                 : NULL;
 
   /* initialize options */
   options.disable_server = options.show_version = options.show_colors = options.show_help = options.show_preferences = 0;
@@ -272,12 +280,8 @@ main (int argc, char **argv)
   nargv[nargc++] = g_get_current_dir ();
 
   /* append startup if given */
-  startup_id = g_getenv ("DESKTOP_STARTUP_ID");
   if (G_LIKELY (startup_id != NULL))
-    {
-      nargv[nargc++] = g_strdup_printf ("--startup-id=%s", startup_id);
-      g_unsetenv ("DESKTOP_STARTUP_ID");
-    }
+    nargv[nargc++] = g_strdup_printf ("--startup-id=%s", startup_id);
 
   /* append default display if given */
   display = gdk_display_get_default ();
@@ -370,6 +374,7 @@ main (int argc, char **argv)
   gtk_main ();
 
   g_object_unref (G_OBJECT (app));
+  g_free (startup_id);
 
   return EXIT_SUCCESS;
 }

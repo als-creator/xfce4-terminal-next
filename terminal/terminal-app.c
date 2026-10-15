@@ -1217,9 +1217,14 @@ terminal_app_open_window (TerminalApp *app,
 
       /* A panel that the session starts (autostart) stays out of sight when
        * the user asked for it: it waits for the shortcut instead of covering
-       * the desktop at login.  Only a freshly created panel can do this, a
-       * reused one is the result of an explicit request to use the panel. */
-      if (!start_hidden || reuse_window)
+       * the desktop at login.  A launch by the user is not that case: a
+       * shortcut or a command line is a request to see the terminal now, and
+       * that is how upstream opens it.  DESKTOP_STARTUP_ID, which main.c
+       * turns into --startup-id, is what tells the two apart.  A reused panel
+       * is an explicit request as well. */
+      g_printerr ("DBG show check: start_hidden=%d startup=%s\n", start_hidden,
+                  attr->startup_id != NULL ? attr->startup_id : "(null)");
+      if (!start_hidden || reuse_window || attr->startup_id == NULL)
         terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), attr->startup_id, reuse_window);
     }
   else
