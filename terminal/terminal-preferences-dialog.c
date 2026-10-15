@@ -590,15 +590,14 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Session */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Session"));
 
-  button = terminal_preferences_dialog_check_button_new (_("Remember the _pane layout of tabs"));
+  button = terminal_preferences_dialog_check_button_new (_("Save the session with the _split layout"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-panes-layouts-enabled",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Remember how the tabs are split into panes, together with the"
-                                         " directory of every pane, and put them back when the terminal"
-                                         " starts again.\n"
-                                         "Turn this off to always start with a single pane in the home"
-                                         " directory."));
+  gtk_widget_set_tooltip_text (button, _("Keeps between runs: split layout of every tab,"
+                                         " working directory of every pane. Programs that are"
+                                         " running keep living when a tmux session is started"
+                                         " from the Terminal menu."));
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 

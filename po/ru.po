@@ -722,19 +722,18 @@ msgid "Session"
 msgstr "Сессия"
 
 #: terminal/terminal-preferences-dialog.c:556
-msgid "Remember the _pane layout of tabs"
-msgstr "Запоминать _раскладку панелей вкладок"
+msgid "Save the session with the _split layout"
+msgstr "Сохранять сессию с расположением _сплитов"
 
 #: terminal/terminal-preferences-dialog.c:560
 msgid ""
-"Remember how the tabs are split into panes, together with the directory of "
-"every pane, and put them back when the terminal starts again.\n"
-"Turn this off to always start with a single pane in the home directory."
+"Keeps between runs: split layout of every tab, working directory of every "
+"pane. Programs that are running keep living when a tmux session is started "
+"from the Terminal menu."
 msgstr ""
-"Запоминать, на какие панели разбиты вкладки, вместе с рабочим каталогом "
-"каждой панели, и восстанавливать их при следующем запуске.\n"
-"Если выключить, терминал всегда будет открываться с одной панелью в домашнем "
-"каталоге."
+"Сохраняет между запусками: расположение сплитов в каждой вкладке, рабочий "
+"каталог каждой панели. Запущенные программы продолжают работать, если сессию "
+"tmux запустить из меню «Терминал»."
 
 #.
 #. * Drop-down
