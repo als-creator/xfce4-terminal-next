@@ -119,6 +119,10 @@ enum
   PROP_MISC_HYPERLINKS_ENABLED,
   PROP_MISC_PANES_LAYOUTS,
   PROP_MISC_PANES_LAYOUTS_ENABLED,
+  PROP_MISC_SESSION_ACTIVE_TAB,
+  PROP_MISC_SESSION_ACTIVE_PANE,
+  PROP_MISC_SESSION_ACTIVE_TAB_INDEX,
+  PROP_MISC_SESSION_ACTIVE_PANE_INDEX,
   PROP_MISC_TMUX_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
@@ -1144,6 +1148,56 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           "MiscPanesLayoutsEnabled",
                           TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-session-active-tab:
+   *
+   * Save the number of the tab that was in front and bring it back on the
+   * next start.
+   **/
+  preferences_props[PROP_MISC_SESSION_ACTIVE_TAB] =
+    g_param_spec_boolean ("misc-session-active-tab",
+                          NULL,
+                          "MiscSessionActiveTab",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-session-active-pane:
+   *
+   * Save which pane of the split was in use and bring it back.
+   **/
+  preferences_props[PROP_MISC_SESSION_ACTIVE_PANE] =
+    g_param_spec_boolean ("misc-session-active-pane",
+                          NULL,
+                          "MiscSessionActivePane",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-session-active-tab-index:
+   *
+   * The number of the tab that was in front, written when the session is
+   * saved and read back on the next start.
+   **/
+  preferences_props[PROP_MISC_SESSION_ACTIVE_TAB_INDEX] =
+    g_param_spec_int ("misc-session-active-tab-index",
+                      NULL,
+                      "MiscSessionActiveTabIndex",
+                      0, G_MAXINT, 0,
+                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-session-active-pane-index:
+   *
+   * The number of the pane that was in use inside the split tab.
+   **/
+  preferences_props[PROP_MISC_SESSION_ACTIVE_PANE_INDEX] =
+    g_param_spec_int ("misc-session-active-pane-index",
+                      NULL,
+                      "MiscSessionActivePaneIndex",
+                      0, G_MAXINT, 0,
+                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-tmux-command:

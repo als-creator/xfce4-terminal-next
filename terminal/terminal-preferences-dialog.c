@@ -601,6 +601,30 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
+  /* next row */
+  row++;
+
+  button = terminal_preferences_dialog_check_button_new (_("Bring back the _active tab"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-session-active-tab",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Puts the tab that was in front back in front when"
+                                         " the terminal starts."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  /* next row */
+  row++;
+
+  button = terminal_preferences_dialog_check_button_new (_("Bring back the _active pane"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-session-active-pane",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Puts the pane that was in use inside the split tab"
+                                         " back in use when the terminal starts."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
 
 
 

@@ -370,6 +370,10 @@ terminal_window_restore_panes_layout (TerminalWindow *window,
                                        const gchar     *layout);
 static void
 terminal_window_save_panes_layouts (TerminalWindow *window);
+static void
+terminal_window_save_session_state (TerminalWindow *window);
+static void
+terminal_window_restore_session_state (TerminalWindow *window);
 static gboolean
 terminal_window_panes_layouts_enabled (TerminalWindow *window);
 static gchar *
@@ -1530,6 +1534,7 @@ terminal_window_delete_event (GtkWidget *widget,
        * by itself and panes that were closed by hand are already gone from the
        * tree, while nothing else saves after the handlers below are gone */
       terminal_window_save_panes_layouts (window);
+      terminal_window_save_session_state (window);
 
       /* avoid a lot of page remove calls */
       g_signal_handlers_disconnect_by_func (G_OBJECT (window->priv->notebook),
@@ -2253,6 +2258,7 @@ terminal_window_notebook_page_removed (GtkNotebook *notebook,
 
   /* the panes of the remaining tabs changed, remember them */
   terminal_window_save_panes_layouts (window);
+  terminal_window_save_session_state (window);
 
   /* show the tabs when needed */
   terminal_window_notebook_show_tabs (window);
@@ -3247,6 +3253,85 @@ terminal_window_save_panes_layouts (TerminalWindow *window)
 
 
 
+/* Beside the split layout the session keeps what the user was looking at: the
+ * tab in front, the pane in use inside it and the titles given to the tabs.
+ * Every part has its own switch in the preferences, so that nothing is
+ * restored that the user does not want back. */
+static void
+terminal_window_save_session_state (TerminalWindow *window)
+{
+  gboolean save_tab, save_pane;
+  gint current;
+
+  g_return_if_fail (TERMINAL_IS_WINDOW (window));
+
+  g_object_get (G_OBJECT (window->priv->preferences),
+                "misc-session-active-tab", &save_tab,
+                "misc-session-active-pane", &save_pane, NULL);
+
+  current = gtk_notebook_get_current_page (GTK_NOTEBOOK (window->priv->notebook));
+  if (save_tab && current >= 0)
+    g_object_set (G_OBJECT (window->priv->preferences),
+                  "misc-session-active-tab-index", current, NULL);
+
+  if (save_pane && current >= 0)
+    {
+      GtkWidget *child = gtk_notebook_get_nth_page (GTK_NOTEBOOK (window->priv->notebook), current);
+      gint index = 0;
+
+      if (TERMINAL_IS_PANES (child))
+        index = g_slist_index (terminal_panes_get_screens (TERMINAL_PANES (child)),
+                               terminal_panes_get_active (TERMINAL_PANES (child)));
+      g_object_set (G_OBJECT (window->priv->preferences),
+                    "misc-session-active-pane-index", index, NULL);
+    }
+
+}
+
+
+
+/* The restored parts are applied while the tabs appear, the same way the split
+ * layouts are. */
+static void
+terminal_window_restore_session_state (TerminalWindow *window)
+{
+  gboolean save_tab, save_pane;
+  gint index = 0;
+
+  g_return_if_fail (TERMINAL_IS_WINDOW (window));
+
+  g_object_get (G_OBJECT (window->priv->preferences),
+                "misc-session-active-tab", &save_tab,
+                "misc-session-active-pane", &save_pane, NULL);
+
+  if (save_tab)
+    {
+      g_object_get (G_OBJECT (window->priv->preferences),
+                    "misc-session-active-tab-index", &index, NULL);
+      if (index >= 0 && index < gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook)))
+        gtk_notebook_set_current_page (GTK_NOTEBOOK (window->priv->notebook), index);
+    }
+
+  if (save_pane)
+    {
+      gint current = gtk_notebook_get_current_page (GTK_NOTEBOOK (window->priv->notebook));
+      GtkWidget *child = gtk_notebook_get_nth_page (GTK_NOTEBOOK (window->priv->notebook), MAX (current, 0));
+
+      g_object_get (G_OBJECT (window->priv->preferences),
+                    "misc-session-active-pane-index", &index, NULL);
+      if (TERMINAL_IS_PANES (child))
+        {
+          GSList *screens = terminal_panes_get_screens (TERMINAL_PANES (child));
+
+          if (screens != NULL && index >= 0 && index < g_slist_length (screens))
+            terminal_panes_set_active (TERMINAL_PANES (child),
+                                       TERMINAL_SCREEN (g_slist_nth_data (screens, index)));
+        }
+    }
+}
+
+
+
 /* the saved layouts only belong to the tabs that exist at startup */
 static gboolean
 terminal_window_panes_layout_restore_idle (gpointer user_data)
@@ -3255,6 +3340,7 @@ terminal_window_panes_layout_restore_idle (gpointer user_data)
 
   window->priv->panes_layout_index = -1;
   window->priv->panes_layout_idle = 0;
+  terminal_window_restore_session_state (window);
 
   return FALSE;
 }

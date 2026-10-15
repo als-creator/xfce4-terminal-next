@@ -722,6 +722,23 @@ msgid "Session"
 msgstr "Сессия"
 
 #: terminal/terminal-preferences-dialog.c:556
+msgid "Bring back the _active tab"
+msgstr "Возвращать на место _активную вкладку"
+
+msgid "Bring back the _active pane"
+msgstr "Возвращать на место _активную панель"
+
+msgid ""
+"Puts the tab that was in front back in front when the terminal starts."
+msgstr "Возвращает на место вкладку, которая была впереди, при запуске терминала."
+
+msgid ""
+"Puts the pane that was in use inside the split tab back in use when the "
+"terminal starts."
+msgstr ""
+"Возвращает в работу ту панель сплита, которая была активна, при запуске "
+"терминала."
+
 msgid "Save the session with the _split layout"
 msgstr "Сохранять сессию с расположением _сплитов"
 

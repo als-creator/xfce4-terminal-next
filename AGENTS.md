@@ -107,6 +107,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 | Системная горячая клавиша | `dbus-run-session -- bash tests/shortcuts-test.sh` — 13 проверок |
 | Значок и меню трея | `bash tests/sni-test.sh` — 14 проверок, свой StatusNotifierWatcher на изолированной шине |
 | D-Bus переключение панели | `bash tests/dropdown-dbus-test.sh` |
+| Сохранение сессии | `dbus-run-session -- bash tests/session-test.sh` — 7 проверок: раскладки сплитов, активная вкладка и активная панель переживают перезапуск |
 | Падение при закрытии панели | `bash tests/crash-check.sh` — ASan-сборка, сплиты и закрытие вкладок |
 | Виджеты настроек не накладываются | `dbus-run-session -- bash tests/layout-test.sh` — 2 проверки; при `TERMINAL_DEBUG_UI=1` диалог сам обходит своё дерево и пишет в stderr `layout-overlap` и `layout-missing` |
 | Хоткеи на нелатинской раскладке | `tests/keys-live-test.sh` на `:99` с `grp:ctrl_shift_toggle`: `Ctrl+Shift+H` и `Ctrl+Shift+Tab` срабатывают, `Ctrl+H`/`Ctrl+Tab` — нет; печатает `KEY … h=1/0 tab=1/0` |
