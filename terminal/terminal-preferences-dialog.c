@@ -634,10 +634,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
     gtk_info_bar_set_message_type (GTK_INFO_BAR (info), GTK_MESSAGE_INFO);
     gtk_info_bar_set_show_close_button (GTK_INFO_BAR (info), TRUE);
-    info_label = gtk_label_new (_("Whatever the settings below, you can always add"
-                                  " \"xfce4-terminal-local --drop-down\" to the"
-                                  " autostart by hand and give it a shortcut —"
-                                  " this works on any desktop."));
+    info_label = gtk_label_new (_("Regardless of the settings below, you can always"
+                                  " create a hot key for \"xfce4-terminal-local"
+                                  " --drop-down\"."));
     gtk_label_set_xalign (GTK_LABEL (info_label), 0.0f);
     gtk_label_set_line_wrap (GTK_LABEL (info_label), TRUE);
     gtk_label_set_attributes (GTK_LABEL (info_label), terminal_pango_attr_list_small ());
