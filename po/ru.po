@@ -766,10 +766,9 @@ msgstr "Поведение"
 
 #: terminal/terminal-preferences-dialog.c:589
 msgid "Regardless of the settings below, you can get the drop-down terminal window."
-msgstr "Вне зависимости от настроек ниже вы можете получить выпадающее окно терминала."
-"Выпадающая панель запускается отдельно командой \"xfce4-terminal-local --"
-"drop-down\" (например, из автозапуска сессии). Обычный запуск всегда "
-"открывает обычное окно."
+msgstr ""
+"Вне зависимости от настроек ниже вы можете получить выпадающее окно "
+"терминала."
 
 #: terminal/terminal-preferences-dialog.c:601
 msgid "_Keep window open when it loses focus"
