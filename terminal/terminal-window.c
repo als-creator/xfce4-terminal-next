@@ -67,11 +67,9 @@ enum
   CONFIRMED_CLOSE_WINDOW
 };
 
-/* CSS for slim notebook tabs style */
 #define NOTEBOOK_NAME PACKAGE_NAME "-notebook"
 
-/* how many panes can be reached by number, the same way the tabs are */
-#define MAX_NUMBER_OF_PANES 9
+/* CSS for slim notebook tabs style */
 const gchar *CSS_SLIM_TABS =
   "#" NOTEBOOK_NAME " tab {\n"
   "  min-height: 0;\n"
@@ -330,24 +328,6 @@ static void
 terminal_window_zoom_update_screens (TerminalWindow *window);
 static TerminalPanes *
 terminal_window_get_current_panes (TerminalWindow *window);
-static gboolean
-terminal_window_action_equalize (TerminalWindow *window);
-static gboolean
-terminal_window_action_rotate_panes (TerminalWindow *window);
-static gboolean
-terminal_window_action_swap_panes (TerminalWindow *window);
-static gboolean
-terminal_window_action_show_pane_numbers (TerminalWindow *window);
-static gboolean
-terminal_window_action_undo_pane_layout (TerminalWindow *window);
-static void
-terminal_window_remember_panes_layout (TerminalWindow *window);
-static gboolean
-terminal_window_action_goto_pane (GtkRadioAction *action,
-                                 TerminalWindow  *window);
-static void
-terminal_window_action_new_pane_ratio (GtkRadioAction *action,
-                                       TerminalWindow  *window);
 static void
 terminal_window_set_active_screen (TerminalWindow *window,
                                    TerminalPanes *panes,
@@ -452,7 +432,7 @@ struct _TerminalWindowPrivate
   guint n_child_windows;
 
   GSList *tabs_menu_actions;
-  GSList *panes_menu_actions;
+
 
   TerminalPreferences *preferences;
   GtkWidget *preferences_dialog;
@@ -473,10 +453,6 @@ struct _TerminalWindowPrivate
 
   GQueue *closed_tabs_list;
 
-  /* the layouts the panes had before every change, so that one change can be
-   * taken back */
-  GQueue *panes_layout_history;
-
   gchar *font;
 
   TerminalVisibility scrollbar_visibility;
@@ -486,9 +462,6 @@ struct _TerminalWindowPrivate
   gchar **panes_layouts;
   gint panes_layout_index;
   guint panes_layout_idle;
-
-  /* id of the timer that takes the pane numbers off the screen again */
-  guint panes_numbers_timeout;
 
   /* if this is a TerminalWindowDropdown */
   guint drop_down : 1;
@@ -1055,147 +1028,6 @@ static XfceGtkActionEntry action_entries[] = {
     G_CALLBACK (terminal_window_action_focus_prev),
   },
   {
-    TERMINAL_WINDOW_ACTION_ROTATE_PANES,
-    "<Actions>/terminal-window/rotate-panes",
-    "<super>r",
-    XFCE_GTK_MENU_ITEM,
-    N_ ("_Rotate Panes"),
-    N_ ("Turn every divider of the split onto the other axis"),
-    NULL,
-    G_CALLBACK (terminal_window_action_rotate_panes),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_SWAP_PANES,
-    "<Actions>/terminal-window/swap-panes",
-    "<super><shift>p",
-    XFCE_GTK_MENU_ITEM,
-    N_ ("S_wap Panes"),
-    N_ ("Put the focused pane and the one that was focused before it in each "
-        "others places"),
-    NULL,
-    G_CALLBACK (terminal_window_action_swap_panes),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_SHOW_PANE_NUMBERS,
-    "<Actions>/terminal-window/show-pane-numbers",
-    "<super>n",
-    XFCE_GTK_MENU_ITEM,
-    N_ ("Show Pane _Numbers"),
-    N_ ("Write down the number of every pane for a moment"),
-    NULL,
-    G_CALLBACK (terminal_window_action_show_pane_numbers),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_UNDO_PANE_LAYOUT,
-    "<Actions>/terminal-window/undo-pane-layout",
-    "<super>u",
-    XFCE_GTK_MENU_ITEM,
-    N_ ("_Undo Last Split"),
-    N_ ("Put the panes back the way they were before the last change"),
-    NULL,
-    G_CALLBACK (terminal_window_action_undo_pane_layout),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_EQUALIZE,
-    "<Actions>/terminal-window/equalize",
-    "<super>equal",
-    XFCE_GTK_MENU_ITEM,
-    N_ ("_Equalize Panes"),
-    N_ ("Make every pane of the split the same size"),
-    NULL,
-    G_CALLBACK (terminal_window_action_equalize),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_1,
-    "<Actions>/terminal-window/goto-pane-1",
-    "<super>1",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 1"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_2,
-    "<Actions>/terminal-window/goto-pane-2",
-    "<super>2",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 2"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_3,
-    "<Actions>/terminal-window/goto-pane-3",
-    "<super>3",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 3"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_4,
-    "<Actions>/terminal-window/goto-pane-4",
-    "<super>4",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 4"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_5,
-    "<Actions>/terminal-window/goto-pane-5",
-    "<super>5",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 5"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_6,
-    "<Actions>/terminal-window/goto-pane-6",
-    "<super>6",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 6"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_7,
-    "<Actions>/terminal-window/goto-pane-7",
-    "<super>7",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 7"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_8,
-    "<Actions>/terminal-window/goto-pane-8",
-    "<super>8",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 8"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
-    TERMINAL_WINDOW_ACTION_GOTO_PANE_9,
-    "<Actions>/terminal-window/goto-pane-9",
-    "<super>9",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("Go to Pane 9"),
-    NULL,
-    NULL,
-    G_CALLBACK (terminal_window_action_do_nothing),
-  },
-  {
     TERMINAL_WINDOW_ACTION_MOVE_PANE_UP,
     "<Actions>/terminal-window/move-pane-up",
     "<control><shift>Up",
@@ -1513,7 +1345,6 @@ terminal_window_init (TerminalWindow *window)
   window->priv->font = NULL;
   window->priv->zoom = TERMINAL_ZOOM_LEVEL_DEFAULT;
   window->priv->closed_tabs_list = g_queue_new ();
-  window->priv->panes_layout_history = g_queue_new ();
 
   /* setup dnd support for widgets other than screen: menubar, toolbar, etc.*/
   gtk_drag_dest_set (GTK_WIDGET (window),
@@ -1704,11 +1535,8 @@ terminal_window_finalize (GObject *object)
   g_object_unref (G_OBJECT (window->priv->encoding_action));
 
   g_slist_free (window->priv->tabs_menu_actions);
-  g_slist_free_full (window->priv->panes_menu_actions, g_object_unref);
   g_free (window->priv->font);
   g_queue_free_full (window->priv->closed_tabs_list, (GDestroyNotify) terminal_tab_attr_free);
-  if (window->priv->panes_layout_history != NULL)
-    g_queue_free_full (window->priv->panes_layout_history, g_free);
 
   (*G_OBJECT_CLASS (terminal_window_parent_class)->finalize) (object);
 }
@@ -3600,16 +3428,7 @@ terminal_window_action_split (TerminalWindow *window,
   if (window->priv->scrollbar_visibility != TERMINAL_VISIBILITY_DEFAULT)
     terminal_screen_update_scrolling_bar (new_screen);
 
-  terminal_window_remember_panes_layout (window);
 
-  /* split the pane tree; this makes the new screen active */
-  {
-    guint ratio = 50;
-
-    g_object_get (G_OBJECT (window->priv->preferences), "misc-new-pane-ratio", &ratio, NULL);
-    terminal_panes_split_screen_at (panes, active, orientation, new_screen,
-                                    (gdouble) ratio / 100.0);
-  }
 
   /* connect the accels */
   terminal_screen_widget_append_accels (new_screen, window->priv->accel_group);
@@ -3832,258 +3651,6 @@ terminal_window_action_focus_next (TerminalWindow *window)
 
   return TRUE;
 }
-
-
-static gboolean
-terminal_window_action_equalize (TerminalWindow *window)
-{
-  TerminalPanes *panes;
-
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes != NULL)
-    {
-      terminal_window_remember_panes_layout (window);
-      terminal_panes_equalize (panes);
-    }
-
-  return TRUE;
-}
-
-
-
-static gboolean
-terminal_window_action_rotate_panes (TerminalWindow *window)
-{
-  TerminalPanes *panes;
-
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes != NULL)
-    {
-      terminal_window_remember_panes_layout (window);
-      terminal_panes_rotate (panes);
-      terminal_window_save_panes_layouts (window);
-    }
-
-  return TRUE;
-}
-
-
-
-/* tmux writes the numbers of the panes on the screen and takes them away after
- * a moment. A window has nowhere to draw them but its title and a tab has its
- * label, so the numbers go into whichever of the two is on the screen. */
-static gboolean
-terminal_window_panes_numbers_restore (gpointer user_data)
-{
-  TerminalWindow *window = TERMINAL_WINDOW (user_data);
-  TerminalPanes *panes;
-
-  window->priv->panes_numbers_timeout = 0;
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes != NULL && g_object_get_data (G_OBJECT (panes), "panes-tab-label") != NULL)
-    terminal_window_update_panes_label (window, panes);
-
-  terminal_window_notify_title (window->priv->active, NULL, window);
-
-  return G_SOURCE_REMOVE;
-}
-
-
-
-static gboolean
-terminal_window_action_show_pane_numbers (TerminalWindow *window)
-{
-  TerminalPanes *panes;
-  GtkWidget *label;
-  GSList *screens, *lp;
-  GString *numbers;
-  guint n = 0;
-
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes == NULL)
-    return TRUE;
-
-  screens = terminal_panes_get_screens (panes);
-  numbers = g_string_new (NULL);
-  for (lp = screens; lp != NULL; lp = lp->next)
-    g_string_append_printf (numbers, n++ == 0 ? "%u" : "  %u", n);
-  g_slist_free (screens);
-
-  label = g_object_get_data (G_OBJECT (panes), "panes-tab-label");
-  if (label != NULL)
-    {
-      gtk_label_set_text (GTK_LABEL (label), numbers->str);
-    }
-  else
-    {
-      gchar *title = g_strdup (window->priv->active != NULL
-                                 ? terminal_screen_get_title (window->priv->active)
-                                 : NULL);
-      gchar *text = g_strconcat (numbers->str, " - ", title != NULL ? title : "", NULL);
-
-      gtk_window_set_title (GTK_WINDOW (window), text);
-      g_free (text);
-      g_free (title);
-    }
-  g_string_free (numbers, TRUE);
-
-  /* the numbers are gone after a couple of seconds, as they are in tmux */
-  if (window->priv->panes_numbers_timeout != 0)
-    g_source_remove (window->priv->panes_numbers_timeout);
-  window->priv->panes_numbers_timeout = g_timeout_add (2000, terminal_window_panes_numbers_restore, window);
-
-  return TRUE;
-}
-
-
-
-/* tmux takes back the last change of the layout with select-layout -o. The
- * layouts are kept as the panes left them, so that one step back is one step of
- * the history and not a guess. */
-static void
-terminal_window_remember_panes_layout (TerminalWindow *window)
-{
-  TerminalPanes *panes;
-  gchar *layout;
-  const gchar *last;
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes == NULL)
-    return;
-
-  layout = terminal_panes_get_layout (panes);
-
-  last = g_queue_peek_tail (window->priv->panes_layout_history);
-  if (g_strcmp0 (last, layout) != 0)
-    {
-      g_queue_push_tail (window->priv->panes_layout_history, layout);
-
-      /* a long session should not keep every layout of the day in memory */
-      while (g_queue_get_length (window->priv->panes_layout_history) > 50)
-        g_free (g_queue_pop_head (window->priv->panes_layout_history));
-    }
-  else
-    {
-      g_free (layout);
-    }
-}
-
-
-
-static gboolean
-terminal_window_action_undo_pane_layout (TerminalWindow *window)
-{
-  TerminalPanes *panes;
-  gchar *layout;
-
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes == NULL || g_queue_is_empty (window->priv->panes_layout_history))
-    return TRUE;
-
-  layout = g_queue_pop_tail (window->priv->panes_layout_history);
-  terminal_window_restore_panes_layout (window, panes, layout);
-  terminal_window_save_panes_layouts (window);
-  g_free (layout);
-
-  return TRUE;
-}
-
-
-
-static gboolean
-terminal_window_action_swap_panes (TerminalWindow *window)
-{
-  TerminalPanes *panes;
-  TerminalScreen *active, *previous;
-
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes == NULL)
-    return TRUE;
-
-  active = terminal_panes_get_active (panes);
-  previous = window->priv->last_active;
-
-  /* the panes of one tab can only be swapped with each other; when the pane
-   * that was focused before belongs to another tab, nothing is done */
-  if (active == NULL || previous == NULL || previous == active
-      || !terminal_panes_contains (panes, previous))
-    return TRUE;
-
-  terminal_window_remember_panes_layout (window);
-  terminal_panes_swap_screens (panes, active, previous);
-  terminal_window_save_panes_layouts (window);
-
-  return TRUE;
-}
-
-
-
-/* The share a new pane takes of the tab is a setting, not something that lives
- * with the window, so the radio item writes it right into the preferences. */
-static void
-terminal_window_action_new_pane_ratio (GtkRadioAction *action,
-                                       TerminalWindow  *window)
-{
-  gint value;
-
-  g_return_if_fail (TERMINAL_IS_WINDOW (window));
-  g_return_if_fail (GTK_IS_RADIO_ACTION (action));
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  if (gtk_toggle_action_get_active (GTK_TOGGLE_ACTION (action)))
-    {
-      value = gtk_radio_action_get_current_value (action);
-      G_GNUC_END_IGNORE_DEPRECATIONS
-
-      if (value > 0)
-        g_object_set (G_OBJECT (window->priv->preferences),
-                      "misc-new-pane-ratio", (guint) value, NULL);
-    }
-}
-
-
-
-/* The numbered panes are radio actions of their own: the number of the pane
- * travels in the value of the action, so that one handler serves all nine
- * entries, exactly the way the numbered tabs do it. */
-static gboolean
-terminal_window_action_goto_pane (GtkRadioAction *action,
-                                 TerminalWindow  *window)
-{
-  TerminalPanes *panes;
-  gint index;
-
-  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
-  g_return_val_if_fail (GTK_IS_RADIO_ACTION (action), FALSE);
-
-  panes = terminal_window_get_current_panes (window);
-  if (panes == NULL)
-    return TRUE;
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  if (gtk_toggle_action_get_active (GTK_TOGGLE_ACTION (action)))
-    {
-      index = gtk_radio_action_get_current_value (action);
-      G_GNUC_END_IGNORE_DEPRECATIONS
-
-      if (index >= 0)
-        terminal_panes_focus_index (panes, (guint) index);
-    }
-
-  return TRUE;
-}
-
 
 
 static gboolean
@@ -6069,21 +5636,9 @@ terminal_window_menu_add_section (TerminalWindow *window,
 
   GtkWidget *item;
   GtkWidget *insert_to_menu;
-  GtkWidget *split_menu;
   GtkMenu *submenu;
-  GtkRadioAction *radio_action;
-  TerminalPanes *panes;
-  gchar name[64];
-  gchar buf[128];
-  gchar *label;
-  guint new_pane_ratio;
-  GtkAccelKey key;
   static const gint n_signal_names = 31;
 
-  static const guint pane_ratios[] = { 50, 33, 67, 25, 75 };
-
-  panes = terminal_window_get_current_panes (window);
-  g_object_get (G_OBJECT (window->priv->preferences), "misc-new-pane-ratio", &new_pane_ratio, NULL);
   insert_to_menu = menu;
 
   if (sections & MENU_SECTION_SIGNAL)
@@ -6148,78 +5703,6 @@ terminal_window_menu_add_section (TerminalWindow *window,
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SPLIT_VERTICAL), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_PANE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
-
-      item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_EQUALIZE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      gtk_widget_set_sensitive (item, panes != NULL && terminal_panes_get_n_screens (panes) > 1);
-      item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_ROTATE_PANES), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      gtk_widget_set_sensitive (item, panes != NULL && terminal_panes_get_n_screens (panes) > 1);
-      item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SWAP_PANES), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      gtk_widget_set_sensitive (item, panes != NULL && terminal_panes_get_n_screens (panes) > 1);
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SHOW_PANE_NUMBERS), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_UNDO_PANE_LAYOUT), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      gtk_widget_set_sensitive (item, !g_queue_is_empty (window->priv->panes_layout_history));
-      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
-
-      /* how much of the tab the next split gives to the new pane */
-      AS_SUBMENU (_("New Pane Size"));
-      for (guint i = 0; i < G_N_ELEMENTS (pane_ratios); i++)
-        {
-          g_snprintf (name, sizeof (name), "new-pane-ratio-%u", pane_ratios[i]);
-          label = g_strdup_printf ("%u %%", pane_ratios[i]);
-
-          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-          radio_action = gtk_radio_action_new (name, label, NULL, NULL, pane_ratios[i]);
-          gtk_radio_action_set_current_value (radio_action, new_pane_ratio);
-          gtk_action_set_accel_group (GTK_ACTION (radio_action), window->priv->accel_group);
-          G_GNUC_END_IGNORE_DEPRECATIONS
-
-          g_signal_connect (G_OBJECT (radio_action), "activate",
-                            G_CALLBACK (terminal_window_action_new_pane_ratio), window);
-
-          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-          gtk_menu_shell_append (GTK_MENU_SHELL (insert_to_menu), gtk_action_create_menu_item (GTK_ACTION (radio_action)));
-          G_GNUC_END_IGNORE_DEPRECATIONS
-
-          window->priv->panes_menu_actions = g_slist_prepend (window->priv->panes_menu_actions, radio_action);
-          g_free (label);
-        }
-
-      insert_to_menu = split_menu;
-
-      /* the numbered panes are radio actions, so the number travels in the
-       * value of the action and one handler serves all of them */
-      split_menu = insert_to_menu;
-      AS_SUBMENU (_("Go to Pane"));
-      for (int i = 0; i < MAX_NUMBER_OF_PANES; i++)
-        {
-          g_snprintf (name, sizeof (name), "goto-pane-%d", i + 1);
-
-          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-          radio_action = gtk_radio_action_new (name, NULL, NULL, NULL, i);
-          gtk_action_set_sensitive (GTK_ACTION (radio_action), panes != NULL && i < terminal_panes_get_n_screens (panes));
-          gtk_action_set_accel_group (GTK_ACTION (radio_action), window->priv->accel_group);
-          G_GNUC_END_IGNORE_DEPRECATIONS
-
-          g_signal_connect (G_OBJECT (radio_action), "activate",
-                            G_CALLBACK (terminal_window_action_goto_pane), window);
-
-          g_snprintf (buf, sizeof (buf), "<Actions>/terminal-window/%s", name);
-          if (gtk_accel_map_lookup_entry (buf, &key) && key.accel_key != 0)
-            {
-              G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-              gtk_action_set_accel_path (GTK_ACTION (radio_action), buf);
-              G_GNUC_END_IGNORE_DEPRECATIONS
-            }
-
-          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-          gtk_menu_shell_append (GTK_MENU_SHELL (insert_to_menu), gtk_action_create_menu_item (GTK_ACTION (radio_action)));
-          G_GNUC_END_IGNORE_DEPRECATIONS
-
-          window->priv->panes_menu_actions = g_slist_prepend (window->priv->panes_menu_actions, radio_action);
-        }
-
-      /* back into the "Split" submenu, the numbered panes got one of their own */
-      insert_to_menu = split_menu;
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
     }
 
