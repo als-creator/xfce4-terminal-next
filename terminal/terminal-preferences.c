@@ -347,7 +347,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_double ("background-darkness",
                          NULL,
                          "BackgroundDarkness",
-                         0.0, 1.0, 0.5,
+                         0.0, 1.0, 0.6,
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -667,7 +667,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("dropdown-toggle-focus",
                           NULL,
                           "DropdownToggleFocus",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -696,7 +696,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("dropdown-start-hidden",
                           NULL,
                           "DropdownStartHidden",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
 
@@ -707,7 +707,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_uint ("dropdown-width",
                        NULL,
                        "DropdownWidth",
-                       10, 100, 80,
+                       10, 100, 100,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -717,7 +717,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_uint ("dropdown-height",
                        NULL,
                        "DropdownHeight",
-                       10, 100, 50,
+                       10, 100, 85,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -727,7 +727,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_uint ("dropdown-opacity",
                        NULL,
                        "DropdownOpacity",
-                       0, 100, 100,
+                       0, 100, 97,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -789,7 +789,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("dropdown-parameters-once",
                           NULL,
                           "DropdownParametersOnce",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -849,7 +849,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-bell",
                           NULL,
                           "MiscBell",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -859,7 +859,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-bell-urgent",
                           NULL,
                           "MiscBellUrgent",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -889,7 +889,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-cursor-blinks",
                           NULL,
                           "MiscCursorBlinks",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -930,7 +930,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-menubar-default",
                           NULL,
                           "MiscMenubarDefault",
-                          TRUE,
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1051,7 +1051,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-copy-on-select",
                           NULL,
                           "MiscCopyOnSelect",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1071,7 +1071,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-slim-tabs",
                           NULL,
                           "MiscSlimTabs",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1081,7 +1081,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-new-tab-adjacent",
                           NULL,
                           "MiscNewTabAdjacent",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1111,7 +1111,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-show-unsafe-paste-dialog",
                           NULL,
                           "MiscShowUnsafePasteDialog",
-                          TRUE,
+                          FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1158,7 +1158,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("misc-panes-layouts-enabled",
                           NULL,
                           "MiscPanesLayoutsEnabled",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1191,7 +1191,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("overlay-scrolling",
                           NULL,
                           "OverlayScrolling",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1201,7 +1201,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_uint ("scrolling-lines",
                        NULL,
                        "ScrollingLines",
-                       0u, 1024u * 1024u, 1000u,
+                       0u, 1024u * 1024u, 10000,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1211,7 +1211,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("scrolling-unlimited",
                           NULL,
                           "ScrollingUnlimited",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1221,7 +1221,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("kinetic-scrolling",
                           NULL,
                           "KineticScrolling",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -1231,7 +1231,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("scrolling-on-output",
                           NULL,
                           "ScrollingOnOutput",
-                          FALSE,
+                          TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
