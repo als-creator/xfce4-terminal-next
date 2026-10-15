@@ -651,8 +651,9 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* How the drop-down window is to be reached is worth one plain line here,
    * and it stays a plain line: a plain label that is not a dismissible info
    * bar, small so that it takes as little room as possible. */
-  label = gtk_label_new (_("Regardless of the settings below, you can get the"
-                           " drop-down terminal window."));
+  label = gtk_label_new (_("Regardless of the settings below, you get the drop-down"
+                           " terminal window with a hotkey for \"xfce4-terminal-local"
+                           " --drop-down\"."));
   gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
   gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
   gtk_label_set_attributes (GTK_LABEL (label), terminal_pango_attr_list_small ());
