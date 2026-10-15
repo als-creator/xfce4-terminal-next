@@ -129,7 +129,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 
 | Где | Строка (как показывается) | Оригинал в коде |
 | --- | --- | --- |
-| Вкладка «Выпадающий», надпись сверху | Вне зависимости от настроек ниже вы получаете выпадающее окно терминала по хоткею для команды `xfce4-terminal-local --drop-down`. | `"Regardless of the settings below, you get the drop-down terminal window with a hotkey for \"xfce4-terminal-local --drop-down\"."` |
+| Вкладка «Выпадающий», надпись сверху | Вне зависимости от настроек ниже вы получаете выпадающее окно терминала, если добавите хоткей для команды `xfce4-terminal-local --drop-down`. | `"Regardless of the settings below, you get the drop-down terminal window if you add a hotkey for \"xfce4-terminal-local --drop-down\"."` |
 | Вкладка «Выпадающий», галка хоткея | Использовать _системную горячую клавишу для скрытия и появления терминала | `"Use a _system shortcut to hide and show the terminal"` |
 | Раздел «Сессия», галка | Сохранять сессию с расположением _сплитов | `"Save the session with the _split layout"` |
 | Раздел «Сессия», галка | Возвращать на место _активную вкладку | `"Bring back the _active tab"` |
