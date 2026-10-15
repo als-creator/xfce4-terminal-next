@@ -247,6 +247,20 @@ terminal_window_action_copy_as (TerminalWindow *window);
 static gboolean
 terminal_window_action_copy_to_slot (TerminalWindow *window);
 static gboolean
+terminal_window_action_goto_bookmark (GtkMenuItem *item,
+                                     TerminalWindow *window);
+static gboolean
+terminal_window_action_toggle_log (GtkCheckMenuItem *item,
+                                   TerminalWindow *window);
+static void
+terminal_window_log_start (TerminalWindow *window);
+static void
+terminal_window_log_setting_changed (TerminalWindow *window);
+static void
+terminal_window_log_stop (TerminalWindow *window);
+static gboolean
+terminal_window_log_tick (gpointer user_data);
+static gboolean
 terminal_window_action_paste_from_slot (GtkRadioAction *action,
                                         TerminalWindow  *window);
 static gboolean
@@ -476,6 +490,9 @@ struct _TerminalWindowPrivate
 
   GQueue *closed_tabs_list;
 
+  /* id of the timer that writes the screen into the log */
+  guint log_timeout;
+
   gchar *font;
 
   TerminalVisibility scrollbar_visibility;
@@ -659,6 +676,16 @@ static XfceGtkActionEntry action_entries[] = {
     N_ ("Ask in which form the selection goes into the clipboard"),
     "edit-copy",
     G_CALLBACK (terminal_window_action_copy_as),
+  },
+  {
+    TERMINAL_WINDOW_ACTION_TOGGLE_LOG,
+    "<Actions>/terminal-window/toggle-log",
+    "",
+    XFCE_GTK_CHECK_MENU_ITEM,
+    N_ ("_Log Screen"),
+    N_ ("Write what is on the screen to the log file from time to time"),
+    NULL,
+    G_CALLBACK (terminal_window_action_toggle_log),
   },
   {
     TERMINAL_WINDOW_ACTION_COPY_TO_SLOT,
@@ -1430,6 +1457,11 @@ terminal_window_init (TerminalWindow *window)
 
   gtk_window_add_accel_group (GTK_WINDOW (window), window->priv->accel_group);
 
+  /* the screen log follows the setting, whatever turned it on */
+  g_signal_connect_swapped (G_OBJECT (window->priv->preferences), "notify::misc-log-screen",
+                            G_CALLBACK (terminal_window_log_setting_changed), window);
+  terminal_window_log_setting_changed (window);
+
   window->menubar = gtk_menu_bar_new ();
   terminal_window_create_menu (window, TERMINAL_WINDOW_ACTION_FILE_MENU, G_CALLBACK (terminal_window_update_file_menu));
   terminal_window_create_menu (window, TERMINAL_WINDOW_ACTION_EDIT_MENU, G_CALLBACK (terminal_window_update_edit_menu));
@@ -1580,6 +1612,8 @@ terminal_window_finalize (GObject *object)
   g_slist_free (window->priv->tabs_menu_actions);
   g_free (window->priv->font);
   g_queue_free_full (window->priv->closed_tabs_list, (GDestroyNotify) terminal_tab_attr_free);
+  if (window->priv->log_timeout != 0)
+    g_source_remove (window->priv->log_timeout);
 
   (*G_OBJECT_CLASS (terminal_window_parent_class)->finalize) (object);
 }
@@ -4123,6 +4157,150 @@ terminal_window_action_copy_as (TerminalWindow *window)
 
 
 
+/* The screen log is a snapshot now and then, each snapshot under a line with
+ * the time it was taken: what was on the screen at that moment is what the log
+ * has to say, the terminal cannot know what the commands under it meant. */
+static gboolean
+terminal_window_log_tick (gpointer user_data)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (user_data);
+  const gchar *path;
+  GError *error = NULL;
+  GFile *file;
+  GOutputStream *stream;
+  gchar *stamp;
+  GDateTime *now;
+
+  if (window->priv->active == NULL)
+    return G_SOURCE_CONTINUE;
+
+  g_object_get (G_OBJECT (window->priv->preferences), "misc-log-file", &path, NULL);
+  if (path == NULL || *path == '\0')
+    return G_SOURCE_CONTINUE;
+
+  file = g_file_new_for_path (path);
+  stream = G_OUTPUT_STREAM (g_file_append_to (file, G_FILE_CREATE_NONE, NULL, &error));
+  if (stream == NULL)
+    {
+      /* without a file there is nothing to write into: stop and say so once */
+      terminal_window_log_stop (window);
+      xfce_dialog_show_error (GTK_WINDOW (window), error,
+                              _("Failed to open the log file"));
+      g_clear_error (&error);
+      g_object_unref (file);
+
+      return G_SOURCE_REMOVE;
+    }
+
+  now = g_date_time_new_now_local ();
+  stamp = g_date_time_format (now, "%Y-%m-%d %H:%M:%S");
+  g_date_time_unref (now);
+
+  g_output_stream_write (stream, (gpointer) "--- ", 4, NULL, &error);
+  g_output_stream_write (stream, stamp, strlen (stamp), NULL, &error);
+  g_output_stream_write (stream, (gpointer) "\n", 1, NULL, &error);
+  terminal_screen_save_contents (TERMINAL_SCREEN (window->priv->active), stream, error);
+  g_output_stream_write (stream, (gpointer) "\n", 1, NULL, &error);
+
+  if (error != NULL)
+    {
+      terminal_window_log_stop (window);
+      xfce_dialog_show_error (GTK_WINDOW (window), error,
+                              _("Failed to write the log file"));
+      g_clear_error (&error);
+    }
+
+  g_free (stamp);
+  g_object_unref (stream);
+  g_object_unref (file);
+
+  return window->priv->log_timeout != 0 ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+}
+
+
+
+static void
+terminal_window_log_setting_changed (TerminalWindow *window)
+{
+  gboolean logging = FALSE;
+
+  g_object_get (G_OBJECT (window->priv->preferences), "misc-log-screen", &logging, NULL);
+
+  if (logging)
+    terminal_window_log_start (window);
+  else
+    terminal_window_log_stop (window);
+}
+
+
+static void
+terminal_window_log_start (TerminalWindow *window)
+{
+  if (window->priv->log_timeout != 0)
+    g_source_remove (window->priv->log_timeout);
+
+  window->priv->log_timeout = g_timeout_add (2000, terminal_window_log_tick, window);
+}
+
+
+
+static void
+terminal_window_log_stop (TerminalWindow *window)
+{
+  if (window->priv->log_timeout != 0)
+    {
+      g_source_remove (window->priv->log_timeout);
+      window->priv->log_timeout = 0;
+    }
+}
+
+
+
+static gboolean
+terminal_window_action_toggle_log (GtkCheckMenuItem *item,
+                                   TerminalWindow *window)
+{
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  g_object_set (G_OBJECT (window->priv->preferences),
+                "misc-log-screen", gtk_check_menu_item_get_active (item), NULL);
+
+  return TRUE;
+}
+
+
+/* A bookmark is a plain directory in the list of the setting; the menu item
+ * carries it as its own label and the path as the item data. */
+static gboolean
+terminal_window_action_goto_bookmark (GtkMenuItem *item,
+                                      TerminalWindow *window)
+{
+  const gchar *path;
+  gchar *expanded;
+  gchar *quoted;
+
+  g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
+
+  path = g_object_get_data (G_OBJECT (item), "bookmark-path");
+  if (path == NULL || *path == '\0' || window->priv->active == NULL)
+    return TRUE;
+
+  expanded = path;
+  if (expanded[0] == '~' && (expanded[1] == '/' || expanded[1] == '\0'))
+    expanded = g_strdup_printf ("%s%s", g_get_home_dir (), expanded + 1);
+
+  quoted = g_shell_quote (expanded);
+  terminal_screen_feed_text (TERMINAL_SCREEN (window->priv->active), "cd ");
+  terminal_screen_feed_text (TERMINAL_SCREEN (window->priv->active), quoted);
+  terminal_screen_feed_text (TERMINAL_SCREEN (window->priv->active), "\n");
+  g_free (quoted);
+  if (expanded != path)
+    g_free (expanded);
+
+  return TRUE;
+}
+
+
 /* Copying into a slot is a copy through the system clipboard: Vte offers no
  * other way to read the selection. The slot number moves on, so that copying
  * and pasting work in turns without picking a number first. */
@@ -5887,6 +6065,8 @@ terminal_window_update_file_menu (TerminalWindow *window,
 {
   GtkWidget *item;
   gint n_pages;
+  gchar *bookmarks;
+  gboolean logging;
 
   g_return_if_fail (TERMINAL_IS_WINDOW (window));
 
@@ -5895,6 +6075,12 @@ terminal_window_update_file_menu (TerminalWindow *window,
 
   /* determine the number of pages */
   n_pages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
+
+  g_object_get (G_OBJECT (window->priv->preferences),
+                "misc-directory-bookmarks", &bookmarks,
+                "misc-log-screen", &logging,
+                NULL);
+  g_object_set_data_full (G_OBJECT (window), "directory-bookmarks", bookmarks, g_free);
 
   terminal_window_menu_clean (GTK_MENU (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_NEW_TAB), G_OBJECT (window), GTK_MENU_SHELL (menu));
@@ -5905,6 +6091,47 @@ terminal_window_update_file_menu (TerminalWindow *window,
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
   item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_DETACH_TAB), G_OBJECT (window), GTK_MENU_SHELL (menu));
   gtk_widget_set_sensitive (item, n_pages > 1);
+  /* the bookmarks of the settings, each one a directory to cd into */
+  bookmarks = g_object_get_data (G_OBJECT (window), "directory-bookmarks");
+  if (bookmarks != NULL && *bookmarks != '\0')
+    {
+      gchar **dirs = g_strsplit (bookmarks, ":", -1);
+      GtkWidget *submenu;
+      guint i;
+
+      submenu = gtk_menu_new ();
+      for (i = 0; dirs[i] != NULL; i++)
+        {
+          gchar *name;
+          gchar *label;
+
+          if (*dirs[i] == '\0')
+            continue;
+
+          name = g_strdup_printf ("bookmark-%u", i);
+          label = g_strdup_printf ("_cd %s", dirs[i]);
+
+          item = gtk_menu_item_new_with_mnemonic (label);
+          g_object_set_data_full (G_OBJECT (item), "bookmark-path",
+                                  g_strdup (dirs[i]), g_free);
+          g_signal_connect (G_OBJECT (item), "activate",
+                            G_CALLBACK (terminal_window_action_goto_bookmark), window);
+          gtk_menu_shell_append (GTK_MENU_SHELL (submenu), item);
+
+          g_free (name);
+          g_free (label);
+        }
+      g_strfreev (dirs);
+
+      item = gtk_menu_item_new_with_mnemonic (_("Go to _Directory Bookmark"));
+      gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
+      gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+    }
+
+  item = xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_TOGGLE_LOG), G_OBJECT (window), logging, GTK_MENU_SHELL (menu));
+  g_object_unref (item);
+
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_TAB), G_OBJECT (window), GTK_MENU_SHELL (menu));
   item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_OTHER_TABS), G_OBJECT (window), GTK_MENU_SHELL (menu));
@@ -5986,6 +6213,7 @@ terminal_window_update_terminal_menu (TerminalWindow *window,
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SAVE_CONTENTS), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
+
   terminal_window_menu_add_section (window, menu, MENU_SECTION_SIGNAL, TRUE);
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_RESET), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_RESET_AND_CLEAR), G_OBJECT (window), GTK_MENU_SHELL (menu));
