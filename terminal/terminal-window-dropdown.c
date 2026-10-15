@@ -579,24 +579,16 @@ terminal_window_dropdown_activate_action (TerminalWindowDropdown *dropdown,
 {
   TerminalWindow *window = TERMINAL_WINDOW (dropdown);
   const XfceGtkActionEntry *entry;
-  GtkWidget *menu;
-  GtkWidget *item;
 
   entry = terminal_window_get_action_entry (window, action_id);
   if (entry == NULL)
     return;
 
-  /* an action entry names an action of the widget hierarchy, so the action
-   * itself is taken from a menu item built for it */
-  menu = gtk_menu_new ();
-  item = xfce_gtk_menu_item_new_from_action_entry (entry, G_OBJECT (window), GTK_MENU_SHELL (menu));
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  if (GTK_IS_MENU_ITEM (item))
-    gtk_menu_item_activate (GTK_MENU_ITEM (item));
-  G_GNUC_END_IGNORE_DEPRECATIONS
-
-  gtk_widget_destroy (menu);
+  /* The callback of the action entry is called directly.  Building a hidden
+   * menu item and activating that only worked while the window was on the
+   * screen, and the tray menu is used mostly while the panel is hidden. */
+  if (entry->callback != NULL)
+    ((void (*) (TerminalWindowDropdown *)) entry->callback) (dropdown);
 }
 
 
