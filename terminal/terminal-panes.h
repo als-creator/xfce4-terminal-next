@@ -148,6 +148,53 @@ void
 terminal_panes_focus_previous (TerminalPanes *panes);
 
 /**
+ * terminal_panes_equalize:
+ * @panes: a #TerminalPanes
+ *
+ * Puts every divider in the middle, so that after a series of resizes all the
+ * panes are of equal size again.
+ */
+void
+terminal_panes_equalize (TerminalPanes *panes);
+
+/**
+ * terminal_panes_focus_index:
+ * @panes: a #TerminalPanes
+ * @index: zero based number of the pane, in the order panes are walked
+ *
+ * Puts the focus into the pane of that number, as tmux and kitty do with their
+ * numbered panes. Nothing happens when there is no such pane.
+ */
+void
+terminal_panes_focus_index (TerminalPanes *panes,
+                            guint     index);
+
+/**
+ * terminal_panes_rotate:
+ * @panes: a #TerminalPanes
+ *
+ * Turns every divider of the split onto the other axis, which is what tmux
+ * calls rotate-layout.
+ */
+void
+terminal_panes_rotate (TerminalPanes *panes);
+
+/**
+ * terminal_panes_swap_screens:
+ * @panes: a #TerminalPanes
+ * @first: one of the screens of @panes
+ * @second: another one of the screens of @panes
+ *
+ * Puts the two screens in each others places, so that the processes of both
+ * keep running while they change what is on the screen. The focus goes to
+ * @second, as in tmux swap-pane.
+ */
+void
+terminal_panes_swap_screens (TerminalPanes *panes,
+                             TerminalScreen *first,
+                             TerminalScreen *second);
+
+/**
  * Moves the pane focus in the given direction based on pane geometry.
  */
 void
