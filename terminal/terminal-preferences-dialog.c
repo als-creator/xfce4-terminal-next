@@ -706,19 +706,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = terminal_preferences_dialog_check_button_new (_("Start _hidden"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "dropdown-start-hidden",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("The drop-down terminal window is started with the"
-                                         " session but stays out of sight: it does not cover"
-                                         " the desktop at login and appears on the shortcut."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
   /* the drop-down terminal window is controlled by a system shortcut, the
    * terminal keeps no key grab of its own: a grab is X11-only and upstream has
    * none either */

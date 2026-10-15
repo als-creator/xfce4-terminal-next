@@ -2214,14 +2214,6 @@ msgid "Start _hidden"
 msgstr "Запускать _скрытой"
 
 #: terminal/terminal-preferences-dialog.c
-msgid ""
-"The drop-down terminal window is started with the session but stays out of "
-"sight: it does not cover the desktop at login and appears on the shortcut."
-msgstr ""
-"Выпадающее окно терминала запускается вместе с сеансом, но остаётся скрытым: "
-"не закрывает "
-"рабочий стол при входе и появляется по горячей клавише."
-
 #: terminal/terminal-window-dropdown.c
 msgid "Preferences"
 msgstr "Настройки"

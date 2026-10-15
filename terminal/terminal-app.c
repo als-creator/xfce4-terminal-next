@@ -1210,21 +1210,7 @@ terminal_app_open_window (TerminalApp *app,
 
   /* show the window */
   if (attr->drop_down)
-    {
-      gboolean start_hidden;
-
-      g_object_get (G_OBJECT (app->preferences), "dropdown-start-hidden", &start_hidden, NULL);
-
-      /* A panel that the session starts (autostart) stays out of sight when
-       * the user asked for it: it waits for the shortcut instead of covering
-       * the desktop at login.  A launch by the user is not that case: a
-       * shortcut or a command line is a request to see the terminal now, and
-       * that is how upstream opens it.  DESKTOP_STARTUP_ID, which main.c
-       * turns into --startup-id, is what tells the two apart.  A reused panel
-       * is an explicit request as well. */
-      if (!start_hidden || reuse_window || attr->startup_id == NULL)
-        terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), attr->startup_id, reuse_window);
-    }
+    terminal_window_dropdown_toggle (TERMINAL_WINDOW_DROPDOWN (window), attr->startup_id, reuse_window);
   else
     {
       /* save window geometry to prevent overriding */

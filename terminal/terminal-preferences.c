@@ -72,7 +72,6 @@ enum
   PROP_DROPDOWN_KEEP_ABOVE,
   PROP_DROPDOWN_TOGGLE_FOCUS,
   PROP_DROPDOWN_KEEP_ALIVE,
-  PROP_DROPDOWN_START_HIDDEN,
   PROP_DROPDOWN_WIDTH,
   PROP_DROPDOWN_HEIGHT,
   PROP_DROPDOWN_OPACITY,
@@ -681,21 +680,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_boolean ("dropdown-keep-alive",
                           NULL,
                           "DropdownKeepAlive",
-                          TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-
-  /**
-   * TerminalPreferences:dropdown-start-hidden:
-   *
-   * Start the drop-down window out of sight: it is created with the session
-   * (autostart) but does not cover the desktop, the shortcut shows it. Does
-   * not apply when an existing panel is reused.
-   **/
-  preferences_props[PROP_DROPDOWN_START_HIDDEN] =
-    g_param_spec_boolean ("dropdown-start-hidden",
-                          NULL,
-                          "DropdownStartHidden",
                           TRUE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
