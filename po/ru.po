@@ -766,11 +766,11 @@ msgstr "Поведение"
 
 #: terminal/terminal-preferences-dialog.c:589
 msgid ""
-"Regardless of the settings below, you get the drop-down terminal window with "
-"a hotkey for \"xfce4-terminal-local --drop-down\"."
+"Regardless of the settings below, you get the drop-down terminal window if you "
+"add a hotkey for \"xfce4-terminal-local --drop-down\"."
 msgstr ""
-"Вне зависимости от настроек ниже вы получаете выпадающее окно терминала по "
-"хоткею для команды \"xfce4-terminal-local --drop-down\"."
+"Вне зависимости от настроек ниже вы получаете выпадающее окно терминала, если "
+"добавите хоткей для команды \"xfce4-terminal-local --drop-down\"."
 
 #: terminal/terminal-preferences-dialog.c:601
 msgid "_Keep window open when it loses focus"
