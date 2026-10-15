@@ -113,6 +113,7 @@ enum
   PROP_MISC_REWRAP_ON_RESIZE,
   PROP_MISC_SLIM_TABS,
   PROP_MISC_NEW_TAB_ADJACENT,
+  PROP_MISC_NEW_PANE_RATIO,
   PROP_MISC_SEARCH_DIALOG_OPACITY,
   PROP_MISC_SHOW_UNSAFE_PASTE_DIALOG,
   PROP_MISC_RIGHT_CLICK_ACTION,
@@ -960,6 +961,16 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           "MiscToolbarDefault",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-new-pane-ratio:
+   **/
+  preferences_props[PROP_MISC_NEW_PANE_RATIO] =
+    g_param_spec_uint ("misc-new-pane-ratio",
+                       NULL,
+                       "MiscNewPaneRatio",
+                       10, 90, 50,
+                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-confirm-close:
