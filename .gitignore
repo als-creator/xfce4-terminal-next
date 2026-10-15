@@ -5,8 +5,7 @@
 *.AppImage
 
 # Сборка Arch-пакета
-/pkg/
-/src/
+/pkgbuild/
 /pkg.tar.zst
 *.pkg.tar.zst
 # сгенерированный шаблон перевода

@@ -19,8 +19,8 @@
 | Тестовые бинарники | `tests/bin/` (в `.gitignore`, собираются из исходников рядом) |
 | Логи, `HOME` и pid-файлы стендов | `tests/work/` (в `.gitignore`; **не** `/tmp`: это tmpfs) |
 | Переводы | `po/ru.po`, шаблон `po/xfce4-terminal.pot` (не отслеживается) |
-| Каталог сборки Arch-пакета | домашний каталог пользователя, корень (`~`) |
-| Готовый пакет | корень репозитория (`*.pkg.tar.zst`, в `.gitignore`) |
+| Каталог сборки Arch-пакета | `pkgbuild/` в папке проекта (в `.gitignore`) |
+| Готовый пакет | домашний каталог пользователя (`~/xfce4-terminal-local-*.pkg.tar.zst`) |
 | Ничего нужного в `/tmp` | `/tmp` — tmpfs, содержимое теряется при перебо��ке |
 
 ## Сборка
@@ -57,9 +57,10 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
    `msgfmt -c --statistics -o /dev/null po/ru.po`.
 4. Если стенд не запускается в окружении (например, нет `Xvfb` или дисплея) —
    сказать об этом прямо, а не считать фичу проверенной.
-5. Пакет: `pkgrel` +1, `makepkg`, копирование в корень репозитория, старый
-   пакет удалить.
+5. Пакет: `pkgrel` +1, сборка в `pkgbuild/`, готовый пакет копируется в
+   домашний каталог пользователя, предыдущий пакет оттуда удаляется.
 6. Отчёт пользователю — по-русски, коротко: что изменилось, чем проверено,
+   и команда установки (`sudo pacman -U ~/xfce4-terminal-local-*.pkg.tar.zst`).
    что осталось непроверенным.
 
 ## Тесты
@@ -132,20 +133,33 @@ msgmerge --no-fuzzy-matching --update po/ru.po po/xfce4-terminal.pot
 
 ## Arch-пакет
 
-Каталог сборки — **домашний каталог пользователя, прямо в корне** (`~`): там
-лежат `src/`, `PKGBUILD` и готовый `*.pkg.tar.zst`. В `/tmp` не собираем: это
-tmpfs, его содержимое теряется при перезагрузке вместе с исходниками и пакетом.
+Каталог сборки — **в папке проекта**, `pkgbuild/` (в `.gitignore`): там лежат
+`src/`, `PKGBUILD`, `xfce4-terminal-local.install` и результат `makepkg`. Ни в
+`/tmp` (это tmpfs, содержимое пропадает при перезагрузке), ни в домашнем
+каталоге: домашний каталог нужен только для готового пакета, который там
+остаётся как результат.
 
 ```
-cd ~ && rm -rf src && mkdir -p src
-git -C /mnt/Data/Projects/xfce4-terminal archive HEAD | tar -C src -xf -
-cp /mnt/Data/Projects/xfce4-terminal/PKGBUILD ~/
-cp /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-local.install ~/
+cd /mnt/Data/Projects/xfce4-terminal
+mkdir -p pkgbuild/src
+git archive HEAD | tar -C pkgbuild/src -xf -
+cp PKGBUILD xfce4-terminal-local.install pkgbuild/
+cd pkgbuild
 PATH=/mnt/Data/Projects/xfce4-terminal/.venv/bin:$PATH makepkg -f --noconfirm --nodeps
+cp xfce4-terminal-local-*.pkg.tar.zst ~/
 ```
 
-`pkgrel` поднимать на единицу при каждой пересборке; готовый пакет копируется в
-корень репозитория (`/mnt/Data/Projects/xfce4-terminal/`), предыдущий удаляется.
+`pkgrel` поднимать на единицу при каждой пересборке. Готовый пакет копируется в
+**домашний каталог пользователя** (`~/xfce4-terminal-local-*.pkg.tar.zst`),
+предыдущий оттуда удаляется (перед удалением показать, что именно удаляется).
+В корень репозитория пакеты не кладём.
+
+После сборки — отчёт по-русски с командой установки:
+
+```
+sudo pacman -U ~/xfce4-terminal-local-<версия>-<pkgrel>-x86_64.pkg.tar.zst
+```
+
 Установка в `/usr/local`, бинарник `xfce4-terminal-local`, D-Bus
 `org.xfce.Terminal5Local`.
 
