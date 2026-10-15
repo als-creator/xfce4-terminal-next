@@ -625,26 +625,17 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* section: Behavior */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Behavior"));
 
-  /* The drop-down window is an explicitly started mode, so it is worth one
-   * compact line only: whatever is set below, it can always be added to the
-   * autostart by hand and given a shortcut, on any desktop. */
-  {
-    GtkWidget *info = gtk_info_bar_new ();
-    GtkWidget *info_label;
-
-    gtk_info_bar_set_message_type (GTK_INFO_BAR (info), GTK_MESSAGE_INFO);
-    gtk_info_bar_set_show_close_button (GTK_INFO_BAR (info), TRUE);
-    info_label = gtk_label_new (_("Regardless of the settings below, you can get the"
-                                  " drop-down terminal window by creating a hotkey for"
-                                  " \"xfce4-terminal-local --drop-down\"."));
-    gtk_label_set_xalign (GTK_LABEL (info_label), 0.0f);
-    gtk_label_set_line_wrap (GTK_LABEL (info_label), TRUE);
-    gtk_label_set_attributes (GTK_LABEL (info_label), terminal_pango_attr_list_small ());
-    gtk_container_add (GTK_CONTAINER (gtk_info_bar_get_content_area (GTK_INFO_BAR (info))), info_label);
-    gtk_widget_show (info_label);
-    gtk_grid_attach (GTK_GRID (grid), info, 0, row, 3, 1);
-    gtk_widget_show (info);
-  }
+  /* How the drop-down window is to be reached is worth one plain line here,
+   * and it stays a plain line: a plain label that is not a dismissible info
+   * bar, small so that it takes as little room as possible. */
+  label = gtk_label_new (_("Regardless of the settings below, you can get the"
+                           " drop-down terminal window by creating a hotkey for"
+                           " \"xfce4-terminal-local --drop-down\"."));
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
+  gtk_label_set_attributes (GTK_LABEL (label), terminal_pango_attr_list_small ());
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
+  gtk_widget_show (label);
 
   /* next row */
   row++;
