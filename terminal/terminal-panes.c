@@ -77,12 +77,54 @@ static GParamSpec *panes_properties[N_PROPERTIES];
 
 static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
 
+/* the stylesheet and the provider that carries it, shared by every pane tree */
+static const gchar *CSS_ACTIVE_PANE =
+  "paned.pane-active {"
+  "  border: 2px solid @accent_color;"
+  "}";
+static GtkCssProvider *panes_style_provider = NULL;
+
+
+
+/* The pane that has the keyboard is marked, so that it can be told from the
+ * others at a glance in a split of many panes. The mark is a style class; what
+ * it looks like is up to the stylesheet in terminal-widget.c. */
+static void
+panes_update_active_style (TerminalPanes *panes)
+{
+  GSList *screens, *lp;
+
+  screens = terminal_panes_get_screens (panes);
+  for (lp = screens; lp != NULL; lp = lp->next)
+    {
+      GtkStyleContext *context;
+
+      GtkWidget *screen = GTK_WIDGET (lp->data);
+      GtkWidget *parent = gtk_widget_get_parent (screen);
+
+      /* Vte draws its own window and a stylesheet border does not reach it, so
+       * the mark goes on the paned that holds the screen: in the tree every
+       * screen but the first one of the tab lives in a paned of its own. */
+      if (parent != NULL && GTK_IS_PANED (parent))
+        screen = parent;
+
+      context = gtk_widget_get_style_context (screen);
+      if (TERMINAL_SCREEN (lp->data) == panes->active)
+        gtk_style_context_add_class (context, "pane-active");
+      else
+        gtk_style_context_remove_class (context, "pane-active");
+    }
+  g_slist_free (screens);
+}
+
 
 
 static void
 panes_emit_active_changed (TerminalPanes *panes,
                            TerminalScreen *screen)
 {
+  panes_update_active_style (panes);
+
   g_signal_emit (panes, panes_signals[TERMINAL_PANES_ACTIVE_SCREEN_CHANGED], 0,
                  screen);
   g_object_notify (G_OBJECT (panes), "title");
@@ -171,6 +213,17 @@ terminal_panes_init (TerminalPanes *panes)
 {
   panes->root = NULL;
   panes->active = NULL;
+
+  /* the frame around the pane that has the keyboard; the stylesheet is put on
+   * the screen, because the paned it applies to is not this widget */
+  if (panes_style_provider == NULL)
+    {
+      panes_style_provider = gtk_css_provider_new ();
+      gtk_style_context_add_provider_for_screen (gtk_widget_get_screen (GTK_WIDGET (panes)),
+                                                 GTK_STYLE_PROVIDER (panes_style_provider),
+                                                 GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+      gtk_css_provider_load_from_data (panes_style_provider, CSS_ACTIVE_PANE, -1, NULL);
+    }
 }
 
 

@@ -179,6 +179,10 @@ terminal_app_finalize (GObject *object)
   TerminalApp *app = TERMINAL_APP (object);
   GSList *lp;
 
+  /* the clipboard slots live in terminal-window.c; they go away with the
+   * process, but freeing them here keeps the sanitizers quiet */
+  terminal_window_free_clipboard_slots ();
+
   /* stop accel map stuff */
   if (G_UNLIKELY (app->accel_map_load_id != 0))
     g_source_remove (app->accel_map_load_id);
