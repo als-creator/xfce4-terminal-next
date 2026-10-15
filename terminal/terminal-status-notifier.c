@@ -119,7 +119,7 @@ static const gchar terminal_status_notifier_xml[] =
   "      <arg name='idErrors' type='ai' direction='out'/>"
   "    </method>"
   "    <method name='AboutToShow'>"
-  "      <arg name='id' type='i' direction='in'/>"
+  "      <arg name='ids' type='ai' direction='in'/>"
   "      <arg name='needUpdate' type='b' direction='out'/>"
   "    </method>"
   "    <method name='AboutToShowGroup'>"
@@ -525,7 +525,13 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
     }
   else if (g_strcmp0 (method_name, "EventGroup") == 0)
     {
-      g_dbus_method_invocation_return_value (invocation, g_variant_new ("@ai", NULL, 0));
+      GVariantBuilder id_errors;
+
+      /* An empty a(isvu) came in and every event was delivered, so no id
+       * failed.  The array has to be built, not passed as NULL: "@ai" would
+       * ask for a ready made variant and abort the process on NULL. */
+      g_variant_builder_init (&id_errors, g_variant_type_checked_ ("ai"));
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(ai)", &id_errors));
     }
   else if (g_strcmp0 (method_name, "AboutToShow") == 0)
     {
@@ -533,7 +539,14 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
     }
   else if (g_strcmp0 (method_name, "AboutToShowGroup") == 0)
     {
-      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(ai@ai)", NULL, 0, NULL, 0));
+      GVariantBuilder updates;
+      GVariantBuilder id_errors;
+
+      /* the signature of the reply is (ai, ai), two arrays, not "@ai" */
+      g_variant_builder_init (&updates, g_variant_type_checked_ ("ai"));
+      g_variant_builder_init (&id_errors, g_variant_type_checked_ ("ai"));
+      g_dbus_method_invocation_return_value (invocation,
+                                             g_variant_new ("(aiai)", &updates, &id_errors));
     }
   else
     {
