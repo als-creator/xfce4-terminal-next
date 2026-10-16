@@ -148,6 +148,10 @@ typedef enum
   MENU_SECTION_PASTE = 1 << 3,
   MENU_SECTION_VIEW = 1 << 4,
   MENU_SECTION_SPLIT = 1 << 5,
+  /* the two ways of copying that are not a plain copy: they belong in the
+   * "Edit" menu and are left out of the context menu, which is about the
+   * things a right click is expected to offer */
+  MENU_SECTION_COPY_AS = 1 << 6,
 } MenuSections;
 
 typedef struct _TerminalWindowClass
