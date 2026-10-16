@@ -46,6 +46,17 @@ terminal_preferences_dialog_check_layout_on_map (GtkWidget *widget,
                                                  gpointer   data);
 static GtkWidget *
 terminal_preferences_dialog_check_button_new (const gchar *mnemonic);
+static GtkWidget *
+terminal_preferences_dialog_slot_format_radio (TerminalPreferencesDialog *dialog,
+                                               GtkWidget                *group,
+                                               const gchar              *value,
+                                               const gchar              *mnemonic,
+                                               GtkWidget                *grid,
+                                               gint                       column,
+                                               gint                       row);
+static void
+terminal_preferences_dialog_slot_format_toggled (GtkToggleButton *button,
+                                                 gpointer         user_data);
 static void
 terminal_preferences_dialog_check_buttons (GtkWidget *page,
                                             gint        built);
@@ -245,6 +256,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   GtkWidget *entry;
   GtkWidget *spin;
   GtkWidget *combo;
+  GtkWidget *first_format;
   gchar *current;
   gint row = 0;
   const gchar *text;
@@ -563,6 +575,105 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
   gtk_widget_set_tooltip_text (button, _("Show a dialog that allows one to edit text that is considered unsafe for pasting"));
   gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
+  gtk_widget_show (button);
+
+  /* the slots of their own: one check box turns the whole thing on, the rest
+   * of the section only makes sense with it and is greyed out otherwise */
+  row++;
+
+  button = terminal_preferences_dialog_check_button_new (_("_Use clipboard slots"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Keep a few slots of their own next to the system clipboard,"
+                                         " so that more than one string can be held at a time.\n"
+                                         "The slots live in memory: they are gone when the last"
+                                         " window is closed, unless they are kept in a file below."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  spin = gtk_spin_button_new_with_range (2, 6, 1);
+  gtk_widget_set_tooltip_text (spin, _("How many slots of their own the terminal keeps"
+                                      " next to the system clipboard"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots",
+                          G_OBJECT (spin), "value",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (spin), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_grid_attach (GTK_GRID (grid), spin, 1, row, 1, 1);
+  gtk_widget_show (spin);
+
+  /* what a slot takes when the selection is copied into it: one value for all
+   * slots, because a slot holds a single string */
+  row++;
+
+  label = gtk_label_new_with_mnemonic (_("Put into a slot when _copying:"));
+  gtk_widget_set_halign (label, GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 3, 1);
+  gtk_widget_show (label);
+
+  row++;
+
+  first_format = terminal_preferences_dialog_slot_format_radio (
+    dialog, NULL, "text", _("Plain _text"), grid, 0, row);
+  terminal_preferences_dialog_slot_format_radio (
+    dialog, first_format, "links", _("_Links only"), grid, 1, row);
+  terminal_preferences_dialog_slot_format_radio (
+    dialog, first_format, "html", _("_HTML"), grid, 2, row);
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), first_format);
+
+  /* which of the two directions the menus offer, and how */
+  row++;
+
+  button = terminal_preferences_dialog_check_button_new (_("Copy into _slots"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-copy",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (button), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  button = terminal_preferences_dialog_check_button_new (_("_Paste from slots"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-paste",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (button), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
+  gtk_widget_show (button);
+
+  row++;
+
+  button = terminal_preferences_dialog_check_button_new (_("_Nested submenu"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-nested",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (button), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Put the slots of each direction under a submenu of"
+                                         " their own instead of an entry per slot."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  row++;
+
+  button = terminal_preferences_dialog_check_button_new (_("Keep _slots in a file"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-save",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (button), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Write the contents of the slots to"
+                                         " \"~/.config/xfce4/terminal/clipboard-slots\" when the last"
+                                         " window is closed and read them back at the next start.\n"
+                                         "Without this the slots live only as long as the session."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
   gtk_widget_show (button);
 
 
@@ -1868,23 +1979,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  label = gtk_label_new_with_mnemonic (_("Clipboard _slots:"));
-  gtk_widget_set_halign (label, GTK_ALIGN_START);
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-
-  spin = gtk_spin_button_new_with_range (2, 9, 1);
-  gtk_widget_set_tooltip_text (spin, _("How many slots of their own the terminal keeps "
-                                      "next to the system clipboard"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots",
-                          G_OBJECT (spin), "value",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), spin);
-  gtk_grid_attach (GTK_GRID (grid), spin, 1, row, 1, 1);
-  gtk_widget_show (spin);
-
-  /* next row */
-  row++;
-
   button = terminal_preferences_dialog_check_button_new (_("_Highlight the focused split"));
   gtk_widget_set_tooltip_text (button, _("A thin accent line along the edge of the pane "
                                         "that has the keyboard, so that it can be told "
@@ -2082,6 +2176,69 @@ terminal_preferences_dialog_check_button_new (const gchar *mnemonic)
 {
   check_buttons++;
   return gtk_check_button_new_with_mnemonic (mnemonic);
+}
+
+
+
+/* One of the three forms a slot can be copied in. The group is built from
+ * left to right, the string the button stands for is kept on it, and the
+ * setting ends up holding that one plain string: a slot holds one string, so
+ * there is exactly one form to choose at a time. */
+static GtkWidget *
+terminal_preferences_dialog_slot_format_radio (TerminalPreferencesDialog *dialog,
+                                               GtkWidget                *group,
+                                               const gchar              *value,
+                                               const gchar              *mnemonic,
+                                               GtkWidget                *grid,
+                                               gint                       column,
+                                               gint                       row)
+{
+  GtkWidget *radio;
+  gchar *current = NULL;
+
+  /* a radio button is a check button by class and is counted with them */
+  check_buttons++;
+
+  radio = gtk_radio_button_new_with_mnemonic_from_widget (
+    group != NULL ? GTK_RADIO_BUTTON (group) : NULL, mnemonic);
+  g_object_set_data_full (G_OBJECT (radio), "slot-format", g_strdup (value), g_free);
+
+  /* the setting picks the button, before the handler is connected so that
+   * building the row does not write back */
+  g_object_get (G_OBJECT (dialog->preferences), "misc-clipboard-slots-format", &current, NULL);
+  if (current != NULL && g_strcmp0 (current, value) == 0)
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
+  g_free (current);
+
+  g_signal_connect (G_OBJECT (radio), "toggled",
+                    G_CALLBACK (terminal_preferences_dialog_slot_format_toggled), dialog);
+
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (radio), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+
+  gtk_grid_attach (GTK_GRID (grid), radio, column, row, 1, 1);
+  gtk_widget_show (radio);
+
+  return radio;
+}
+
+
+
+static void
+terminal_preferences_dialog_slot_format_toggled (GtkToggleButton *button,
+                                                 gpointer         user_data)
+{
+  TerminalPreferencesDialog *dialog = TERMINAL_PREFERENCES_DIALOG (user_data);
+  const gchar *value;
+
+  /* only the button that was turned on names the form */
+  if (!gtk_toggle_button_get_active (button))
+    return;
+
+  value = g_object_get_data (G_OBJECT (button), "slot-format");
+  if (value != NULL)
+    g_object_set (G_OBJECT (dialog->preferences), "misc-clipboard-slots-format", value, NULL);
 }
 
 

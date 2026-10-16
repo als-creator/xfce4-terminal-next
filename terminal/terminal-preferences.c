@@ -107,6 +107,12 @@ enum
   PROP_MISC_HIGHLIGHT_URLS,
   PROP_MISC_HIGHLIGHT_ACTIVE_PANE,
   PROP_MISC_CLIPBOARD_SLOTS,
+  PROP_MISC_CLIPBOARD_SLOTS_ENABLED,
+  PROP_MISC_CLIPBOARD_SLOTS_FORMAT,
+  PROP_MISC_CLIPBOARD_SLOTS_COPY,
+  PROP_MISC_CLIPBOARD_SLOTS_PASTE,
+  PROP_MISC_CLIPBOARD_SLOTS_NESTED,
+  PROP_MISC_CLIPBOARD_SLOTS_SAVE,
   PROP_MISC_DIRECTORY_BOOKMARKS,
   PROP_MISC_LOG_SCREEN,
   PROP_MISC_LOG_FILE,
@@ -1064,8 +1070,78 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_uint ("misc-clipboard-slots",
                        NULL,
                        "MiscClipboardSlots",
-                       2, 9, 3,
+                       2, 6, 3,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots-enabled:
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_ENABLED] =
+    g_param_spec_boolean ("misc-clipboard-slots-enabled",
+                          NULL,
+                          "MiscClipboardSlotsEnabled",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots-format:
+   *
+   * What goes into a slot when the selection is copied: "text" (the selection
+   * as it stands), "links" (only the links found in it) or "html" (the
+   * selection as HTML source). One value for all slots: a slot holds one
+   * string, so two formats at once would be meaningless.
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_FORMAT] =
+    g_param_spec_string ("misc-clipboard-slots-format",
+                         NULL,
+                         "MiscClipboardSlotsFormat",
+                         "text",
+                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots-copy:
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_COPY] =
+    g_param_spec_boolean ("misc-clipboard-slots-copy",
+                          NULL,
+                          "MiscClipboardSlotsCopy",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots-paste:
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_PASTE] =
+    g_param_spec_boolean ("misc-clipboard-slots-paste",
+                          NULL,
+                          "MiscClipboardSlotsPaste",
+                          TRUE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots-nested:
+   *
+   * Show the slots in a submenu of their own instead of one entry per slot.
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_NESTED] =
+    g_param_spec_boolean ("misc-clipboard-slots-nested",
+                          NULL,
+                          "MiscClipboardSlotsNested",
+                          FALSE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-clipboard-slots-save:
+   *
+   * Keep the slots in a file so that they survive the session. Off by
+   * default: the file lives on disk between runs, unlike the slots themselves.
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_SAVE] =
+    g_param_spec_boolean ("misc-clipboard-slots-save",
+                          NULL,
+                          "MiscClipboardSlotsSave",
+                          FALSE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-highlight-urls:
