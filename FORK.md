@@ -214,21 +214,43 @@ there and the accelerator still fires.
 
 The system clipboard holds one string. Copying a second thing before pasting
 the first one loses the first one, and that happens a lot when a path from one
-pane is needed while pasting a line from another. The fork keeps three slots of
+pane is needed while pasting a line from another. The fork keeps a few slots of
 its own next to the system clipboard:
 
 * <kbd>Ctrl+Alt+C</kbd> puts the **selection** into the current slot and moves
-  on to the next slot (three slots, in turns). With nothing selected nothing is
-  copied and the slot number does not move.
+  on to the next slot, in turns. With nothing selected nothing is copied and the
+  slot number does not move.
 * <kbd>Ctrl+Alt+V</kbd> pastes what is in the current slot. The cursor stays
   where it is, so the text lands in the command line the way an ordinary paste
   puts it there.
 
-The point of three slots is to take one string, go to another tab for a second
-one and come back: <kbd>Ctrl+Alt+C</kbd> puts the first into slot 1,
+The point of the slots is to take one string, go to another tab for a second one
+and come back: <kbd>Ctrl+Alt+C</kbd> puts the first into slot 1,
 <kbd>Ctrl+Alt+C</kbd> in the other tab puts the second into slot 2, and
 <kbd>Ctrl+Alt+V</kbd> back in the first tab brings up the first string while a
 second press brings up the second.
+
+Everything about them sits on «General» → «Clipboard», behind one checkbox:
+
+* **how many** slots there are — from 2 to 6, three by default. The count is a
+  setting and not a constant, because the useful number is the number of places
+  a string is carried between; the entries in the menu are numbered by it. Lower
+  it and the extra slots are dropped, raise it and the new ones start empty;
+* **what is put into a slot when copying**: the whole selected **text**, only
+  the **links** found in it, or its **HTML** as the application offered it. The
+  choice is one for all slots, because a slot holds one string and not a
+  document; a copy that finds nothing (no link in the selection, for instance)
+  leaves the slot as it was instead of emptying it;
+* **copying** and **pasting** are enabled apart from each other, so a shortcut
+  can be given to one direction only;
+* **a nested submenu**: with it off the slots are flat entries, one per slot,
+  with the count in the label; with it on the two directions become entries with
+  a submenu of their own, «Slot 1», «Slot 2» and so on;
+* **keep the slots in a file**: with it on the contents are written when the
+  last window is closed and read back at the next start, so the slots outlive
+  the session. The path is a field of its own, empty meaning a file under the
+  configuration directory; the file is a key file, one line per slot, so a
+  string with newlines in it comes back whole.
 
 The same two things are in the menu by name — «Copy to Clipboard Slot 1/2/3» and
 «Paste from Clipboard Slot 1/2/3» — in «Edit» and in the context menu, so a slot
@@ -236,9 +258,8 @@ can be picked without counting presses. The current slot is marked in the
 «Edit» list, and a slot that holds nothing is greyed out there.
 
 The slots belong to the application and not to a window: a string copied in one
-window is pasted in another. They live in memory, so they are gone when the
-last terminal window is closed — unlike the system clipboard, nothing of them is
-kept on disk.
+window is pasted in another. Nothing is written to disk unless the file setting
+is on.
 
 The copy goes through the system clipboard, because Vte offers no other way to
 read the selection. A trailing dot or bracket that belongs to the sentence
