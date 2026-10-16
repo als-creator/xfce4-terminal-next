@@ -4634,41 +4634,68 @@ terminal_window_add_slots_menu (TerminalWindow *window,
       gtk_widget_set_sensitive (item, terminal_screen_has_selection (window->priv->active));
     }
 
-  if (paste && nested)
+  if (nested)
     {
-      /* the numbered slots are radio actions, so that the number travels in the
-       * value of the action and one handler serves all of them */
-      GtkRadioAction *radio_action;
-      GtkWidget *slot_menu;
-
-      slot_menu = gtk_menu_new ();
-      for (i = 0; i < n; i++)
+      /* nested: the slots of each direction sit under a submenu of their own,
+       * both of them — with only the paste there was nothing to copy into a
+       * numbered slot while the setting was on */
+      if (copy)
         {
-          gchar *name = g_strdup_printf ("paste-from-slot-%u", i + 1);
-          gchar *label = g_strdup_printf (_("Slot %u"), i + 1);
+          GtkWidget *slot_menu = gtk_menu_new ();
 
-          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-          radio_action = gtk_radio_action_new (name, NULL, label, NULL, (gint) i);
-          gtk_radio_action_set_current_value (radio_action, (gint) clipboard_slot);
-          gtk_action_set_sensitive (GTK_ACTION (radio_action), clipboard_slots[i] != NULL);
-          G_GNUC_END_IGNORE_DEPRECATIONS
+          for (i = 0; i < n; i++)
+            {
+              gchar *label = g_strdup_printf (_("Slot %u"), i + 1);
 
-          g_signal_connect (G_OBJECT (radio_action), "activate",
-                            G_CALLBACK (terminal_window_action_paste_from_slot), window);
+              item = gtk_menu_item_new_with_mnemonic (label);
+              g_free (label);
+              g_object_set_data (G_OBJECT (item), "clipboard-slot", GINT_TO_POINTER ((gint) i));
+              g_signal_connect (G_OBJECT (item), "activate",
+                                G_CALLBACK (terminal_window_action_slot_item), window);
+              gtk_widget_set_sensitive (item, terminal_screen_has_selection (window->priv->active));
+              gtk_menu_shell_append (GTK_MENU_SHELL (slot_menu), item);
+            }
 
-          G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-          gtk_menu_shell_append (GTK_MENU_SHELL (slot_menu), gtk_action_create_menu_item (GTK_ACTION (radio_action)));
-          G_GNUC_END_IGNORE_DEPRECATIONS
-
-          g_object_unref (radio_action);
-          g_free (name);
-          g_free (label);
+          item = gtk_menu_item_new_with_mnemonic (_("Copy to Clipboard _Slot"));
+          gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), slot_menu);
+          gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
         }
 
-      item = gtk_menu_item_new_with_mnemonic (_("Paste from Clipboard _Slot"));
-      gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), slot_menu);
-      gtk_widget_set_sensitive (item, terminal_screen_get_input_enabled (window->priv->active));
-      gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+      if (paste)
+        {
+          /* the numbered slots are radio actions, so that the number travels in
+           * the value of the action and one handler serves all of them */
+          GtkRadioAction *radio_action;
+          GtkWidget *slot_menu = gtk_menu_new ();
+
+          for (i = 0; i < n; i++)
+            {
+              gchar *name = g_strdup_printf ("paste-from-slot-%u", i + 1);
+              gchar *label = g_strdup_printf (_("Slot %u"), i + 1);
+
+              G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+              radio_action = gtk_radio_action_new (name, NULL, label, NULL, (gint) i);
+              gtk_radio_action_set_current_value (radio_action, (gint) clipboard_slot);
+              gtk_action_set_sensitive (GTK_ACTION (radio_action), clipboard_slots[i] != NULL);
+              G_GNUC_END_IGNORE_DEPRECATIONS
+
+              g_signal_connect (G_OBJECT (radio_action), "activate",
+                                G_CALLBACK (terminal_window_action_paste_from_slot), window);
+
+              G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+              gtk_menu_shell_append (GTK_MENU_SHELL (slot_menu), gtk_action_create_menu_item (GTK_ACTION (radio_action)));
+              G_GNUC_END_IGNORE_DEPRECATIONS
+
+              g_object_unref (radio_action);
+              g_free (name);
+              g_free (label);
+            }
+
+          item = gtk_menu_item_new_with_mnemonic (_("Paste from Clipboard _Slot"));
+          gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), slot_menu);
+          gtk_widget_set_sensitive (item, terminal_screen_get_input_enabled (window->priv->active));
+          gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+        }
     }
   else
     {
