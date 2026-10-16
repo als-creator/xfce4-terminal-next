@@ -30,6 +30,9 @@ G_BEGIN_DECLS
 void
 terminal_window_free_clipboard_slots (void);
 
+void
+terminal_window_clipboard_slots_load (void);
+
 typedef struct _TerminalWindow TerminalWindow;
 
 #define TERMINAL_TYPE_WINDOW (terminal_window_get_type ())

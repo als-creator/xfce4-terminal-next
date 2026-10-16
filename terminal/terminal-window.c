@@ -27,6 +27,7 @@
 #include <unistd.h>
 #endif
 
+#include <glib/gstdio.h>
 #ifdef ENABLE_X11
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
@@ -146,24 +147,166 @@ terminal_window_clipboard_slots (void)
   g_object_unref (preferences);
   n = CLAMP (n, (guint) CLIPBOARD_SLOTS_MIN, (guint) CLIPBOARD_SLOTS_MAX);
 
-  if (clipboard_slots == NULL || clipboard_slots_n != n)
+  if (clipboard_slots == NULL)
+    {
+      /* the array is born empty; every cell is a string of its own and has to
+       * start as one, whatever the count happens to be */
+      clipboard_slots = g_new0 (gchar *, n);
+      clipboard_slots_n = n;
+    }
+  else if (clipboard_slots_n != n)
     {
       /* a smaller number gives up the tail: realloc would drop the pointer
        * and nothing would ever free that string */
-      if (clipboard_slots != NULL)
-        for (i = n; i < clipboard_slots_n; i++)
-          g_clear_pointer (&clipboard_slots[i], g_free);
+      for (i = n; i < clipboard_slots_n; i++)
+        g_clear_pointer (&clipboard_slots[i], g_free);
 
       clipboard_slots = g_realloc (clipboard_slots, n * sizeof (gchar *));
       for (i = clipboard_slots_n; i < n; i++)
         clipboard_slots[i] = NULL;
       clipboard_slots_n = n;
-
-      if (clipboard_slot >= n)
-        clipboard_slot = 0;
     }
 
+  if (clipboard_slot >= n)
+    clipboard_slot = 0;
+
   return n;
+}
+
+
+
+/* The file the slots are kept in: what the setting says, and the default path
+ * when it says nothing. A path typed as "~/..." is opened under the home
+ * directory, because nothing else would expand it and the working directory
+ * of a terminal started from the menu is not a place anyone chooses. */
+static gchar *
+terminal_window_clipboard_slots_file (void)
+{
+  TerminalPreferences *preferences = terminal_preferences_get ();
+  gchar *file = NULL;
+  gchar *path = NULL;
+
+  g_object_get (G_OBJECT (preferences), "misc-clipboard-slots-file", &file, NULL);
+  g_object_unref (preferences);
+
+  if (file == NULL || *file == '\0')
+    path = terminal_preferences_clipboard_slots_default_file ();
+  else if (g_str_has_prefix (file, "~/"))
+    path = g_build_filename (g_get_home_dir (), file + 2, NULL);
+  else
+    path = g_strdup (file);
+
+  g_free (file);
+
+  return path;
+}
+
+
+
+/* The slots are read once, when the application starts: what the last session
+ * left behind. A file that is not there is the normal case of a first run, and
+ * a slot the file does not mention stays empty.
+ *
+ * Reading it later, when the first menu is built, would not do: a session that
+ * never opens a menu would never read the file, and the write at the end would
+ * then wipe what the file held. */
+void
+terminal_window_clipboard_slots_load (void)
+{
+  GKeyFile *key_file;
+  GError *error = NULL;
+  guint n;
+  guint i;
+  gchar *path;
+
+  /* the array has to exist before the file has anywhere to land */
+  n = terminal_window_clipboard_slots ();
+
+  path = terminal_window_clipboard_slots_file ();
+  key_file = g_key_file_new ();
+
+  if (!g_key_file_load_from_file (key_file, path, G_KEY_FILE_NONE, &error))
+    {
+      g_clear_error (&error);
+      goto out;
+    }
+
+  for (i = 0; i < n; i++)
+    {
+      gchar *key = g_strdup_printf ("slot-%u", i + 1);
+      gchar *text = g_key_file_get_string (key_file, "Slots", key, NULL);
+
+      /* an empty line is not a slot worth keeping: it would grey out the
+       * entry the same way an empty slot does, for nothing */
+      if (text != NULL && *text != '\0')
+        {
+          g_free (clipboard_slots[i]);
+          clipboard_slots[i] = text;
+        }
+      else
+        {
+          g_free (text);
+        }
+
+      g_free (key);
+    }
+
+out:
+  g_key_file_free (key_file);
+  g_free (path);
+}
+
+
+
+/* Called once, when the last window goes: the slots are of the application
+ * and not of a window, so there is no window left to hold them. */
+void
+terminal_window_clipboard_slots_save (void)
+{
+  GKeyFile *key_file;
+  GError *error = NULL;
+  gchar *path;
+  gchar *directory;
+  gchar *data;
+  gsize length;
+  guint i;
+
+  if (!terminal_window_clipboard_slots_enabled ()
+      || !terminal_window_clipboard_slots_flag ("misc-clipboard-slots-save"))
+    return;
+
+  key_file = g_key_file_new ();
+
+  for (i = 0; i < clipboard_slots_n; i++)
+    {
+      gchar *key;
+
+      if (clipboard_slots[i] == NULL || *clipboard_slots[i] == '\0')
+        continue;
+
+      key = g_strdup_printf ("slot-%u", i + 1);
+      g_key_file_set_string (key_file, "Slots", key, clipboard_slots[i]);
+      g_free (key);
+    }
+
+  data = g_key_file_to_data (key_file, &length, NULL);
+  path = terminal_window_clipboard_slots_file ();
+
+  /* a first run has no directory to write into, and g_file_set_contents does
+   * not make one: it would fail with "No such file or directory" */
+  directory = g_path_get_dirname (path);
+  g_mkdir_with_parents (directory, 0755);
+  g_free (directory);
+
+  /* a failure here is not worth a dialog: the terminal is on its way out and
+   * the reason is in the journal */
+  if (!g_file_set_contents (path, data, (gssize) length, &error))
+    g_warning ("Failed to write the clipboard slots to %s: %s", path, error->message);
+
+  g_clear_error (&error);
+  g_free (data);
+  g_free (path);
+  g_key_file_free (key_file);
 }
 
 
@@ -171,6 +314,10 @@ void
 terminal_window_free_clipboard_slots (void)
 {
   guint i;
+
+  /* the last moment the slots exist: what was copied is written out before
+   * the memory goes, if the setting asked for a file */
+  terminal_window_clipboard_slots_save ();
 
   /* the array only appears when a slot is touched, and the application may be
    * finalized before that ever happened */

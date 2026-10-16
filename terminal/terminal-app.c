@@ -166,6 +166,10 @@ terminal_app_init (TerminalApp *app)
 
   terminal_app_update_accels (app);
 
+  /* the slots of the last session are read before any window asks for them:
+   * a window that never opens a menu must not lose what the file holds */
+  terminal_window_clipboard_slots_load ();
+
   /* schedule accel map load and update windows when finished */
   app->accel_map_load_id = gdk_threads_add_idle_full (G_PRIORITY_LOW, terminal_app_accel_map_load, app,
                                                       terminal_app_update_windows_accels);
