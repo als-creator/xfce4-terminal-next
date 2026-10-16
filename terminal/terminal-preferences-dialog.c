@@ -741,16 +741,21 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
       dialog->shortcut_check = button;
       {
         /* Everything this check box cannot say in one line lives in the
-         * tooltip: that keeps the tab short and the text readable. */
-        gchar *tip = g_strdup_printf (_("Show or hide the drop-down terminal window with a"
-                                        " shortcut of the desktop (F1 by default); the desktop"
-                                        " handles the key, so this works in an X11 session as"
-                                        " well as in a Wayland one. Without a system shortcut"
-                                        " the drop-down terminal window is only shown by"
-                                        " \"xfce4-terminal-local --drop-down\"; a shortcut assigned"
-                                        " by hand in the keyboard shortcut settings works as well"
-                                        " and is recognised here."),
-                                      TERMINAL_SHORTCUT_COMMAND);
+         * tooltip: that keeps the tab short and the text readable. The text is
+         * a plain list of what the check box does and what it does not do, so
+         * that it says exactly where its reach ends. */
+        gchar *tip = g_strdup_printf (
+          _("Show or hide the drop-down terminal window with a shortcut of the desktop.\n"
+            "\n"
+            "What it does:\n"
+            "• binds the key you press to \"%s\";\n"
+            "• the desktop handles the key, so it works on X11 and Wayland alike;\n"
+            "• toggles the window: hidden becomes shown, shown becomes hidden.\n"
+            "\n"
+            "What it does not do:\n"
+            "• does not grab the key itself; the terminal keeps no shortcut of its own;\n"
+            "• without a shortcut the window is opened by the command alone."),
+          TERMINAL_SHORTCUT_COMMAND);
         gtk_widget_set_tooltip_text (button, tip);
         g_free (tip);
       }
