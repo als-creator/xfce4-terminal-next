@@ -697,7 +697,8 @@ terminal_window_update_tabs_menu (TerminalWindow *window,
                                   GtkWidget *menu);
 static void
 terminal_window_add_slots_menu (TerminalWindow *window,
-                                GtkWidget     *menu);
+                                GtkWidget     *menu,
+                                gboolean       with_hotkey);
 static gboolean
 terminal_window_action_slot_item (GtkMenuItem   *item,
                                  TerminalWindow *window);
@@ -3263,6 +3264,9 @@ terminal_window_get_context_menu (TerminalScreen *screen,
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (context_menu));
 
   terminal_window_menu_add_section (window, context_menu, MENU_SECTION_COPY | MENU_SECTION_PASTE, FALSE);
+  /* in the context menu every slot is named, so the entry without a number is
+   * left out: there the numbered ones say the same thing better */
+  terminal_window_add_slots_menu (window, context_menu, FALSE);
 
   xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SHOW_MENUBAR), G_OBJECT (window), gtk_widget_is_visible (window->menubar), GTK_MENU_SHELL (context_menu));
   xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_FULLSCREEN), G_OBJECT (window), window->is_fullscreen, GTK_MENU_SHELL (context_menu));
@@ -4596,7 +4600,8 @@ terminal_window_action_goto_bookmark (GtkMenuItem *item,
  * the slots of each direction under a submenu, the way they were before. */
 static void
 terminal_window_add_slots_menu (TerminalWindow *window,
-                                GtkWidget     *menu)
+                                GtkWidget     *menu,
+                                gboolean       with_hotkey)
 {
   GtkWidget *item;
   guint n;
@@ -4620,8 +4625,10 @@ terminal_window_add_slots_menu (TerminalWindow *window,
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
 
   /* the hotkey that walks the slots one press at a time: it is in the menu
-   * with its accelerator, whichever layout the slots themselves take */
-  if (copy)
+   * with its accelerator, whichever layout the slots themselves take. In the
+   * context menu it is left out: there the slots are named one by one, and a
+   * second way of saying the same thing above them is only noise. */
+  if (copy && with_hotkey)
     {
       item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_COPY_TO_SLOT), G_OBJECT (window), GTK_MENU_SHELL (menu));
       gtk_widget_set_sensitive (item, terminal_screen_has_selection (window->priv->active));
@@ -6525,10 +6532,6 @@ terminal_window_menu_add_section (TerminalWindow *window,
       item = xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_PASTE_SELECTION), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       gtk_widget_set_sensitive (item, terminal_screen_get_input_enabled (window->priv->active));
 
-      /* the slots of their own are a thing beside the two pastes and not a
-       * third kind of paste: they are added to the menu that holds the
-       * "Copy" and "Paste" submenus, by the one builder both menus share */
-      terminal_window_add_slots_menu (window, menu);
     }
 
   if (sections & MENU_SECTION_SPLIT)
@@ -6649,6 +6652,8 @@ terminal_window_update_edit_menu (TerminalWindow *window,
 
   terminal_window_menu_clean (GTK_MENU (menu));
   terminal_window_menu_add_section (window, menu, MENU_SECTION_COPY | MENU_SECTION_COPY_AS | MENU_SECTION_PASTE, FALSE);
+  /* in the "Edit" menu the slots follow the hotkey that walks them */
+  terminal_window_add_slots_menu (window, menu, TRUE);
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SELECT_ALL), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_COPY_INPUT), G_OBJECT (window), GTK_MENU_SHELL (menu));
