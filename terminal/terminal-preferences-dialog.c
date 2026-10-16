@@ -258,6 +258,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   GtkWidget *combo;
   GtkWidget *first_format;
   gchar *current;
+  gchar *default_file;
   gint row = 0;
   const gchar *text;
 
@@ -669,12 +670,40 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
                           G_OBJECT (button), "sensitive",
                           G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Write the contents of the slots to"
-                                         " \"~/.config/xfce4/terminal/clipboard-slots\" when the last"
-                                         " window is closed and read them back at the next start.\n"
+  gtk_widget_set_tooltip_text (button, _("Write the contents of the slots to the file on the right"
+                                         " when the last window is closed and read them back at the"
+                                         " next start.\n"
                                          "Without this the slots live only as long as the session."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
+
+  label = gtk_label_new_with_mnemonic (_("_File:"));
+  gtk_widget_set_halign (label, GTK_ALIGN_START);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (label), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_grid_attach (GTK_GRID (grid), label, 1, row, 1, 1);
+  gtk_widget_show (label);
+
+  entry = gtk_entry_new ();
+  gtk_widget_set_hexpand (entry, TRUE);
+  /* the dialog is not resizable, so an entry grows only as far as its own
+   * minimum: enough for a path to be readable without resizing the window */
+  gtk_widget_set_size_request (entry, 260, -1);
+  default_file = terminal_preferences_clipboard_slots_default_file ();
+  gtk_entry_set_placeholder_text (GTK_ENTRY (entry), default_file);
+  g_free (default_file);
+  gtk_widget_set_tooltip_text (entry, _("An empty field means the default path shown here."
+                                        " The file is written once the last window is closed."));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-file",
+                          G_OBJECT (entry), "text",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
+                          G_OBJECT (entry), "sensitive",
+                          G_BINDING_SYNC_CREATE);
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
+  gtk_grid_attach (GTK_GRID (grid), entry, 2, row, 1, 1);
+  gtk_widget_show (entry);
 
 
 

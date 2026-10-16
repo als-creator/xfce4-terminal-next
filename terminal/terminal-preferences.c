@@ -113,6 +113,7 @@ enum
   PROP_MISC_CLIPBOARD_SLOTS_PASTE,
   PROP_MISC_CLIPBOARD_SLOTS_NESTED,
   PROP_MISC_CLIPBOARD_SLOTS_SAVE,
+  PROP_MISC_CLIPBOARD_SLOTS_FILE,
   PROP_MISC_DIRECTORY_BOOKMARKS,
   PROP_MISC_LOG_SCREEN,
   PROP_MISC_LOG_FILE,
@@ -1144,6 +1145,19 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
+   * TerminalPreferences:misc-clipboard-slots-file:
+   *
+   * Where the slots are written when saving is on. An empty string means the
+   * default path, so that the field can be cleared instead of corrected.
+   **/
+  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_FILE] =
+    g_param_spec_string ("misc-clipboard-slots-file",
+                         NULL,
+                         "MiscClipboardSlotsFile",
+                         "",
+                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
    * TerminalPreferences:misc-highlight-urls:
    **/
   preferences_props[PROP_MISC_HIGHLIGHT_URLS] =
@@ -1790,6 +1804,25 @@ terminal_preferences_get (void)
     }
 
   return preferences;
+}
+
+
+
+/**
+ * terminal_preferences_clipboard_slots_default_file:
+ *
+ * Where the clipboard slots are written when the user did not ask for another
+ * place: a stable file under the configuration directory of the user. Used as
+ * the placeholder of the path entry, so that an empty field still shows where
+ * the slots go.
+ *
+ * Return value: the path, to be freed with g_free().
+ **/
+gchar *
+terminal_preferences_clipboard_slots_default_file (void)
+{
+  return g_build_filename (g_get_user_config_dir (), "xfce4", "terminal",
+                           "clipboard-slots", NULL);
 }
 
 

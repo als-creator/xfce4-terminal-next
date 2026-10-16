@@ -99,6 +99,9 @@ typedef enum /*< enum,prefix=TERMINAL_RIGHT_CLICK_ACTION >*/
 TerminalPreferences *
 terminal_preferences_get (void);
 
+gchar *
+terminal_preferences_clipboard_slots_default_file (void);
+
 gboolean
 terminal_preferences_get_color (TerminalPreferences *preferences,
                                 const gchar *property,
