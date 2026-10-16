@@ -293,6 +293,11 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   notebook = gtk_notebook_new ();
   gtk_container_set_border_width (GTK_CONTAINER (notebook), 6);
   gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), notebook, TRUE, TRUE, 0);
+  /* The dialog is not resizable, so with enough tabs they stop fitting into
+   * its width and the last ones are dropped without a trace. A scrollable
+   * notebook keeps every tab reachable: those that do not fit hide behind the
+   * arrows instead of going away. Set once the pages are all in. */
+  gtk_notebook_set_scrollable (GTK_NOTEBOOK (notebook), TRUE);
   gtk_widget_show (notebook);
 
 
@@ -560,6 +565,82 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_widget_show (button);
 
 
+  /* section: tmux launch options */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux Launch Options"));
+  label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+  gtk_widget_show (label);
+
+  entry = gtk_entry_new ();
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
+                          G_OBJECT (entry), "text",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by Ctrl+Shift+M and the"
+                                        " \"Start tmux Session\" menu entry.\n"
+                                        "The default attaches to an existing session, which is"
+                                        " what makes it survive an SSH disconnect."));
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
+  gtk_widget_set_hexpand (entry, TRUE);
+  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
+  gtk_widget_show (entry);
+
+
+
+  /*
+   * Session and Memory
+   */
+  label = gtk_label_new (_("Session & Memory"));
+  if (vbox != NULL)
+    {
+      terminal_preferences_dialog_check_buttons (vbox, check_buttons);
+      check_buttons = 0;
+    }
+
+  vbox = g_object_new (GTK_TYPE_BOX, "orientation", GTK_ORIENTATION_VERTICAL, "border-width", 12, "spacing", 18, NULL);
+  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), vbox, label);
+  gtk_widget_show (label);
+  gtk_widget_show (vbox);
+
+  /* section: Session */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Session"));
+
+  button = terminal_preferences_dialog_check_button_new (_("Save the session with the _split layout"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-panes-layouts-enabled",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Keeps between runs: split layout of every tab,"
+                                         " working directory of every pane. Programs that are"
+                                         " running keep living when a tmux session is started"
+                                         " from the Terminal menu."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  /* next row */
+  row++;
+
+  /* the two that belong together stand next to each other: a tab is made of a
+   * split, so which tab and which pane are in front is one question */
+  button = terminal_preferences_dialog_check_button_new (_("Bring back the _active tab"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-session-active-tab",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Puts the tab that was in front back in front when"
+                                         " the terminal starts."));
+  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
+  gtk_widget_show (button);
+
+  button = terminal_preferences_dialog_check_button_new (_("Bring back the _active pane"));
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-session-active-pane",
+                          G_OBJECT (button), "active",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_widget_set_tooltip_text (button, _("Puts the pane that was in use inside the split tab"
+                                         " back in use when the terminal starts."));
+  gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
+  gtk_widget_show (button);
+
+
+
+
   /* section: Clipboard */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Clipboard"));
 
@@ -704,68 +785,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
   gtk_grid_attach (GTK_GRID (grid), entry, 2, row, 1, 1);
   gtk_widget_show (entry);
-
-
-
-  /* section: tmux launch options */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux Launch Options"));
-  label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-  gtk_widget_show (label);
-
-  entry = gtk_entry_new ();
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
-                          G_OBJECT (entry), "text",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by Ctrl+Shift+M and the"
-                                        " \"Start tmux Session\" menu entry.\n"
-                                        "The default attaches to an existing session, which is"
-                                        " what makes it survive an SSH disconnect."));
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
-  gtk_widget_set_hexpand (entry, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
-  gtk_widget_show (entry);
-
-
-
-  /* section: Session */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Session"));
-
-  button = terminal_preferences_dialog_check_button_new (_("Save the session with the _split layout"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-panes-layouts-enabled",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Keeps between runs: split layout of every tab,"
-                                         " working directory of every pane. Programs that are"
-                                         " running keep living when a tmux session is started"
-                                         " from the Terminal menu."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
-  button = terminal_preferences_dialog_check_button_new (_("Bring back the _active tab"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-session-active-tab",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Puts the tab that was in front back in front when"
-                                         " the terminal starts."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
-  button = terminal_preferences_dialog_check_button_new (_("Bring back the _active pane"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-session-active-pane",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Puts the pane that was in use inside the split tab"
-                                         " back in use when the terminal starts."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
 
 
 
