@@ -4125,19 +4125,13 @@ terminal_window_action_copy_html (TerminalWindow *window)
 
 /* Vte offers no way to read the selection apart from putting it into the
  * clipboard, so the links of the selection are taken from there: the selection
- * is copied as text, read back and replaced by the links it holds. */
-static void
-terminal_window_copy_links (TerminalWindow *window)
+ * is copied as text and read back. */
+static gchar *
+terminal_window_extract_links (const gchar *text)
 {
-  GtkClipboard *clipboard;
   static GRegex *link_regex;
-  gchar *text;
-  GString *links;
   GMatchInfo *match;
-
-  clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
-  terminal_screen_copy_clipboard (window->priv->active);
-  text = gtk_clipboard_wait_for_text (clipboard);
+  GString *links;
 
   if (link_regex == NULL)
     link_regex = g_regex_new ("(https?|ftps?|file|ssh|sftp|git)://[^[:space:]\"'<>]+",
@@ -4168,9 +4162,34 @@ terminal_window_copy_links (TerminalWindow *window)
     }
   g_match_info_free (match);
 
-  if (links->len > 0)
+  if (links->len == 0)
     {
-      gtk_clipboard_set_text (clipboard, links->str, (gint) links->len);
+      g_string_free (links, TRUE);
+      return NULL;
+    }
+
+  return g_string_free (links, FALSE);
+}
+
+
+
+static void
+terminal_window_copy_links (TerminalWindow *window)
+{
+  GtkClipboard *clipboard;
+  gchar *links;
+  gchar *text;
+
+  clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
+  terminal_screen_copy_clipboard (window->priv->active);
+  text = gtk_clipboard_wait_for_text (clipboard);
+  links = terminal_window_extract_links (text);
+  g_free (text);
+
+  if (links != NULL)
+    {
+      gtk_clipboard_set_text (clipboard, links, (gint) strlen (links));
+      g_free (links);
     }
   else
     {
@@ -4186,9 +4205,6 @@ terminal_window_copy_links (TerminalWindow *window)
       gtk_dialog_run (GTK_DIALOG (dialog));
       gtk_widget_destroy (dialog);
     }
-
-  g_string_free (links, TRUE);
-  g_free (text);
 }
 
 
@@ -4481,28 +4497,102 @@ terminal_window_add_slots_menu (TerminalWindow *window,
 
 
 /* Copying into a slot is a copy through the system clipboard: Vte offers no
- * other way to read the selection. The slot number moves on, so that copying
- * and pasting work in turns without picking a number first. */
-static void
+ * other way to read the selection. The form the slot keeps is one setting for
+ * all of them: a slot holds one string, so a text and an HTML form of the
+ * same selection would fight over the same cell. */
+static gchar *
+terminal_window_slot_clipboard_html (GtkClipboard *clipboard)
+{
+  GtkSelectionData *selection_data;
+  const guchar *bytes;
+  gint length;
+  gchar *html = NULL;
+
+  /* Vte puts the HTML form under a target of its own, which is not the text
+   * that gtk_clipboard_wait_for_text () reads back */
+  selection_data = gtk_clipboard_wait_for_contents (clipboard,
+                                                    gdk_atom_intern_static_string ("text/html"));
+  if (selection_data == NULL)
+    return NULL;
+
+  bytes = gtk_selection_data_get_data_with_length (selection_data, &length);
+  if (bytes != NULL && length > 0)
+    {
+      /* the bytes are not terminated, so one more is copied in */
+      html = g_malloc ((gsize) length + 1);
+      memcpy (html, bytes, (gsize) length);
+      html[length] = '\0';
+    }
+
+  gtk_selection_data_free (selection_data);
+
+  return html;
+}
+
+
+
+/* Returns %TRUE when the slot was written. A selection that has nothing in the
+ * form the setting asks for leaves the slot as it was: a slot is not a place
+ * to lose a string to a failed copy. */
+static gboolean
 terminal_window_slot_copy (TerminalWindow *window,
-                           guint            slot)
+                           guint           slot)
 {
   GtkClipboard *clipboard;
+  TerminalPreferences *preferences;
+  gchar *format = NULL;
   gchar *text;
 
   if (slot >= terminal_window_clipboard_slots () || !terminal_screen_has_selection (window->priv->active))
-    return;
+    return FALSE;
 
   clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
-  terminal_screen_copy_clipboard (window->priv->active);
-  text = gtk_clipboard_wait_for_text (clipboard);
+  preferences = terminal_preferences_get ();
+  g_object_get (G_OBJECT (preferences), "misc-clipboard-slots-format", &format, NULL);
+  g_object_unref (preferences);
 
-  if (text != NULL)
+  if (g_strcmp0 (format, "html") == 0)
     {
-      g_free (clipboard_slots[slot]);
-      clipboard_slots[slot] = text;
+      terminal_screen_copy_clipboard_html (window->priv->active);
+      text = terminal_window_slot_clipboard_html (clipboard);
+
+      /* a selection Vte refuses to turn into HTML is worth a slot as text
+       * rather than no slot at all */
+      if (text == NULL)
+        {
+          terminal_screen_copy_clipboard (window->priv->active);
+          text = gtk_clipboard_wait_for_text (clipboard);
+        }
     }
+  else
+    {
+      terminal_screen_copy_clipboard (window->priv->active);
+      text = gtk_clipboard_wait_for_text (clipboard);
+
+      if (g_strcmp0 (format, "links") == 0)
+        {
+          /* a selection without a link gives NULL and the slot stays as it
+           * was */
+          gchar *links = terminal_window_extract_links (text);
+          g_free (text);
+          text = links;
+        }
+    }
+
+  g_free (format);
+
+  if (text == NULL || *text == '\0')
+    {
+      g_free (text);
+      return FALSE;
+    }
+
+  g_free (clipboard_slots[slot]);
+  clipboard_slots[slot] = text;
+
+  return TRUE;
 }
+
 
 
 static gboolean
@@ -4513,8 +4603,10 @@ terminal_window_action_copy_to_slot (TerminalWindow *window)
   if (!terminal_window_clipboard_slots_enabled () || !terminal_window_clipboard_slots_copy ())
     return TRUE;
 
-  terminal_window_slot_copy (window, clipboard_slot);
-  clipboard_slot = (clipboard_slot + 1) % terminal_window_clipboard_slots ();
+  /* the number moves on only for a copy that happened: otherwise the next
+   * press would land in a slot the user never saw filled */
+  if (terminal_window_slot_copy (window, clipboard_slot))
+    clipboard_slot = (clipboard_slot + 1) % terminal_window_clipboard_slots ();
 
   return TRUE;
 }
