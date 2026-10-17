@@ -1,4 +1,4 @@
-# xfce4-terminal-local
+# xfce4-terminal-next
 
 A fork of [xfce4-terminal](https://gitlab.xfce.org/apps/xfce4-terminal) with
 split panes and a few fixes. Everything is built on top
@@ -138,7 +138,7 @@ Wayland client never sees the keys of other windows — and it was the only X11
 piece the fork added to the panel. The grab is gone:
 
 * *Drop-down → Use a system shortcut to show and hide the panel* registers
-  `xfce4-terminal-local --drop-down` as an application shortcut in the
+  `xfce4-terminal-next --drop-down` as an application shortcut in the
   `xfce4-keyboard-shortcuts` channel, exactly what *Settings → Keyboard
   Shortcuts → Application Shortcuts* writes, and *Change shortcut…* asks for
   the combination in a dialog of its own (a Wayland client cannot grab keys,
@@ -161,7 +161,7 @@ removes the double toggle a grab plus a system shortcut would produce.
 
 ### Showing and hiding the panel over D-Bus
 
-* `org.xfce.Terminal5Local.ToggleDropDown` (new) shows or hides the panel in
+* `org.xfce.TerminalNextLocal.ToggleDropDown` (new) shows or hides the panel in
   the running instance, creating it if it does not exist yet, without starting
   a new process. It is what a compositor or desktop shortcut should call, where
   running the binary again would be the alternative. Unlike `Launch` it does
@@ -306,18 +306,18 @@ Compare the fork with upstream:
 git diff master...feature/split-panes
 ```
 
-or on GitHub: <https://github.com/als-creator/xfce4-terminal-local/compare/master...feature/split-panes>
+or on GitHub: <https://github.com/als-creator/xfce4-terminal-next/compare/master...feature/split-panes>
 
 ## Building
 
 Arch, with the package in this repository's root:
 
 ```
-sudo pacman -U xfce4-terminal-local-<version>-x86_64.pkg.tar.zst
+sudo pacman -U xfce4-terminal-next-<version>-x86_64.pkg.tar.zst
 ```
 
-The package installs to `/usr/local`, the binary is `xfce4-terminal-local`, the
-D-Bus name is `org.xfce.Terminal5Local`, and removing the package removes
+The package installs to `/usr/local`, the binary is `xfce4-terminal-next`, the
+D-Bus name is `org.xfce.TerminalNextLocal`, and removing the package removes
 everything again.
 
 From source:

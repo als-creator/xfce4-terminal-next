@@ -933,10 +933,10 @@ msgstr "Поведение"
 #: terminal/terminal-preferences-dialog.c:894
 msgid ""
 "Regardless of the settings below, you get the drop-down terminal window if "
-"you add a hotkey for \"xfce4-terminal-local --drop-down\"."
+"you add a hotkey for \"xfce4-terminal-next --drop-down\"."
 msgstr ""
 "Вне зависимости от настроек ниже вы получаете выпадающее окно терминала, "
-"если добавите хоткей для команды \"xfce4-terminal-local --drop-down\"."
+"если добавите хоткей для команды \"xfce4-terminal-next --drop-down\"."
 
 #: terminal/terminal-preferences-dialog.c:906
 msgid "_Keep window open when it loses focus"
@@ -2573,7 +2573,7 @@ msgstr "terminal;settings;preferences;configuration;configure;терминал;�
 #~ "Show or hide the drop-down terminal window with a shortcut of the desktop "
 #~ "(F1 by default); the desktop handles the key, so this works in an X11 "
 #~ "session as well as in a Wayland one. Without a system shortcut the drop-"
-#~ "down terminal window is only shown by \"xfce4-terminal-local --drop-"
+#~ "down terminal window is only shown by \"xfce4-terminal-next --drop-"
 #~ "down\"; a shortcut assigned by hand in the keyboard shortcut settings "
 #~ "works as well and is recognised here."
 #~ msgstr ""
@@ -2583,7 +2583,7 @@ msgstr "terminal;settings;preferences;configuration;configure;терминал;�
 #~ "клавиши выпадающее окно терминала показывается только командой \"xfce4-"
 #~ "terminal-local --drop-down\"; назначенная вручную в настройках клавиатуры "
 #~ "горячая клавиша тоже работает и распознаётся здесь.Без системной горячей "
-#~ "клавиши панель показывается только командой «xfce4-terminal-local --drop-"
+#~ "клавиши панель показывается только командой «xfce4-terminal-next --drop-"
 #~ "down»; клавиша, назначенная вручную в настройках горячих клавиш, тоже "
 #~ "работает и распознаётся здесь."
 

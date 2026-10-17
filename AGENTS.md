@@ -1,4 +1,4 @@
-# xfce4-terminal-local — рабочий процесс
+# xfce4-terminal-next — рабочий процесс
 
 Форк xfce4-terminal: нативные сплиты, панель, tmux, выпадающий
 терминал. Ветка форка — `feature/split-panes`, ветки для возможных PR —
@@ -20,7 +20,7 @@
 | Логи, `HOME` и pid-файлы стендов | `tests/work/` (в `.gitignore`; **не** `/tmp`: это tmpfs) |
 | Переводы | `po/ru.po`, шаблон `po/xfce4-terminal.pot` (не отслеживается) |
 | Каталог сборки Arch-пакета | `pkgbuild/` — **в папке проекта** (в `.gitignore`) |
-| Готовый пакет | **в папке проекта**, корень репозитория (`xfce4-terminal-local-*.pkg.tar.zst`, в `.gitignore`) |
+| Готовый пакет | **в папке проекта**, корень репозитория (`xfce4-terminal-next-*.pkg.tar.zst`, в `.gitignore`) |
 | Сводка по задаче и контекст чата | `CONTEXT.md` в корне репозитория (в git, читать в начале работы, обновлять после каждого шага) |
 | Ничего нужного в `/tmp` | `/tmp` — tmpfs, содержимое теряется при перебо��ке |
 
@@ -76,7 +76,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
    (с показом, что именно удаляется).
 6. Отчёт пользователю — по-русски, коротко: что изменилось, чем проверено, и
    после этого команда установки
-   (`sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-local-<версия>-<pkgrel>-x86_64.pkg.tar.zst`).
+   (`sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-<версия>-<pkgrel>-x86_64.pkg.tar.zst`).
    что осталось непроверенным.
 
 ## Тесты
@@ -104,7 +104,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 анимацией) и с повтором. Предикат эффекта исполняется через `eval`.
 
 Панель переключается **не клавишей F1**, а вызовом D-Bus
-`org.xfce.Terminal5.ToggleDropDown`: собственный перехват клавиши у
+`org.xfce.TerminalNext.ToggleDropDown`: собственный перехват клавиши у
 терминала удалён (он X11-only и в апстриме его нет), а на Wayland клавишу
 всё равно обрабатывает рабочий стол. Стенды зовут `stand_toggle_panel`.
 
@@ -143,7 +143,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 
 | Где | Строка (как показывается) | Оригинал в коде |
 | --- | --- | --- |
-| Вкладка «Выпадающий», надпись сверху | Вне зависимости от настроек ниже вы получаете выпадающее окно терминала, если добавите хоткей для команды `xfce4-terminal-local --drop-down`. | `"Regardless of the settings below, you get the drop-down terminal window if you add a hotkey for \"xfce4-terminal-local --drop-down\"."` |
+| Вкладка «Выпадающий», надпись сверху | Вне зависимости от настроек ниже вы получаете выпадающее окно терминала, если добавите хоткей для команды `xfce4-terminal-next --drop-down`. | `"Regardless of the settings below, you get the drop-down terminal window if you add a hotkey for \"xfce4-terminal-next --drop-down\"."` |
 | Вкладка «Выпадающий», галка хоткея | Использовать _системную горячую клавишу для скрытия и появления терминала | `"Use a _system shortcut to hide and show the terminal"` |
 | Раздел «Сессия», галка | Сохранять сессию с расположением _сплитов | `"Save the session with the _split layout"` |
 | Раздел «Сессия», галка | Возвращать на место _активную вкладку | `"Bring back the _active tab"` |
@@ -182,10 +182,10 @@ msgmerge --no-fuzzy-matching --update po/ru.po po/xfce4-terminal.pot
 cd /mnt/Data/Projects/xfce4-terminal
 mkdir -p pkgbuild/src
 git archive HEAD | tar -C pkgbuild/src -xf -
-cp PKGBUILD xfce4-terminal-local.install pkgbuild/
+cp PKGBUILD xfce4-terminal-next.install pkgbuild/
 cd pkgbuild
 PATH=/mnt/Data/Projects/xfce4-terminal/.venv/bin:$PATH makepkg -f --noconfirm --nodeps
-cp xfce4-terminal-local-*.pkg.tar.zst /mnt/Data/Projects/xfce4-terminal/
+cp xfce4-terminal-next-*.pkg.tar.zst /mnt/Data/Projects/xfce4-terminal/
 ```
 
 `pkgrel` поднимать на единицу при каждой пересборке. Готовый пакет лежит в
@@ -196,11 +196,11 @@ cp xfce4-terminal-local-*.pkg.tar.zst /mnt/Data/Projects/xfce4-terminal/
 команда установки:
 
 ```
-sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-local-<версия>-<pkgrel>-x86_64.pkg.tar.zst
+sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-<версия>-<pkgrel>-x86_64.pkg.tar.zst
 ```
 
-Установка в `/usr/local`, бинарник `xfce4-terminal-local`, D-Bus
-`org.xfce.Terminal5Local`.
+Установка в `/usr/local`, бинарник `xfce4-terminal-next`, D-Bus
+`org.xfce.TerminalNextLocal`.
 
 ## Язык
 

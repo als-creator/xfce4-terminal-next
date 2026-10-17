@@ -31,7 +31,7 @@ G_BEGIN_DECLS
  * preferences dialog) assigns as a system shortcut. */
 
 #define TERMINAL_SHORTCUT_CHANNEL "xfce4-keyboard-shortcuts"
-#define TERMINAL_SHORTCUT_COMMAND "xfce4-terminal-local --drop-down"
+#define TERMINAL_SHORTCUT_COMMAND "xfce4-terminal-next --drop-down"
 
 /* Whether the running session is Xfce, the only desktop that reads the
  * xfce4-keyboard-shortcuts channel this module writes. */
