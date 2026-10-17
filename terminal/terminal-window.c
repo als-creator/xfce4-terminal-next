@@ -3996,6 +3996,15 @@ terminal_window_action_lock_pane (TerminalWindow *window)
    * menu; the menu entry is a check box and has to show the same state */
   terminal_window_apply_title (window, active);
   gtk_widget_queue_draw (GTK_WIDGET (window));
+
+  /* and the pane itself is marked: a lock that shows nowhere but the title is
+   * a lock nobody notices */
+  {
+    TerminalPanes *panes = terminal_window_screen_get_panes (active);
+
+    if (panes != NULL)
+      terminal_panes_update_active_style (panes);
+  }
 }
 
 

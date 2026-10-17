@@ -26,6 +26,7 @@
 
 #include "terminal-panes.h"
 #include "terminal-preferences.h"
+#include "terminal-screen.h"
 
 
 
@@ -86,11 +87,20 @@ static GParamSpec *panes_properties[N_PROPERTIES];
 static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
 
 /* the stylesheet and the provider that carries it, shared by every pane tree */
-static const gchar *CSS_ACTIVE_PANE =
+static const gchar *CSS_PANE_STYLES =
+  /* the pane with the keyboard: a thin accent line along its edge */
   "paned.pane-active > separator {"
   "  background-color: @accent_color;"
   "  min-width: 2px;"
   "  min-height: 2px;"
+  "}"
+  /* a locked pane: a wider band with a border, so that a lock is seen in a
+   * split of many panes at a glance and does not pass for the mark of the
+   * active pane */
+  "paned.pane-locked > separator {"
+  "  background-color: @accent_color;"
+  "  min-width: 5px;"
+  "  min-height: 5px;"
   "}";
 static GtkCssProvider *panes_style_provider = NULL;
 
@@ -124,6 +134,11 @@ panes_update_active_style (TerminalPanes *panes)
         gtk_style_context_add_class (context, "pane-active");
       else
         gtk_style_context_remove_class (context, "pane-active");
+
+      if (terminal_screen_get_locked (TERMINAL_SCREEN (lp->data)))
+        gtk_style_context_add_class (context, "pane-locked");
+      else
+        gtk_style_context_remove_class (context, "pane-locked");
     }
   g_slist_free (screens);
 }
@@ -240,7 +255,7 @@ terminal_panes_init (TerminalPanes *panes)
       gtk_style_context_add_provider_for_screen (gtk_widget_get_screen (GTK_WIDGET (panes)),
                                                  GTK_STYLE_PROVIDER (panes_style_provider),
                                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-      gtk_css_provider_load_from_data (panes_style_provider, CSS_ACTIVE_PANE, -1, NULL);
+      gtk_css_provider_load_from_data (panes_style_provider, CSS_PANE_STYLES, -1, NULL);
     }
 }
 
