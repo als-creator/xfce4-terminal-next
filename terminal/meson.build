@@ -7,6 +7,7 @@ terminal_sources = [
   'terminal-gdbus.c',
   'terminal-gdbus.h',
   'terminal-keys.c',
+  'terminal-tmux.c',
   'terminal-keys.h',
   'terminal-image-loader.c',
   'terminal-image-loader.h',
