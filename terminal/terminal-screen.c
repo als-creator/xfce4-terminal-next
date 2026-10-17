@@ -134,6 +134,8 @@ terminal_screen_get_child_command (TerminalScreen *screen,
                                    gchar **command,
                                    gchar ***argv,
                                    GError **error);
+static void
+terminal_screen_relaunch_locked (TerminalScreen *screen);
 static gchar *
 terminal_screen_parse_title (TerminalScreen *screen,
                              const gchar *title);
@@ -256,6 +258,11 @@ struct _TerminalScreen
   TerminalTitle dynamic_title_mode;
   guint hold : 1;
   guint has_random_bg_color : 1;
+
+  /* the pane is locked: its shell ending is not the end of the pane, and the
+   * program below is what runs in it from then on */
+  gchar *pinned_command;
+  guint locked : 1;
 
   guint contents_changed_id;
   guint activity_timeout_id;
@@ -469,6 +476,7 @@ terminal_screen_finalize (GObject *object)
   g_object_unref (screen->cancellable);
 
   g_strfreev (screen->custom_command);
+  g_free (screen->pinned_command);
   g_free (screen->working_directory);
   g_free (screen->custom_title);
   g_free (screen->initial_title);
@@ -758,7 +766,16 @@ terminal_screen_get_child_command (TerminalScreen *screen,
     "/bin/ksh", "/usr/bin/ksh"
   };
 
-  if (screen->custom_command != NULL)
+  /* a locked pane runs the program it was locked on, whatever the terminal
+   * itself was told to start: that is the whole point of the lock */
+  if (screen->locked && screen->pinned_command != NULL && *screen->pinned_command != '\0')
+    {
+      if (!g_shell_parse_argv (screen->pinned_command, NULL, argv, error))
+        return FALSE;
+
+      *command = g_strdup ((*argv)[0]);
+    }
+  else if (screen->custom_command != NULL)
     {
       *command = g_strdup (screen->custom_command[0]);
       *argv = g_strdupv (screen->custom_command);
@@ -1543,8 +1560,13 @@ terminal_screen_vte_child_exited (VteTerminal *terminal,
 
   g_object_get (G_OBJECT (screen->preferences), "misc-show-relaunch-dialog", &show_relaunch_dialog, NULL);
 
-  if (G_LIKELY (!screen->hold))
+  if (G_LIKELY (!screen->hold && !screen->locked))
     gtk_widget_destroy (GTK_WIDGET (screen));
+  else if (screen->locked && screen->pinned_command != NULL && *screen->pinned_command != '\0')
+    {
+      /* the pane is locked on this program, so it simply runs it again */
+      terminal_screen_relaunch_locked (screen);
+    }
   else if (show_relaunch_dialog)
     {
       /* create "Relaunch" bar */
@@ -1581,6 +1603,83 @@ terminal_screen_vte_child_exited (VteTerminal *terminal,
 
 
 
+/* Start the program of a locked pane again: its shell is gone and nobody is
+ * waiting for it, the pane stands and carries on with its program. */
+static void
+terminal_screen_relaunch_locked (TerminalScreen *screen)
+{
+  terminal_screen_launch_child (screen);
+  terminal_screen_focus (screen);
+}
+
+
+
+/**
+ * terminal_screen_set_locked:
+ * @screen: a #TerminalScreen
+ * @locked: %TRUE to keep the pane when its shell ends
+ * @command: (nullable): the program to run in the pane
+ * @restart: %TRUE to start that program right away
+ *
+ * Lock the pane: its shell ending no longer ends the pane, and the program
+ * from @command runs there from then on — on the next start of the shell and,
+ * with @restart, right now.
+ */
+void
+terminal_screen_set_locked (TerminalScreen *screen,
+                            gboolean        locked,
+                            const gchar    *command,
+                            gboolean        restart)
+{
+  g_return_if_fail (TERMINAL_IS_SCREEN (screen));
+
+  screen->locked = locked;
+
+  g_free (screen->pinned_command);
+  screen->pinned_command = (locked && command != NULL) ? g_strdup (command) : NULL;
+
+  if (locked && restart && screen->pinned_command != NULL && *screen->pinned_command != '\0')
+    terminal_screen_relaunch_locked (screen);
+}
+
+
+/**
+ * terminal_screen_get_locked:
+ * @screen: a #TerminalScreen
+ *
+ * Whether the pane survives its shell.
+ *
+ * Returns: %TRUE while the pane is locked.
+ */
+gboolean
+terminal_screen_get_locked (TerminalScreen *screen)
+{
+  g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), FALSE);
+
+  return screen->locked;
+}
+
+
+
+/**
+ * terminal_screen_get_pinned_command:
+ * @screen: a #TerminalScreen
+ *
+ * The program a locked pane runs: an empty string when the pane is locked
+ * without a program and simply stays where it is.
+ *
+ * Returns: (transfer none) (nullable): the command, owned by the pane.
+ */
+const gchar *
+terminal_screen_get_pinned_command (TerminalScreen *screen)
+{
+  g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), NULL);
+
+  return screen->pinned_command != NULL ? screen->pinned_command : "";
+}
+
+
+
 static void
 terminal_screen_vte_eof (VteTerminal *terminal,
                          TerminalScreen *screen)
@@ -1588,7 +1687,7 @@ terminal_screen_vte_eof (VteTerminal *terminal,
   g_return_if_fail (VTE_IS_TERMINAL (terminal));
   g_return_if_fail (TERMINAL_IS_SCREEN (screen));
 
-  if (G_LIKELY (!screen->hold))
+  if (G_LIKELY (!screen->hold && !screen->locked))
     gtk_widget_destroy (GTK_WIDGET (screen));
 }
 

@@ -68,7 +68,7 @@ terminal_panes_split_screen_at (TerminalPanes *panes,
                                 gdouble fraction);
 
 /**
- * Shifts the divider of the split the given pane lives in, the way Guake moves
+ * Shifts the divider of the split the given pane lives in, the way a split is
  * and resizes a split with its move-terminal-split-* hotkeys.
  */
 void
@@ -103,6 +103,16 @@ terminal_panes_get_session_layout (TerminalPanes *panes);
  */
 gchar **
 terminal_panes_session_cdirs (const gchar *record);
+
+/* one pane of a saved tab: whether it was locked, and the program it ran */
+typedef struct
+{
+  gboolean locked;
+  gchar *command;
+} TerminalPanePin;
+
+GPtrArray *terminal_panes_session_pins (const gchar *record);
+void       terminal_panes_session_pins_free (GPtrArray *pins);
 
 /**
  * Removes @screen from the pane tree, collapsing the split.

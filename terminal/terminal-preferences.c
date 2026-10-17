@@ -140,6 +140,7 @@ enum
   PROP_MISC_TMUX_SESSION,
   PROP_MISC_TMUX_TRUE_COLOR,
   PROP_MISC_TMUX_MOUSE,
+  PROP_MISC_PINNED_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
   PROP_SCROLLING_LINES,
@@ -1411,6 +1412,20 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                           "MiscTmuxMouse",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /**
+   * TerminalPreferences:misc-pinned-command:
+   *
+   * The program a locked pane runs: after its shell ends the pane starts this
+   * one again, and a restored pane starts with it right away. Empty means the
+   * pane is simply kept, waiting for a key.
+   **/
+  preferences_props[PROP_MISC_PINNED_COMMAND] =
+    g_param_spec_string ("misc-pinned-command",
+                         NULL,
+                         "MiscPinnedCommand",
+                         NULL,
+                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:scrolling-bar:

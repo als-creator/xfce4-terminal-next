@@ -1,6 +1,6 @@
 # xfce4-terminal-local — рабочий процесс
 
-Форк xfce4-terminal: нативные сплиты, guake-резидентность, tmux, выпадающий
+Форк xfce4-terminal: нативные сплиты, панель, tmux, выпадающий
 терминал. Ветка форка — `feature/split-panes`, ветки для возможных PR —
 `upstream/*` (считаются от чистого `master`, который совпадает с апстримом).
 Образец оформления уже принятого PR — `upstream/pr-layout-accel`, его стоит
@@ -66,7 +66,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
    - нормализация раскладки — `tests/bin/test-keys` (48 проверок);
    - панели — `python3 tests/build-test.py` и `tests/bin/test-panes` (67 проверок);
    - выпадающее окно и разделение режимов — `tests/stand-wm.sh`, затем
-     `dbus-run-session -- tests/split-test.sh` (и `guake-*.sh`/`plain-test.sh`).
+     `dbus-run-session -- tests/split-test.sh` (и `panel-*.sh`/`plain-test.sh`).
 3. Новые строки интерфейса — перевести в `po/ru.po` и проверить
    `msgfmt -c --statistics -o /dev/null po/ru.po`.
 4. Если стенд не запускается в окружении (например, нет `Xvfb` или дисплея) —
@@ -114,9 +114,9 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 | Панели | `python3 tests/build-test.py` и `DISPLAY=:99 tests/bin/test-panes` — 67 проверок |
 | Переводы | `msgfmt -c --statistics -o /dev/null po/ru.po` |
 | Разделение режимов | `dbus-run-session -- bash tests/split-test.sh` — 5 проверок |
-| Выпадающее окно | `dbus-run-session -- bash tests/guake-test.sh` — 5 проверок (Ctrl+D прячет, ToggleDropDown возвращает, закрытие окна завершает) |
-| Панель с keep-open | `dbus-run-session -- bash tests/guake-hide-test.sh` — 6 проверок |
-| Панель без keep-alive | `dbus-run-session -- bash tests/guake-off-test.sh` — 2 проверки, строгое поведение апстрима |
+| Выпадающее окно | `dbus-run-session -- bash tests/panel-test.sh` — 5 проверок (Ctrl+D прячет, ToggleDropDown возвращает, закрытие окна завершает) |
+| Панель с keep-open | `dbus-run-session -- bash tests/panel-hide-test.sh` — 6 проверок |
+| Панель без keep-alive | `dbus-run-session -- bash tests/panel-off-test.sh` — 2 проверки, строгое поведение апстрима |
 | Обычное окно | `dbus-run-session -- bash tests/plain-test.sh` — 2 проверки |
 | Системная горячая клавиша | `dbus-run-session -- bash tests/shortcuts-test.sh` — 13 проверок |
 | Значок и меню трея | `bash tests/sni-test.sh` — 14 проверок, свой StatusNotifierWatcher на изолированной шине |

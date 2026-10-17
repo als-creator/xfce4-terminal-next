@@ -58,13 +58,20 @@ struct _TerminalPanes
 #define PANES_WANTED_PERCENT "panes-wanted-percent"
 
 /* how far a single move-pane step shifts the divider, and how small a pane may
- * become while doing so (both taken from Guake's SplitMover) */
+ * become while doing so */
 #define PANES_MOVE_STEP 10
 #define PANES_MIN_PANE_SIZE 35
 
 /* separates the layout of a saved tab from the directories of its panes; the
  * layout grammar has no character like it */
 #define PANES_CDIR_SEPARATOR '|'
+
+/* the same separator as a string, for splitting a record into fields */
+#define PANES_CDIR_SEPARATOR_STR "|"
+
+/* tells the pin fields apart from the directories that come before them: a
+ * directory is a path, and no path looks like this word */
+#define PANES_PINS_MARKER "pins"
 
 
 
@@ -759,7 +766,7 @@ panes_paned_set_fraction (GtkWidget *paned,
 
 
 
-/* Serializes the pane tree the way Guake stores its layout: a leaf is ".", a
+/* Serializes the pane tree: a leaf is ".", a
  * split is "<O><percent>,<left>,<right>", where O is H for children side by
  * side and V for children stacked, and percent is the divider position.
  *
@@ -822,9 +829,8 @@ terminal_panes_get_layout (TerminalPanes *panes)
 
 
 
-/* guake's SplitMover: shift the divider of the split the active pane lives in,
- * the same way Guake moves and resizes a split with move-terminal-split-*. */
-/* Guake has no separate "active pane" state: the pane that owns the keyboard
+/* Shift the divider of the split the active pane lives in. */
+/* There is no separate "active pane" state here: the pane that owns the keyboard
  * focus is the active one. panes->active stays as a cache for the moments when
  * the focus is outside the pane tree (menu, dialog, search bar). */
 /**
@@ -870,9 +876,113 @@ terminal_panes_get_session_layout (TerminalPanes *panes)
           g_free (escaped);
         }
     }
+
+  /* A locked pane and the program it runs: the lock is meant to outlive the
+   * terminal, otherwise it is one click away from being forgotten. */
+  if (screens != NULL)
+    {
+      g_string_append_c (str, PANES_CDIR_SEPARATOR);
+      g_string_append (str, PANES_PINS_MARKER);
+
+      for (lp = screens; lp != NULL; lp = lp->next)
+        {
+          TerminalScreen *screen = TERMINAL_SCREEN (lp->data);
+          const gchar *command = terminal_screen_get_pinned_command (screen);
+          gchar *escaped;
+
+          g_string_append (str, terminal_screen_get_locked (screen) ? "|1" : "|0");
+
+          g_string_append (str, "|cmd=");
+          escaped = g_uri_escape_string (command != NULL ? command : "", NULL, FALSE);
+          g_string_append (str, escaped != NULL ? escaped : "");
+          g_free (escaped);
+        }
+    }
   g_slist_free (screens);
 
   return g_string_free (str, FALSE);
+}
+
+
+static void
+terminal_panes_session_pin_free (TerminalPanePin *pin)
+{
+  if (pin == NULL)
+    return;
+
+  g_free (pin->command);
+  g_free (pin);
+}
+
+
+/**
+ * terminal_panes_session_pins:
+ * @record: (nullable): a record written by terminal_panes_get_session_layout()
+ *
+ * The locks and the programs of the panes, in the order the layout walks them.
+ * A record written before the pins existed carries none.
+ *
+ * Returns: (transfer full) (element-type TerminalPanePin) (nullable): the pins,
+ * to be freed with terminal_panes_session_pins_free().
+ */
+GPtrArray *
+terminal_panes_session_pins (const gchar *record)
+{
+  GPtrArray *pins;
+  gchar **fields;
+  gint i;
+
+  g_return_val_if_fail (record != NULL, NULL);
+
+  fields = g_strsplit (record, PANES_CDIR_SEPARATOR_STR, -1);
+
+  pins = NULL;
+  for (i = 0; fields[i] != NULL; i++)
+    {
+      if (!g_str_equal (fields[i], PANES_PINS_MARKER))
+        continue;
+
+      pins = g_ptr_array_new_with_free_func ((GDestroyNotify) terminal_panes_session_pin_free);
+
+      /* two fields per pane from here: whether it is locked, then its program */
+      for (i++; fields[i] != NULL; i += 2)
+        {
+          TerminalPanePin *pin = g_new0 (TerminalPanePin, 1);
+
+          pin->locked = fields[i][0] == '1';
+
+          if (fields[i + 1] != NULL && g_str_has_prefix (fields[i + 1], "cmd="))
+            {
+              const gchar *raw = fields[i + 1] + 4;
+              gchar *command = g_uri_unescape_string (raw, NULL);
+
+              pin->command = command != NULL ? command : g_strdup ("");
+            }
+          else
+            pin->command = g_strdup ("");
+
+          g_ptr_array_add (pins, pin);
+        }
+
+      break;
+    }
+
+  g_strfreev (fields);
+
+  return pins;
+}
+
+
+/**
+ * terminal_panes_session_pins_free:
+ * @pins: (nullable) (element-type TerminalPanePin): pins from
+ *   terminal_panes_session_pins()
+ */
+void
+terminal_panes_session_pins_free (GPtrArray *pins)
+{
+  if (pins != NULL)
+    g_ptr_array_unref (pins);
 }
 
 
@@ -901,6 +1011,10 @@ terminal_panes_session_cdirs (const gchar *record)
    * number of directories is decided by the layout, not by the separators */
   while (*p != '\0')
     {
+      /* the pins follow the directories, and they are not directories */
+      if (g_str_has_prefix (p + 1, PANES_PINS_MARKER))
+        break;
+
       const gchar *start = p + 1;
       const gchar *end = strchr (start, PANES_CDIR_SEPARATOR);
       const gchar *stop = (end != NULL) ? end : start + strlen (start);

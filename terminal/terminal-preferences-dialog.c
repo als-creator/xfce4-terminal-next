@@ -648,6 +648,29 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
   gtk_widget_show (entry);
 
+  /* next row */
+  row++;
+
+  /* Сама защёлка живёт в панели и переключается из меню, а программа — вещь
+   * терминала: одна на все панели. */
+  label = gtk_label_new_with_mnemonic (_("Program of the _locked pane:"));
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+  gtk_widget_show (label);
+
+  entry = gtk_entry_new ();
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-pinned-command",
+                          G_OBJECT (entry), "text",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_entry_set_placeholder_text (GTK_ENTRY (entry), _("nothing: the pane simply stays"));
+  gtk_widget_set_tooltip_text (entry, _("Lock a pane with \"Lock this pane\" in the Terminal"
+                                        " menu (Ctrl+Shift+L): after its program ends the pane"
+                                        " starts this one again, and a pane restored in the next"
+                                        " session comes back with it."));
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
+  gtk_widget_set_hexpand (entry, TRUE);
+  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
+  gtk_widget_show (entry);
+
 
 
   /*

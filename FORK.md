@@ -24,13 +24,13 @@ Native split panes inside a tab, built as a tree of `GtkPaned` in a
 | Next / previous pane | <kbd>Ctrl+Tab</kbd> <kbd>Ctrl+Shift+Tab</kbd> |
 | Move pane up / down / left / right | unbound, divider can also be dragged with the mouse |
 
-Ported from Guake, which does the same thing:
+The rules the pane behaviour follows:
 
 * the split to focus is found geometrically, not by tree position: every
   candidate is scored by its distance along the axis and by how well it is
   aligned on the perpendicular one;
 * `Move pane` shifts the divider of the split the focused pane lives in by
-  10px, keeping at least 35px on both sides (`SplitMover` in Guake);
+  10px, keeping at least 35px on both sides;
 * the focused pane *is* the active pane, there is no second source of truth.
 
 The four `Move pane` actions ship without an accelerator and are not in the
@@ -82,7 +82,7 @@ needs those keys.
   (`dropdown-keep-alive`, on by default). The icon is a StatusNotifierItem
   instead of upstream's `GtkStatusIcon`, so it works in a Wayland session too,
   and it stays as long as the process lives.
-* With it enabled the panel is kept alive like Guake does: when the shell of its
+* With it enabled the panel is kept alive: when the shell of its
   last tab ends (e.g. <kbd>Ctrl+D</kbd>), a fresh tab is opened and the panel is
   hidden instead of the window (and the icon) being destroyed, so the process
   stays; the next toggle (the panel shortcut, see below) shows the fresh tab.
@@ -123,9 +123,8 @@ private bus and checks the registration, the item properties, the menu layout,
   system shortcut). There is no setting that turns ordinary launches into a
   panel: an ordinary start — including *Open Terminal Here* in Thunar, which
   calls the terminal without any flags — always opens an ordinary window, and
-  an ordinary window never lands in the panel. Guake has the same split by
-  design: it is a daemon with its own client, and its window is never the
-  "normal" terminal of the desktop.
+  an ordinary window never lands in the panel: the panel is a daemon with its own
+  client, and its window is never the "normal" terminal of the desktop.
 * *Drop-down → Toggle the window when started again* (`dropdown-parameters-once`)
   makes a second `--drop-down` start show or hide the panel instead of opening
   a new tab in it, which is what a system shortcut needs.
@@ -176,7 +175,7 @@ removes the double toggle a grab plus a system shortcut would produce.
 Accelerators are stored as latin keysyms, but on a russian keyboard
 <kbd>Ctrl+Shift+O</kbd> produces a cyrillic keysym, so none of them match and
 the hotkeys look dead. A key press is mapped back to the latin symbol of the
-same physical key, like Guake does in `Keybindings.activate()`: the symbol is
+same physical key: the symbol is
 taken from the first group of the layout with `gdk_keymap_translate_keyboard_state()`
 (xkb always keeps the us layout in group 0) at level 0, so it neither depends on
 the group the switch moved to nor on the shift it swallowed.

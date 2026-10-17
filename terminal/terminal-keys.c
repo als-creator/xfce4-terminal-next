@@ -225,13 +225,12 @@ terminal_keys_swallowed_shift (GdkEventKey *event)
  * @keyval: (out): the latin keysym of the physical key
  * @mods: (out): the modifiers of the key press
  *
- * Guake style layout normalization.
+ * Layout independent normalization of the accelerators.
  *
  * Under a non-latin layout a key press such as Ctrl+Shift+O produces a cyrillic
  * keysym. The accelerators of the window are stored as latin keysyms, so they
  * never match and they look dead. This maps the key press back to the latin
- * symbol of the same physical key, exactly like Guake does it in
- * Keybindings.activate().
+ * symbol of the same physical key.
  *
  * Returns %TRUE if the key press could be normalized, %FALSE if it is not
  * layout dependent and should be handled by the accelerators as they are.
