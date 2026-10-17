@@ -1071,7 +1071,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_uint ("misc-clipboard-slots",
                        NULL,
                        "MiscClipboardSlots",
-                       2, 6, 3,
+                       2, 10, 3,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**

@@ -674,7 +674,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
-  spin = gtk_spin_button_new_with_range (2, 6, 1);
+  spin = gtk_spin_button_new_with_range (2, 10, 1);
   gtk_widget_set_tooltip_text (spin, _("How many slots of their own the terminal keeps"
                                       " next to the system clipboard"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots",
@@ -758,14 +758,8 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
-  label = gtk_label_new_with_mnemonic (_("_File:"));
-  gtk_widget_set_halign (label, GTK_ALIGN_START);
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
-                          G_OBJECT (label), "sensitive",
-                          G_BINDING_SYNC_CREATE);
-  gtk_grid_attach (GTK_GRID (grid), label, 1, row, 1, 1);
-  gtk_widget_show (label);
-
+  /* the field speaks for itself: the path it holds says what it is, so the
+   * word "File" before it only takes room away from the path */
   entry = gtk_entry_new ();
   gtk_widget_set_hexpand (entry, TRUE);
   /* the dialog is not resizable, so an entry grows only as far as its own
@@ -782,8 +776,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
                           G_OBJECT (entry), "sensitive",
                           G_BINDING_SYNC_CREATE);
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
-  gtk_grid_attach (GTK_GRID (grid), entry, 2, row, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), entry, 0, row, 3, 1);
   gtk_widget_show (entry);
 
 
