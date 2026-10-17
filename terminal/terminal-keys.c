@@ -30,6 +30,7 @@
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #include <X11/Xlib.h>
+#include <X11/XKBlib.h>
 #endif
 
 /* Whether the shift key is held down right now.
@@ -88,6 +89,53 @@ terminal_keys_shift_held (void)
   return FALSE;
 #endif
 }
+
+/* The latin symbol of a physical key, asked from the X server itself.
+ *
+ * GDK keeps its own copy of the keymap and refreshes it while it handles
+ * events; ask it outside of that and it answers from the copy it had before
+ * the layout switch moved to the other group — a key press then looks latin
+ * where it should look cyrillic, and the accelerators sit idle until the
+ * language is switched back and forth once. The X server refreshes its own map
+ * on every group change, so the first group of the keycode asked of it is
+ * always the latin one.
+ *
+ * Returns %TRUE if the keycode has a symbol in the first group.
+ */
+static gboolean
+terminal_keys_latin_symbol (guint   keycode,
+                            guint32 *symbol)
+{
+#ifdef GDK_WINDOWING_X11
+  GdkDisplay *display;
+  Display *xdisplay;
+  KeySym keysym;
+
+  display = gdk_display_get_default ();
+  if (display == NULL || !GDK_IS_X11_DISPLAY (display))
+    return FALSE;
+
+  xdisplay = GDK_DISPLAY_XDISPLAY (display);
+  if (xdisplay == NULL)
+    return FALSE;
+
+  /* group 0, level 0: the latin symbol of the key, neither shifted nor
+   * switched to another group */
+  keysym = XkbKeycodeToKeysym (xdisplay, (KeyCode) keycode, 0, 0);
+  if (keysym == NoSymbol)
+    return FALSE;
+
+  *symbol = (guint32) keysym;
+
+  return TRUE;
+#else
+  (void) keycode;
+  (void) symbol;
+
+  return FALSE;
+#endif
+}
+
 
 /* Whether the keysym is one of the modifier keys themselves: a lone modifier
  * press is no accelerator, so there is nothing to restore for it. */
@@ -276,11 +324,12 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
   /* translate the key press back to the latin symbol of the physical key: the
    * first group of the layout (latin on every layout that matters) and level 0,
    * i.e. the symbol does not depend on the group the layout switch moved to nor
-   * on the shift it swallowed */
+   * on the shift it swallowed. The server is asked, not the copy GDK keeps */
   symbol = 0;
-  if (!gdk_keymap_translate_keyboard_state (keymap, keycode, state & ~GDK_SHIFT_MASK, 0,
-                                            &symbol, NULL, NULL, NULL))
-    return FALSE;
+  if (!terminal_keys_latin_symbol (keycode, &symbol))
+    if (!gdk_keymap_translate_keyboard_state (keymap, keycode, state & ~GDK_SHIFT_MASK, 0,
+                                              &symbol, NULL, NULL, NULL))
+      return FALSE;
 
   /* a key without a latin symbol in the first group (tab, arrows, function
    * keys) does not depend on the layout at all: with an unswallowed shift
