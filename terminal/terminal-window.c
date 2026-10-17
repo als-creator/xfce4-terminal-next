@@ -77,7 +77,7 @@ enum
  * when the setting grows. */
 #define CLIPBOARD_SLOTS_DEFAULT 3
 #define CLIPBOARD_SLOTS_MIN 2
-#define CLIPBOARD_SLOTS_MAX 6
+#define CLIPBOARD_SLOTS_MAX 10
 
 static gchar **clipboard_slots;
 static guint clipboard_slots_n = CLIPBOARD_SLOTS_DEFAULT;
@@ -3783,7 +3783,11 @@ terminal_window_action_split (TerminalWindow *window,
 static gboolean
 terminal_window_action_split_horizontal (TerminalWindow *window)
 {
-  return terminal_window_action_split (window, GTK_ORIENTATION_HORIZONTAL);
+  /* "Horizontal" names the line that appears, not the way the panes end up
+   * lying: a horizontal split puts one pane above the other, which is what
+   * GtkPaned calls vertical. The way round it was before read as "panes side
+   * by side", which is what people mean by a vertical split. */
+  return terminal_window_action_split (window, GTK_ORIENTATION_VERTICAL);
 }
 
 
@@ -3791,7 +3795,7 @@ terminal_window_action_split_horizontal (TerminalWindow *window)
 static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window)
 {
-  return terminal_window_action_split (window, GTK_ORIENTATION_VERTICAL);
+  return terminal_window_action_split (window, GTK_ORIENTATION_HORIZONTAL);
 }
 
 
@@ -4594,6 +4598,59 @@ terminal_window_action_goto_bookmark (GtkMenuItem *item,
 }
 
 
+/* What a slot holds, in one line: the menu item says what it will paste, the
+ * same way the clipboard manager does. Long text is cut, newlines become
+ * spaces: a menu with a hundred rows in it helps nobody. */
+static gchar *
+terminal_window_slot_preview (const gchar *text)
+{
+  const gsize limit = 48;
+  gchar *first_line;
+  gchar *cut;
+  gchar *result;
+
+  if (text == NULL || *text == '\0')
+    return NULL;
+
+  first_line = g_strdup (text);
+  for (cut = first_line; *cut != '\0'; cut++)
+    if (*cut == '\n' || *cut == '\r' || *cut == '\t')
+      *cut = ' ';
+
+  if (g_utf8_strlen (first_line, -1) > limit)
+    {
+      gchar *end = g_utf8_offset_to_pointer (first_line, limit);
+      *end = '\0';
+      g_strlcat (first_line, "\xe2\x80\xa6", limit + 4); /* … */
+    }
+
+  result = g_strdup (first_line);
+  g_free (first_line);
+
+  return result;
+}
+
+
+/* The label of a numbered slot, with what it holds: "Clipboard Slot 1: ls -l".
+ * A slot with nothing in it says only its number. */
+static gchar *
+terminal_window_slot_label (guint index,
+                            const gchar *contents)
+{
+  gchar *preview;
+  gchar *label;
+
+  preview = terminal_window_slot_preview (contents);
+  if (preview != NULL)
+    label = g_strdup_printf (_("Clipboard Slot %u: %s"), index, preview);
+  else
+    label = g_strdup_printf (_("Clipboard Slot %u"), index);
+  g_free (preview);
+
+  return label;
+}
+
+
 /* The numbered slots, both ways, for any menu that wants them: the context menu
  * of the terminal and the "Edit" menu are both built from here, so the two
  * cannot drift apart. One entry per slot by default; the nesting setting puts
@@ -4645,7 +4702,7 @@ terminal_window_add_slots_menu (TerminalWindow *window,
 
           for (i = 0; i < n; i++)
             {
-              gchar *label = g_strdup_printf (_("Slot %u"), i + 1);
+              gchar *label = terminal_window_slot_label (i + 1, clipboard_slots[i]);
 
               item = gtk_menu_item_new_with_mnemonic (label);
               g_free (label);
@@ -4671,7 +4728,7 @@ terminal_window_add_slots_menu (TerminalWindow *window,
           for (i = 0; i < n; i++)
             {
               gchar *name = g_strdup_printf ("paste-from-slot-%u", i + 1);
-              gchar *label = g_strdup_printf (_("Slot %u"), i + 1);
+              gchar *label = terminal_window_slot_label (i + 1, clipboard_slots[i]);
 
               G_GNUC_BEGIN_IGNORE_DEPRECATIONS
               radio_action = gtk_radio_action_new (name, NULL, label, NULL, (gint) i);
