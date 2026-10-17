@@ -14,32 +14,24 @@
 
 ## Состояние
 
-Пакет в корне репозитория — `xfce4-terminal-next-1.2.0-58-x86_64.pkg.tar.zst`.
-Старый пакет назывался `xfce4-terminal-local` и удалён.
+Пакет в корне репозитория — `xfce4-terminal-next-1.2.0-59-x86_64.pkg.tar.zst`.
 
 ```
-sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-1.2.0-58-x86_64.pkg.tar.zst
+sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-1.2.0-59-x86_64.pkg.tar.zst
 ```
 
-**Имя форка: `xfce4-terminal-next`.** Переименовано всё, что видит
-пользователь: пакет, бинарник (`/usr/local/bin/xfce4-terminal-next` +
-симлинк `xfce4-terminal` → `xfce4-terminal-next`, чтобы работали Thunar и
-`xdg-terminal-exec`), пункт меню «Xfce4 Terminal Next», имя на шине D-Bus
-(`org.xfce.TerminalNext`, путь `/org/xfce/TerminalNext`).
-
-Что намеренно оставлено как в апстриме:
-- **имя при сборке** (`build/terminal/xfce4-terminal`): переименование и так
-  делается при установке, а лишнее переименование в дереве раздувает дифф для
-  будущего MR;
-- **канал XFConf `xfce4-terminal`**: иначе у пользователя пропала бы вся
-  конфигурация (переменные, раскладки, ячейки, закладки, журнал).
-
-**Что поправить у себя после установки:** системная горячая клавиша панели,
-если она зовёт терминал по старому имени, — например:
-`gdbus call --session --dest org.xfce.TerminalNext --object-path /org/xfce/TerminalNext --method org.xfce.TerminalNext.ToggleDropDown`
+Что в 59 (прошу проверить у себя):
+- журнал экрана убран целиком;
+- настройка tmux — одно поле с командой вместо шести пунктов, запуск из
+  контекстного меню («Запустить сеанс tmux», «Закрепить панель»);
+- на вкладке «Сессия и память» галка «Хранить ячейки в файле» и поле пути больше
+  не накладываются;
+- закреплённая панель видна: широкая акцентная полоса у её края (в стенде это
+  скриншот `tests/work/xtest/lock-on.png`), в заголовке окна — «— панель
+  закреплена».
 
 Переводы: `po/ru.po` полон (кроме `HTML`), `msgfmt -c` чист.
-Полный прогон `bash tests/run-all.sh` — зелёный: 18 стендов плюс
+Полный прогон `bash tests/run-all.sh` зелёный: 18 стендов плюс `style-check`,
 `test-keys` (48), `test-tmux` (12), `test-panes` (74), `shortcuts`.
 
 ## Открытые вопросы пользователя
