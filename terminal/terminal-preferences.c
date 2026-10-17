@@ -115,8 +115,6 @@ enum
   PROP_MISC_CLIPBOARD_SLOTS_SAVE,
   PROP_MISC_CLIPBOARD_SLOTS_FILE,
   PROP_MISC_DIRECTORY_BOOKMARKS,
-  PROP_MISC_LOG_SCREEN,
-  PROP_MISC_LOG_FILE,
   PROP_MISC_MIDDLE_CLICK_OPENS_URI,
   PROP_MISC_COPY_ON_SELECT,
   PROP_MISC_SHOW_RELAUNCH_DIALOG,
@@ -1032,26 +1030,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_string ("misc-directory-bookmarks",
                          NULL,
                          "MiscDirectoryBookmarks",
-                         NULL,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-log-screen:
-   **/
-  preferences_props[PROP_MISC_LOG_SCREEN] =
-    g_param_spec_boolean ("misc-log-screen",
-                          NULL,
-                          "MiscLogScreen",
-                          FALSE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-log-file:
-   **/
-  preferences_props[PROP_MISC_LOG_FILE] =
-    g_param_spec_string ("misc-log-file",
-                         NULL,
-                         "MiscLogFile",
                          NULL,
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 

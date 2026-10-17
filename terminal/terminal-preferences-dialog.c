@@ -1987,32 +1987,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  button = terminal_preferences_dialog_check_button_new (_("_Write what is on the screen to the log file"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-log-screen",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 2, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
-  label = gtk_label_new_with_mnemonic (_("_Log file:"));
-  gtk_widget_set_halign (label, GTK_ALIGN_START);
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-
-  entry = gtk_entry_new ();
-  gtk_widget_set_hexpand (entry, TRUE);
-  gtk_widget_set_tooltip_text (entry, _("Each snapshot of the screen is written under a "
-                                        "line with the time it was taken"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-log-file",
-                          G_OBJECT (entry), "text",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
-  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 1, 1);
-  gtk_widget_show (entry);
-
-
   /* section: Shortcuts */
   terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Shortcuts"));
 

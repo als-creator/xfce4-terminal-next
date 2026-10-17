@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Xfce Apps\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 20:18+0600\n"
+"POT-Creation-Date: 2026-10-17 21:39+0600\n"
 "PO-Revision-Date: 2013-07-03 18:42+0000\n"
 "Last-Translator: Andrei Stepanov, 2022-2024,2026\n"
 "Language-Team: Russian (http://app.transifex.com/xfce/xfce-apps/language/"
@@ -472,7 +472,7 @@ msgid "_Close"
 msgstr "_Закрыть"
 
 #. add the "Help" button
-#: terminal/terminal-preferences-dialog.c:286 terminal/terminal-window.c:1419
+#: terminal/terminal-preferences-dialog.c:286 terminal/terminal-window.c:1396
 msgid "_Help"
 msgstr "_Справка"
 
@@ -1128,7 +1128,7 @@ msgid "x height"
 msgstr "x высота"
 
 #: terminal/terminal-preferences-dialog.c:1278
-#: terminal/terminal-preferences-dialog.c:1936 terminal/terminal-window.c:5612
+#: terminal/terminal-preferences-dialog.c:1936 terminal/terminal-window.c:5469
 msgid "Reset"
 msgstr "Сбросить"
 
@@ -1467,51 +1467,37 @@ msgstr "Каталоги-_закладки:"
 msgid "Directories separated by a colon, for example ~/projects:/etc"
 msgstr "Каталоги через двоеточие, например ~/projects:/etc"
 
-#: terminal/terminal-preferences-dialog.c:1990
-msgid "_Write what is on the screen to the log file"
-msgstr "Писать, что на экране, в файл журнала"
-
-#: terminal/terminal-preferences-dialog.c:2000
-msgid "_Log file:"
-msgstr "Файл _журнала:"
-
-#: terminal/terminal-preferences-dialog.c:2006
-msgid ""
-"Each snapshot of the screen is written under a line with the time it was "
-"taken"
-msgstr "Каждый снимок экрана записывается под строкой со временем снимка"
-
 #. section: Shortcuts
 #.
 #. * Shortcuts
 #.
-#: terminal/terminal-preferences-dialog.c:2017
-#: terminal/terminal-preferences-dialog.c:2159
+#: terminal/terminal-preferences-dialog.c:1991
+#: terminal/terminal-preferences-dialog.c:2133
 msgid "Shortcuts"
 msgstr "Быстрые клавиши"
 
-#: terminal/terminal-preferences-dialog.c:2019
+#: terminal/terminal-preferences-dialog.c:1993
 msgid "_Disable all menu access keys (such as Alt + f)"
 msgstr "_Отключить все клавиши доступа к меню (такие как Alt + f)"
 
-#: terminal/terminal-preferences-dialog.c:2029
+#: terminal/terminal-preferences-dialog.c:2003
 msgid "_Disable menu shortcut key (F10 by default)"
 msgstr "_Отключить клавишу быстрого доступа к меню (по умолчанию F10)"
 
 #. section: Misc
-#: terminal/terminal-preferences-dialog.c:2038
+#: terminal/terminal-preferences-dialog.c:2012
 msgid "Misc"
 msgstr "Разное"
 
-#: terminal/terminal-preferences-dialog.c:2040
+#: terminal/terminal-preferences-dialog.c:2014
 msgid "_Use middle mouse click to close tabs"
 msgstr "_Использовать средний щелчок мыши для закрытия вкладок"
 
-#: terminal/terminal-preferences-dialog.c:2050
+#: terminal/terminal-preferences-dialog.c:2024
 msgid "_Highlight the focused split"
 msgstr "Подсвечивать сплит с _фокусом"
 
-#: terminal/terminal-preferences-dialog.c:2051
+#: terminal/terminal-preferences-dialog.c:2025
 msgid ""
 "A thin accent line along the edge of the pane that has the keyboard, so that "
 "it can be told from the others in a split of many panes"
@@ -1519,19 +1505,19 @@ msgstr ""
 "Тонкая линия акцентного цвета вдоль края панели с клавиатурой, чтобы её "
 "можно было отличить от остальных в сплите"
 
-#: terminal/terminal-preferences-dialog.c:2063
+#: terminal/terminal-preferences-dialog.c:2037
 msgid "Underline urls on mouseover"
 msgstr "Подчёркивание ссылок при наведении курсора"
 
-#: terminal/terminal-preferences-dialog.c:2073
+#: terminal/terminal-preferences-dialog.c:2047
 msgid "_Use middle mouse click to open urls"
 msgstr "_Использовать средний щелчок мыши для открытия ссылок"
 
-#: terminal/terminal-preferences-dialog.c:2085
+#: terminal/terminal-preferences-dialog.c:2059
 msgid "Enable OSC 8 Hyperlinks"
 msgstr "Включить гиперссылки OSC 8"
 
-#: terminal/terminal-preferences-dialog.c:2086
+#: terminal/terminal-preferences-dialog.c:2060
 msgid ""
 "These are the links displayed when you run the 'ls --hyperlink' command, or "
 "by any other means using the OSC 8 escape sequence."
@@ -1539,86 +1525,86 @@ msgstr ""
 "Это ссылки, отображаемые при выполнении команды «ls --hyperlink» или любым "
 "другим способом с использованием управляющей последовательности OSC 8."
 
-#: terminal/terminal-preferences-dialog.c:2096
+#: terminal/terminal-preferences-dialog.c:2070
 msgid "_Auto-hide mouse pointer"
 msgstr "_Автоскрытие указателя мыши"
 
-#: terminal/terminal-preferences-dialog.c:2106
+#: terminal/terminal-preferences-dialog.c:2080
 msgid "_Open new tab to the right of the active tab"
 msgstr "_Открывать новую вкладку справа от активной вкладки"
 
-#: terminal/terminal-preferences-dialog.c:2116
+#: terminal/terminal-preferences-dialog.c:2090
 msgid "_Audible bell"
 msgstr "_Звуковое оповещение"
 
-#: terminal/terminal-preferences-dialog.c:2126
+#: terminal/terminal-preferences-dialog.c:2100
 msgid "_Visual bell"
 msgstr "_Визуальное оповещение"
 
-#: terminal/terminal-preferences-dialog.c:2136
+#: terminal/terminal-preferences-dialog.c:2110
 msgid "Right click action:"
 msgstr "Действие правого щелчка:"
 
-#: terminal/terminal-preferences-dialog.c:2142
+#: terminal/terminal-preferences-dialog.c:2116
 msgid "Context Menu"
 msgstr "Контекстное меню"
 
-#: terminal/terminal-preferences-dialog.c:2143
+#: terminal/terminal-preferences-dialog.c:2117
 msgid "Paste clipboard"
 msgstr "Вставить буфер обмена"
 
-#: terminal/terminal-preferences-dialog.c:2144
+#: terminal/terminal-preferences-dialog.c:2118
 msgid "Paste selection"
 msgstr "Вставить выделенное"
 
-#: terminal/terminal-preferences-dialog.c:2175
+#: terminal/terminal-preferences-dialog.c:2149
 msgid "Window"
 msgstr "Окно"
 
-#: terminal/terminal-preferences-dialog.c:2177
-#: terminal/terminal-preferences.c:1474
+#: terminal/terminal-preferences-dialog.c:2151
+#: terminal/terminal-preferences.c:1452
 msgid "Terminal"
 msgstr "Терминал"
 
-#: terminal/terminal-preferences-dialog.c:2468
+#: terminal/terminal-preferences-dialog.c:2442
 msgid "Press the shortcut for the drop-down panel"
 msgstr "Нажмите горячую клавишу панели"
 
-#: terminal/terminal-preferences-dialog.c:2470 terminal/terminal-screen.c:2032
-#: terminal/terminal-window.c:2211 terminal/terminal-window.c:4528
-#: terminal/terminal-window.c:5788
+#: terminal/terminal-preferences-dialog.c:2444 terminal/terminal-screen.c:2032
+#: terminal/terminal-window.c:2181 terminal/terminal-window.c:4498
+#: terminal/terminal-window.c:5645
 msgid "_Cancel"
 msgstr "_Отмена"
 
-#: terminal/terminal-preferences-dialog.c:2473
+#: terminal/terminal-preferences-dialog.c:2447
 msgid "Press the key combination, Escape cancels"
 msgstr "Нажмите комбинацию клавиш, Escape — отмена"
 
-#: terminal/terminal-preferences-dialog.c:2508
+#: terminal/terminal-preferences-dialog.c:2482
 msgid "not set"
 msgstr "не задана"
 
-#: terminal/terminal-preferences-dialog.c:2584
+#: terminal/terminal-preferences-dialog.c:2558
 #, c-format
 msgid ""
 "The combination %s is already used by \"%s\". Use it for the drop-down panel "
 "anyway?"
 msgstr "Комбинация %s уже занята командой «%s». Всё равно отдать её панели?"
 
-#: terminal/terminal-preferences-dialog.c:2588
+#: terminal/terminal-preferences-dialog.c:2562
 msgid "Replace the shortcut?"
 msgstr "Заменить горячую клавишу?"
 
-#: terminal/terminal-preferences-dialog.c:2590
+#: terminal/terminal-preferences-dialog.c:2564
 msgid "Combination already in use"
 msgstr "Комбинация уже занята"
 
-#: terminal/terminal-preferences-dialog.c:2592
+#: terminal/terminal-preferences-dialog.c:2566
 msgid "_Use it"
 msgstr "_Использовать"
 
 #. default item + separator
-#: terminal/terminal-preferences-dialog.c:3003
+#: terminal/terminal-preferences-dialog.c:2977
 msgid "Select Preset"
 msgstr "Выбрать Предустановку"
 
@@ -1674,7 +1660,7 @@ msgstr "Дочерний процесс был прерван по сигнал�
 msgid "The child process was aborted."
 msgstr "Дочерний процесс был прерван."
 
-#: terminal/terminal-screen.c:1592 terminal/terminal-window.c:2289
+#: terminal/terminal-screen.c:1592 terminal/terminal-window.c:2259
 msgid "Do _not ask me again"
 msgstr "_Больше не спрашивать"
 
@@ -1698,7 +1684,7 @@ msgstr ""
 "Вставка этого текста в терминал может быть опасной, так как некоторые "
 "команды могут быть исполняемыми."
 
-#: terminal/terminal-screen.c:2035 terminal/terminal-window.c:978
+#: terminal/terminal-screen.c:2035 terminal/terminal-window.c:955
 msgid "_Paste"
 msgstr "_Вставить"
 
@@ -1706,7 +1692,7 @@ msgstr "_Вставить"
 msgid "Failed to execute child"
 msgstr "Ошибка выполнения дочернего процесса"
 
-#: terminal/terminal-screen.c:2953 terminal/terminal-window.c:2940
+#: terminal/terminal-screen.c:2953 terminal/terminal-window.c:2910
 msgid "Close this tab"
 msgstr "Закрыть эту вкладку"
 
@@ -1823,295 +1809,287 @@ msgstr "Настройки"
 msgid "Close Window"
 msgstr "Закрыть окно"
 
-#: terminal/terminal-window.c:798
+#: terminal/terminal-window.c:785
 msgid "_File"
 msgstr "_Файл"
 
-#: terminal/terminal-window.c:808
+#: terminal/terminal-window.c:795
 msgid "Open _Tab"
 msgstr "Открыть _вкладку"
 
-#: terminal/terminal-window.c:809
+#: terminal/terminal-window.c:796
 msgid "Open a new terminal tab"
 msgstr "Открыть новую вкладку терминала"
 
-#: terminal/terminal-window.c:818
+#: terminal/terminal-window.c:805
 msgid "Open T_erminal"
 msgstr "Открыть _терминал"
 
-#: terminal/terminal-window.c:819
+#: terminal/terminal-window.c:806
 msgid "Open a new terminal window"
 msgstr "Открыть новое окно терминала"
 
-#: terminal/terminal-window.c:828
+#: terminal/terminal-window.c:815
 msgid "_Open File Manager Here"
 msgstr "Открыть диспетчер файлов _здесь"
 
-#: terminal/terminal-window.c:829
+#: terminal/terminal-window.c:816
 msgid "Open the current directory"
 msgstr "Открыть текущий каталог"
 
-#: terminal/terminal-window.c:838
+#: terminal/terminal-window.c:825
 msgid "_Undo Close Tab"
 msgstr "Восстановить закр_ытую вкладку"
 
-#: terminal/terminal-window.c:848
+#: terminal/terminal-window.c:835
 msgid "_Detach Tab"
 msgstr "_Отделить вкладку"
 
-#: terminal/terminal-window.c:858 terminal/terminal-window.c:2253
+#: terminal/terminal-window.c:845 terminal/terminal-window.c:2223
 msgid "Close T_ab"
 msgstr "Закрыть _вкладку"
 
-#: terminal/terminal-window.c:868
+#: terminal/terminal-window.c:855
 msgid "Close Other Ta_bs"
 msgstr "Закрыть все остальные вкла_дки"
 
-#: terminal/terminal-window.c:878
+#: terminal/terminal-window.c:865
 msgid "Close Tabs to the _Right"
 msgstr "Закрыть вкладки _справа"
 
-#: terminal/terminal-window.c:888
+#: terminal/terminal-window.c:875
 msgid "Close _All Tabs"
 msgstr "Закрыть _все вкладки"
 
-#: terminal/terminal-window.c:898 terminal/terminal-window.c:2260
+#: terminal/terminal-window.c:885 terminal/terminal-window.c:2230
 msgid "Close _Window"
 msgstr "Закрыть _окно"
 
-#: terminal/terminal-window.c:908
+#: terminal/terminal-window.c:895
 msgid "_Edit"
 msgstr "_Правка"
 
-#: terminal/terminal-window.c:918 terminal/terminal-window.c:4529
+#: terminal/terminal-window.c:905 terminal/terminal-window.c:4499
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: terminal/terminal-window.c:919
+#: terminal/terminal-window.c:906
 msgid "Copy to clipboard"
 msgstr "Копировать в буфер обмена"
 
-#: terminal/terminal-window.c:928
+#: terminal/terminal-window.c:915
 msgid "Copy as _HTML"
 msgstr "Копировать как _HTML"
 
-#: terminal/terminal-window.c:929
+#: terminal/terminal-window.c:916
 msgid "Copy to clipboard as HTML"
 msgstr "Копировать в буфер обмена как HTML"
 
-#: terminal/terminal-window.c:938
+#: terminal/terminal-window.c:925
 msgid "Copy As _..."
 msgstr "Копировать как _..."
 
-#: terminal/terminal-window.c:939
+#: terminal/terminal-window.c:926
 msgid "Ask in which form the selection goes into the clipboard"
 msgstr "Выбрать, в каком виде выделение попадёт в буфер обмена"
 
-#: terminal/terminal-window.c:948
-msgid "_Log Screen"
-msgstr "Вести _журнал экрана"
-
-#: terminal/terminal-window.c:949
-msgid "Write what is on the screen to the log file from time to time"
-msgstr "Периодически писать, что на экране, в файл журнала"
-
-#: terminal/terminal-window.c:958
+#: terminal/terminal-window.c:935
 msgid "Copy to Clipboard Slot"
 msgstr "Скопировать в ячейку обмена"
 
-#: terminal/terminal-window.c:959
+#: terminal/terminal-window.c:936
 msgid "Put the selection into a slot of its own and go on to the next one"
 msgstr "Положить выделение в отдельную ячейку и перейти к следующей"
 
-#: terminal/terminal-window.c:968
+#: terminal/terminal-window.c:945
 msgid "Paste from Clipboard Slot"
 msgstr "Вставить из ячейки обмена"
 
-#: terminal/terminal-window.c:979
+#: terminal/terminal-window.c:956
 msgid "Paste from clipboard"
 msgstr "Вставить из буфера обмена"
 
-#: terminal/terminal-window.c:988
+#: terminal/terminal-window.c:965
 msgid "_Paste Alt"
 msgstr "_Вставить Alt"
 
-#: terminal/terminal-window.c:998
+#: terminal/terminal-window.c:975
 msgid "Paste _Selection"
 msgstr "В_ставить выделенное"
 
-#: terminal/terminal-window.c:1008
+#: terminal/terminal-window.c:985
 msgid "Paste _Selection Alt"
 msgstr "Вставить _выделенное Alt"
 
-#: terminal/terminal-window.c:1018
+#: terminal/terminal-window.c:995
 msgid "Select _All"
 msgstr "Выделить _всё"
 
-#: terminal/terminal-window.c:1028
+#: terminal/terminal-window.c:1005
 msgid "Copy _Input To All Tabs..."
 msgstr "Копировать _ввод во все вкладки..."
 
-#: terminal/terminal-window.c:1038
+#: terminal/terminal-window.c:1015
 msgid "Pr_eferences..."
 msgstr "Н_астройки..."
 
-#: terminal/terminal-window.c:1039
+#: terminal/terminal-window.c:1016
 msgid "Open the preferences dialog"
 msgstr "Открыть окно настроек"
 
-#: terminal/terminal-window.c:1048
+#: terminal/terminal-window.c:1025
 msgid "_View"
 msgstr "_Вид"
 
-#: terminal/terminal-window.c:1058
+#: terminal/terminal-window.c:1035
 msgid "Zoom _In"
 msgstr "_Приблизить"
 
-#: terminal/terminal-window.c:1059
+#: terminal/terminal-window.c:1036
 msgid "Zoom in with larger font"
 msgstr "Увеличить размер шрифта"
 
-#: terminal/terminal-window.c:1068
+#: terminal/terminal-window.c:1045
 msgid "Zoom In Alt"
 msgstr "Увеличение Alt"
 
-#: terminal/terminal-window.c:1078
+#: terminal/terminal-window.c:1055
 msgid "Zoom _Out"
 msgstr "О_тдалить"
 
-#: terminal/terminal-window.c:1079
+#: terminal/terminal-window.c:1056
 msgid "Zoom out with smaller font"
 msgstr "Уменьшить размер шрифта"
 
-#: terminal/terminal-window.c:1088
+#: terminal/terminal-window.c:1065
 msgid "Zoom Out Alt"
 msgstr "Уменьшение Alt"
 
-#: terminal/terminal-window.c:1098
+#: terminal/terminal-window.c:1075
 msgid "_Normal Size"
 msgstr "_Нормальный размер"
 
-#: terminal/terminal-window.c:1099
+#: terminal/terminal-window.c:1076
 msgid "Zoom to default size"
 msgstr "Установить размер шрифта по умолчанию"
 
-#: terminal/terminal-window.c:1108
+#: terminal/terminal-window.c:1085
 msgid "_Normal Size Alt"
 msgstr "_Нормальный размер Alt"
 
-#: terminal/terminal-window.c:1118
+#: terminal/terminal-window.c:1095
 msgid "_Terminal"
 msgstr "_Терминал"
 
-#: terminal/terminal-window.c:1128
+#: terminal/terminal-window.c:1105
 msgid "_Set Title..."
 msgstr "_Изменить заголовок..."
 
-#: terminal/terminal-window.c:1138
+#: terminal/terminal-window.c:1115
 msgid "Set Title Co_lor..."
 msgstr "Изменить _цвет заголовка..."
 
-#: terminal/terminal-window.c:1148
+#: terminal/terminal-window.c:1125
 msgid "_Find..."
 msgstr "_Поиск..."
 
-#: terminal/terminal-window.c:1149
+#: terminal/terminal-window.c:1126
 msgid "Search terminal contents"
 msgstr "Искать в содержимом терминала"
 
-#: terminal/terminal-window.c:1158
+#: terminal/terminal-window.c:1135
 msgid "Find Ne_xt"
 msgstr "Найти _следующее"
 
-#: terminal/terminal-window.c:1168
+#: terminal/terminal-window.c:1145
 msgid "Find Pre_vious"
 msgstr "Найти _предыдущее"
 
-#: terminal/terminal-window.c:1178
+#: terminal/terminal-window.c:1155
 msgid "Sa_ve Contents..."
 msgstr "Со_хранить содержимое..."
 
-#: terminal/terminal-window.c:1188 terminal/terminal-window.c:5652
+#: terminal/terminal-window.c:1165 terminal/terminal-window.c:5509
 msgid "_Reset"
 msgstr "_Сбросить"
 
-#: terminal/terminal-window.c:1198
+#: terminal/terminal-window.c:1175
 msgid "_Clear Scrollback and Reset"
 msgstr "_Очистить буфер прокрутки и сбросить"
 
-#: terminal/terminal-window.c:1208
+#: terminal/terminal-window.c:1185
 msgid "T_abs"
 msgstr "В_кладки"
 
-#: terminal/terminal-window.c:1218
+#: terminal/terminal-window.c:1195
 msgid "_Previous Tab"
 msgstr "_Предыдущая вкладка"
 
-#: terminal/terminal-window.c:1219
+#: terminal/terminal-window.c:1196
 msgid "Switch to previous tab"
 msgstr "Переключиться на предыдущую вкладку"
 
-#: terminal/terminal-window.c:1228
+#: terminal/terminal-window.c:1205
 msgid "_Next Tab"
 msgstr "_Следующая вкладка"
 
-#: terminal/terminal-window.c:1229
+#: terminal/terminal-window.c:1206
 msgid "Switch to next tab"
 msgstr "Переключиться на следующую вкладку"
 
-#: terminal/terminal-window.c:1238
+#: terminal/terminal-window.c:1215
 msgid "Last _Active Tab"
 msgstr "Последняя _активная вкладка"
 
-#: terminal/terminal-window.c:1239
+#: terminal/terminal-window.c:1216
 msgid "Switch to last active tab"
 msgstr "Переключиться на последнюю активную вкладку"
 
-#: terminal/terminal-window.c:1248
+#: terminal/terminal-window.c:1225
 msgid "Move Tab _Left"
 msgstr "Переместить вкладку _влево"
 
-#: terminal/terminal-window.c:1258
+#: terminal/terminal-window.c:1235
 msgid "Move Tab _Right"
 msgstr "Переместить вкладку в_право"
 
-#: terminal/terminal-window.c:1268
+#: terminal/terminal-window.c:1245
 msgid "Split _Horizontally"
 msgstr "Разделить _по горизонтали"
 
-#: terminal/terminal-window.c:1269
+#: terminal/terminal-window.c:1246
 msgid "Split the terminal side by side"
 msgstr "Разделить терминал: панели рядом"
 
-#: terminal/terminal-window.c:1278
+#: terminal/terminal-window.c:1255
 msgid "Split _Vertically"
 msgstr "Разделить по _вертикали"
 
-#: terminal/terminal-window.c:1279
+#: terminal/terminal-window.c:1256
 msgid "Split the terminal one above the other"
 msgstr "Разделить терминал: панели друг над другом"
 
-#: terminal/terminal-window.c:1288
+#: terminal/terminal-window.c:1265
 msgid "_Close Pane"
 msgstr "_Закрыть панель"
 
-#: terminal/terminal-window.c:1289
+#: terminal/terminal-window.c:1266
 msgid "Close the current split pane"
 msgstr "Закрыть текущую панель"
 
-#: terminal/terminal-window.c:1298
+#: terminal/terminal-window.c:1275
 msgid "Start tmux Session"
 msgstr "Запустить сеанс tmux"
 
-#: terminal/terminal-window.c:1299
+#: terminal/terminal-window.c:1276
 msgid "Run the configured tmux start command in this pane"
 msgstr "Выполнить настроенную команду запуска tmux в этой панели"
 
-#: terminal/terminal-window.c:1308
+#: terminal/terminal-window.c:1285
 msgid "_Lock this pane"
 msgstr "_Закрепить панель"
 
-#: terminal/terminal-window.c:1309
+#: terminal/terminal-window.c:1286
 msgid ""
 "Keep the pane when its program ends; the pinned program runs in it instead "
 "(Ctrl+D no longer closes it)"
@@ -2119,177 +2097,177 @@ msgstr ""
 "Панель остаётся на месте, когда её программа заканчивается; вместо неё "
 "запускается закреплённая программа (Ctrl+D больше не закрывает панель)"
 
-#: terminal/terminal-window.c:1319
+#: terminal/terminal-window.c:1296
 msgid "Focus Pane _Up"
 msgstr "Перейти на панель _вверх"
 
-#: terminal/terminal-window.c:1329
+#: terminal/terminal-window.c:1306
 msgid "Focus Pane _Down"
 msgstr "Перейти на панель _вниз"
 
-#: terminal/terminal-window.c:1339
+#: terminal/terminal-window.c:1316
 msgid "Focus Pane _Left"
 msgstr "Перейти на панель _влево"
 
-#: terminal/terminal-window.c:1349
+#: terminal/terminal-window.c:1326
 msgid "Focus Pane _Right"
 msgstr "Перейти на панель в_право"
 
-#: terminal/terminal-window.c:1359
+#: terminal/terminal-window.c:1336
 msgid "Next Pane"
 msgstr "Следующая панель"
 
-#: terminal/terminal-window.c:1369
+#: terminal/terminal-window.c:1346
 msgid "Previous Pane"
 msgstr "Предыдущая панель"
 
-#: terminal/terminal-window.c:1379
+#: terminal/terminal-window.c:1356
 msgid "Move Pane _Up"
 msgstr "Сдвинуть панель _вверх"
 
-#: terminal/terminal-window.c:1380
+#: terminal/terminal-window.c:1357
 msgid "Move the current split pane up"
 msgstr "Сдвинуть текущую панель сплита вверх"
 
-#: terminal/terminal-window.c:1389
+#: terminal/terminal-window.c:1366
 msgid "Move Pane _Down"
 msgstr "Сдвинуть панель _вниз"
 
-#: terminal/terminal-window.c:1390
+#: terminal/terminal-window.c:1367
 msgid "Move the current split pane down"
 msgstr "Сдвинуть текущую панель сплита вниз"
 
-#: terminal/terminal-window.c:1399
+#: terminal/terminal-window.c:1376
 msgid "Move Pane _Left"
 msgstr "Сдвинуть панель _влево"
 
-#: terminal/terminal-window.c:1400
+#: terminal/terminal-window.c:1377
 msgid "Move the current split pane left"
 msgstr "Сдвинуть текущую панель сплита влево"
 
-#: terminal/terminal-window.c:1409
+#: terminal/terminal-window.c:1386
 msgid "Move Pane _Right"
 msgstr "Сдвинуть панель _вправо"
 
-#: terminal/terminal-window.c:1410
+#: terminal/terminal-window.c:1387
 msgid "Move the current split pane right"
 msgstr "Сдвинуть текущую панель сплита вправо"
 
-#: terminal/terminal-window.c:1429
+#: terminal/terminal-window.c:1406
 msgid "_Contents"
 msgstr "Со_держание"
 
-#: terminal/terminal-window.c:1430
+#: terminal/terminal-window.c:1407
 msgid "Display help contents"
 msgstr "Отобразить содержание справки"
 
-#: terminal/terminal-window.c:1439
+#: terminal/terminal-window.c:1416
 msgid "_About"
 msgstr "_О программе"
 
-#: terminal/terminal-window.c:1449
+#: terminal/terminal-window.c:1426
 msgid "_Zoom"
 msgstr "_Масштаб"
 
-#: terminal/terminal-window.c:1459
+#: terminal/terminal-window.c:1436
 msgid "Show Menubar Temporarily"
 msgstr "Показать панель меню временно"
 
-#: terminal/terminal-window.c:1469
+#: terminal/terminal-window.c:1446
 msgid "Show _Menubar"
 msgstr "Показать _строку меню"
 
-#: terminal/terminal-window.c:1470
+#: terminal/terminal-window.c:1447
 msgid "Show/hide the menubar"
 msgstr "Показать/скрыть строку меню"
 
-#: terminal/terminal-window.c:1479
+#: terminal/terminal-window.c:1456
 msgid "Show _Toolbar"
 msgstr "Показать панель _инструментов"
 
-#: terminal/terminal-window.c:1480
+#: terminal/terminal-window.c:1457
 msgid "Show/hide the toolbar"
 msgstr "Показать/скрыть панель инструментов"
 
-#: terminal/terminal-window.c:1489
+#: terminal/terminal-window.c:1466
 msgid "Show Window _Borders"
 msgstr "Показать _границы окна"
 
-#: terminal/terminal-window.c:1490
+#: terminal/terminal-window.c:1467
 msgid "Show/hide the window decorations"
 msgstr "Показать/скрыть границы окна"
 
-#: terminal/terminal-window.c:1499
+#: terminal/terminal-window.c:1476
 msgid "_Fullscreen"
 msgstr "_Полноэкранный режим"
 
-#: terminal/terminal-window.c:1500
+#: terminal/terminal-window.c:1477
 msgid "Toggle fullscreen mode"
 msgstr "Переключить полноэкранный режим"
 
-#: terminal/terminal-window.c:1509
+#: terminal/terminal-window.c:1486
 msgid "_Read-Only"
 msgstr "Тол_ько для чтения"
 
-#: terminal/terminal-window.c:1510
+#: terminal/terminal-window.c:1487
 msgid "Toggle read-only mode"
 msgstr "Переключить режим только для чтения"
 
-#: terminal/terminal-window.c:1519
+#: terminal/terminal-window.c:1496
 msgid "Scroll on _Output"
 msgstr "Прокрутка по мере _вывода"
 
-#: terminal/terminal-window.c:1520
+#: terminal/terminal-window.c:1497
 msgid "Toggle scroll on output"
 msgstr "Переключить режим прокрутки по мере вывода"
 
-#: terminal/terminal-window.c:1530
+#: terminal/terminal-window.c:1507
 msgid "Go to Tab 1"
 msgstr "Перейти к вкладке 1"
 
-#: terminal/terminal-window.c:1540
+#: terminal/terminal-window.c:1517
 msgid "Go to Tab 2"
 msgstr "Перейти к вкладке 2"
 
-#: terminal/terminal-window.c:1550
+#: terminal/terminal-window.c:1527
 msgid "Go to Tab 3"
 msgstr "Перейти к вкладке 3"
 
-#: terminal/terminal-window.c:1560
+#: terminal/terminal-window.c:1537
 msgid "Go to Tab 4"
 msgstr "Перейти к вкладке 4"
 
-#: terminal/terminal-window.c:1570
+#: terminal/terminal-window.c:1547
 msgid "Go to Tab 5"
 msgstr "Перейти к вкладке 5"
 
-#: terminal/terminal-window.c:1580
+#: terminal/terminal-window.c:1557
 msgid "Go to Tab 6"
 msgstr "Перейти к вкладке 6"
 
-#: terminal/terminal-window.c:1590
+#: terminal/terminal-window.c:1567
 msgid "Go to Tab 7"
 msgstr "Перейти к вкладке 7"
 
-#: terminal/terminal-window.c:1600
+#: terminal/terminal-window.c:1577
 msgid "Go to Tab 8"
 msgstr "Перейти к вкладке 8"
 
-#: terminal/terminal-window.c:1610
+#: terminal/terminal-window.c:1587
 msgid "Go to Tab 9"
 msgstr "Перейти к вкладке 9"
 
 #. create encoding action
-#: terminal/terminal-window.c:1828
+#: terminal/terminal-window.c:1800
 msgid "Set _Encoding"
 msgstr "_Задать кодировку"
 
-#: terminal/terminal-window.c:2209
+#: terminal/terminal-window.c:2179
 msgid "Warning"
 msgstr "Предупреждение"
 
 #. and process running
-#: terminal/terminal-window.c:2220
+#: terminal/terminal-window.c:2190
 msgid ""
 "There are still processes running in some tabs.\n"
 "Closing this window will kill all of them."
@@ -2298,7 +2276,7 @@ msgstr ""
 "Закрытие этого окна остановит их всех."
 
 #. and no process running
-#: terminal/terminal-window.c:2226
+#: terminal/terminal-window.c:2196
 #, c-format
 msgid ""
 "This window has %d tabs open. Closing this window\n"
@@ -2307,12 +2285,12 @@ msgstr ""
 "В этом окне открыто %d вкладок. Если вы\n"
 "закроете окно, будут закрыты все вкладки."
 
-#: terminal/terminal-window.c:2231
+#: terminal/terminal-window.c:2201
 msgid "Close all tabs?"
 msgstr "Закрыть все вкладки?"
 
 #. closing a tab, and process running
-#: terminal/terminal-window.c:2238
+#: terminal/terminal-window.c:2208
 msgid ""
 "There is still a process running.\n"
 "Closing this tab will kill it."
@@ -2320,12 +2298,12 @@ msgstr ""
 "Процесс всё ещё работает.\n"
 "Закрытие этой вкладки остановит его."
 
-#: terminal/terminal-window.c:2240
+#: terminal/terminal-window.c:2210
 msgid "Close tab?"
 msgstr "Закрыть вкладку?"
 
 #. closing a single tab window, and process running
-#: terminal/terminal-window.c:2245
+#: terminal/terminal-window.c:2215
 msgid ""
 "There is still a process running.\n"
 "Closing this window will kill it."
@@ -2333,23 +2311,23 @@ msgstr ""
 "Процесс всё ещё работает.\n"
 "Закрытие этого окна остановит его."
 
-#: terminal/terminal-window.c:2247
+#: terminal/terminal-window.c:2217
 msgid "Close window?"
 msgstr "Закрыть окно?"
 
-#: terminal/terminal-window.c:3344
+#: terminal/terminal-window.c:3314
 msgid "locked pane"
 msgstr "панель закреплена"
 
-#: terminal/terminal-window.c:4229
+#: terminal/terminal-window.c:4199
 msgid "Failed to open directory"
 msgstr "Не удалось открыть каталог"
 
-#: terminal/terminal-window.c:4501
+#: terminal/terminal-window.c:4471
 msgid "No links in the selection"
 msgstr "В выделении нет ссылок"
 
-#: terminal/terminal-window.c:4503
+#: terminal/terminal-window.c:4473
 msgid ""
 "There is nothing that looks like a web address in the selected text, so it "
 "was copied as it is."
@@ -2357,135 +2335,127 @@ msgstr ""
 "В выделенном тексте нет ничего похожего на веб-адрес, поэтому текст "
 "скопирован как есть."
 
-#: terminal/terminal-window.c:4526
+#: terminal/terminal-window.c:4496
 msgid "Copy As"
 msgstr "Копировать как"
 
-#: terminal/terminal-window.c:4538
+#: terminal/terminal-window.c:4508
 msgid "Put the _selection into the clipboard as:"
 msgstr "Поместить _выделение в буфер обмена как:"
 
-#: terminal/terminal-window.c:4543
+#: terminal/terminal-window.c:4513
 msgid "Plain text"
 msgstr "Обычный текст"
 
-#: terminal/terminal-window.c:4544
+#: terminal/terminal-window.c:4514
 msgid "HTML"
 msgstr ""
 
-#: terminal/terminal-window.c:4545
+#: terminal/terminal-window.c:4515
 msgid "Links only"
 msgstr "Только ссылки"
 
-#: terminal/terminal-window.c:4604
-msgid "Failed to open the log file"
-msgstr "Не удалось открыть файл журнала"
-
-#: terminal/terminal-window.c:4625
-msgid "Failed to write the log file"
-msgstr "Не удалось записать в файл журнала"
-
-#: terminal/terminal-window.c:4782
+#: terminal/terminal-window.c:4639
 #, c-format
 msgid "Clipboard Slot %u: %s"
 msgstr "Ячейка обмена %u: %s"
 
-#: terminal/terminal-window.c:4784
+#: terminal/terminal-window.c:4641
 #, c-format
 msgid "Clipboard Slot %u"
 msgstr "Ячейка обмена %u"
 
-#: terminal/terminal-window.c:4853
+#: terminal/terminal-window.c:4710
 msgid "Copy to Clipboard _Slot"
 msgstr "Скопировать в ячейку _обмена"
 
-#: terminal/terminal-window.c:4888
+#: terminal/terminal-window.c:4745
 msgid "Paste from Clipboard _Slot"
 msgstr "Вставить из _ячейки обмена"
 
-#: terminal/terminal-window.c:4902
+#: terminal/terminal-window.c:4759
 #, c-format
 msgid "Copy to Clipboard Slot %u"
 msgstr "Скопировать в ячейку обмена %u"
 
-#: terminal/terminal-window.c:4914
+#: terminal/terminal-window.c:4771
 #, c-format
 msgid "Paste from Clipboard Slot %u"
 msgstr "Вставить из ячейки обмена %u"
 
-#: terminal/terminal-window.c:5124
+#: terminal/terminal-window.c:4981
 msgid "The clipboard slot is empty"
 msgstr "Ячейка обмена пуста"
 
-#: terminal/terminal-window.c:5225
+#: terminal/terminal-window.c:5082
 msgid "Copy _Input:"
 msgstr "Копировать _ввод:"
 
-#: terminal/terminal-window.c:5229
+#: terminal/terminal-window.c:5086
 msgid "Enter the text to be copied to all tabs"
 msgstr "Введите текст, который будет скопирован во все вкладки"
 
-#: terminal/terminal-window.c:5237
+#: terminal/terminal-window.c:5094
 msgid "Copy input"
 msgstr "Скопировать ввод"
 
-#: terminal/terminal-window.c:5603
+#: terminal/terminal-window.c:5460
 msgid "_Title:"
 msgstr "_Заголовок:"
 
-#: terminal/terminal-window.c:5607
+#: terminal/terminal-window.c:5464
 msgid "Enter the title for the current terminal tab"
 msgstr "Введите заголовок для текущей вкладки"
 
-#: terminal/terminal-window.c:5622
+#: terminal/terminal-window.c:5479
 msgid "Help"
 msgstr "Справка"
 
-#: terminal/terminal-window.c:5628
+#: terminal/terminal-window.c:5485
 msgid "Close"
 msgstr "Закрыть"
 
-#: terminal/terminal-window.c:5651
+#: terminal/terminal-window.c:5508
 msgid "Choose title color"
 msgstr "Указать цвет заголовка"
 
-#: terminal/terminal-window.c:5746
+#: terminal/terminal-window.c:5603
 msgid "Failed to create the regular expression"
 msgstr "Не удалось создать регулярное выражение"
 
-#: terminal/terminal-window.c:5786
+#: terminal/terminal-window.c:5643
 msgid "Save contents..."
 msgstr "Сохранить содержимое..."
 
-#: terminal/terminal-window.c:5789
+#: terminal/terminal-window.c:5646
 msgid "_Save"
 msgstr "_Сохранить"
 
-#: terminal/terminal-window.c:5827
+#: terminal/terminal-window.c:5684
 msgid "Failed to save terminal contents"
 msgstr "Не удалось сохранить содержимое терминала"
 
-#: terminal/terminal-window.c:6703
+#: terminal/terminal-window.c:6560
 msgid "Send Signal"
 msgstr "Отправить сигнал"
 
-#: terminal/terminal-window.c:6721
+#: terminal/terminal-window.c:6578
 msgid "Zoom"
 msgstr "Масштаб"
 
-#: terminal/terminal-window.c:6733
+#: terminal/terminal-window.c:6590
 msgid "Copy"
 msgstr "Копировать"
 
-#: terminal/terminal-window.c:6749
+#: terminal/terminal-window.c:6606
 msgid "Paste"
 msgstr "Вставить"
 
-#: terminal/terminal-window.c:6760
+#: terminal/terminal-window.c:6617
 msgid "Split"
 msgstr "Разделить"
 
-#: terminal/terminal-window.c:6776
+#: terminal/terminal-window.c:6633
 msgid "View Options"
 msgstr "Параметры вида"
 
@@ -2510,6 +2480,29 @@ msgstr "Настроить терминал Xfce"
 #: xfce4-terminal-settings.desktop.in:5
 msgid "terminal;settings;preferences;configuration;configure;"
 msgstr "terminal;settings;preferences;configuration;configure;терминал;консоль;настройки;конфигурация;настроить;"
+
+#~ msgid "_Write what is on the screen to the log file"
+#~ msgstr "Писать, что на экране, в файл журнала"
+
+#~ msgid "_Log file:"
+#~ msgstr "Файл _журнала:"
+
+#~ msgid ""
+#~ "Each snapshot of the screen is written under a line with the time it was "
+#~ "taken"
+#~ msgstr "Каждый снимок экрана записывается под строкой со временем снимка"
+
+#~ msgid "_Log Screen"
+#~ msgstr "Вести _журнал экрана"
+
+#~ msgid "Write what is on the screen to the log file from time to time"
+#~ msgstr "Периодически писать, что на экране, в файл журнала"
+
+#~ msgid "Failed to open the log file"
+#~ msgstr "Не удалось открыть файл журнала"
+
+#~ msgid "Failed to write the log file"
+#~ msgstr "Не удалось записать в файл журнала"
 
 #~ msgid "tmux Launch Options"
 #~ msgstr "Опции запуска tmux"
