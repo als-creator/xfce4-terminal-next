@@ -3276,8 +3276,8 @@ terminal_window_get_context_menu (TerminalScreen *screen,
 
   terminal_window_menu_add_section (window, context_menu, MENU_SECTION_SPLIT, FALSE);
 
-  /* Лок панели и запуск tmux: из меню окна до них надо ещё добраться, а в
-   * контекстном меню терминала их как раз и ищут. */
+  /* Lock the pane and start tmux: from the window menu they are a detour,
+   * and in the terminal context menu that is where they are looked for. */
   xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_LOCK_PANE), G_OBJECT (window), terminal_screen_get_locked (window->priv->active), GTK_MENU_SHELL (context_menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (context_menu));
 
@@ -4903,7 +4903,7 @@ terminal_window_action_copy_to_slot (TerminalWindow *window)
 
 
 /* The same two things from the context menu, where the slot is picked by name:
- * "Скопировать в ячейку 2" and "Вставить из ячейки 2" say exactly what they
+ * "Copy to Clipboard Slot 2" and "Paste from Clipboard Slot 2" say what they
  * will do, which is what the cycling hotkeys cannot do. */
 static gboolean
 terminal_window_action_slot_item (GtkMenuItem   *item,

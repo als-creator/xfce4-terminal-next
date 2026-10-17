@@ -589,8 +589,8 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /* next row */
   row++;
 
-  /* Сама защёлка живёт в панели и переключается из меню, а программа — вещь
-   * терминала: одна на все панели. */
+  /* The latch itself lives in the pane and is switched from the menu, while
+   * the program is a thing of the terminal: one for every pane. */
   label = gtk_label_new_with_mnemonic (_("Program of the _locked pane:"));
   gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
   gtk_widget_show (label);

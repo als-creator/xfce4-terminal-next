@@ -377,7 +377,8 @@ terminal_status_notifier_menu_layout (TerminalStatusNotifier *notifier,
       for (i = 0; i < notifier->n_menu_items; i++)
         /* the children of an "av" array are variants, not bare layouts */
         g_variant_builder_add_value (&children,
-                                     g_variant_new_variant (terminal_status_notifier_menu_layout_item (notifier, i)));
+                                     g_variant_new_variant (
+                                       terminal_status_notifier_menu_layout_item (notifier, i)));
     }
 
   return g_variant_new ("(ia{sv}av)", parent_id, &properties, &children);
@@ -471,8 +472,8 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
       g_dbus_method_invocation_return_value (invocation,
                                              g_variant_new ("(u@(ia{sv}av))",
                                                             notifier->menu_revision,
-                                                            terminal_status_notifier_menu_layout (notifier,
-                                                                                                        parent_id, depth)));
+                                                            terminal_status_notifier_menu_layout (
+                                                              notifier, parent_id, depth)));
     }
   else if (g_strcmp0 (method_name, "GetGroupProperties") == 0)
     {
@@ -511,20 +512,26 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
       if (id >= 1 && (gint) id <= (gint) notifier->n_menu_items && g_strcmp0 (name, "label") == 0)
         {
           g_dbus_method_invocation_return_value (invocation,
-                                                 g_variant_new ("(v)", g_variant_new_string (notifier->menu_labels[id - 1])));
+                                                 g_variant_new ("(v)",
+                                                                g_variant_new_string (
+                                                                  notifier->menu_labels[id - 1])));
         }
       else if (g_strcmp0 (name, "type") == 0)
         {
           g_dbus_method_invocation_return_value (invocation,
-                                                 g_variant_new ("(v)", g_variant_new_string ("standard")));
+                                                 g_variant_new ("(v)",
+                                                                g_variant_new_string ("standard")));
         }
       else if (g_strcmp0 (name, "enabled") == 0 || g_strcmp0 (name, "visible") == 0)
         {
-          g_dbus_method_invocation_return_value (invocation, g_variant_new ("(v)", g_variant_new_boolean (TRUE)));
+          g_dbus_method_invocation_return_value (invocation,
+                                                 g_variant_new ("(v)",
+                                                                g_variant_new_boolean (TRUE)));
         }
       else
         {
-          g_dbus_method_invocation_return_value (invocation, g_variant_new ("(v)", g_variant_new_string ("")));
+          g_dbus_method_invocation_return_value (invocation,
+                                                 g_variant_new ("(v)", g_variant_new_string ("")));
         }
     }
   else if (g_strcmp0 (method_name, "Event") == 0)
@@ -609,7 +616,8 @@ terminal_status_notifier_is_supported (void)
 
   reply = g_dbus_connection_call_sync (connection, "org.freedesktop.DBus",
                                        "/org/freedesktop/DBus", "org.freedesktop.DBus",
-                                       "NameHasOwner", g_variant_new ("(s)", TERMINAL_SNI_WATCHER_NAME),
+                                       "NameHasOwner",
+                                       g_variant_new ("(s)", TERMINAL_SNI_WATCHER_NAME),
                                        g_variant_type_checked_ ("(b)"), G_DBUS_CALL_FLAGS_NONE,
                                        1000, NULL, &error);
   if (reply != NULL)
@@ -713,7 +721,8 @@ terminal_status_notifier_new (const TerminalStatusNotifierInfo *info)
                                                       NULL, notifier, NULL);
 
   /* the watcher may start after us (a panel plugin, say), so keep watching it */
-  notifier->watcher_id = g_bus_watch_name_on_connection (notifier->connection, TERMINAL_SNI_WATCHER_NAME,
+  notifier->watcher_id = g_bus_watch_name_on_connection (notifier->connection,
+                                                         TERMINAL_SNI_WATCHER_NAME,
                                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
                                                           terminal_status_notifier_watcher_appeared,
                                                           terminal_status_notifier_watcher_vanished,

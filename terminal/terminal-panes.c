@@ -786,7 +786,8 @@ panes_layout_append (GString   *str,
       gint size;
 
       gtk_widget_get_allocation (widget, &alloc);
-      size = (gtk_orientable_get_orientation (GTK_ORIENTABLE (widget)) == GTK_ORIENTATION_HORIZONTAL)
+      size = (gtk_orientable_get_orientation (GTK_ORIENTABLE (widget))
+              == GTK_ORIENTATION_HORIZONTAL)
                ? alloc.width
                : alloc.height;
 
@@ -1088,9 +1089,11 @@ terminal_panes_move_pane (TerminalPanes *panes,
         continue;
 
       if ((horizontal
-           && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_HORIZONTAL)
+           && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent))
+              == GTK_ORIENTATION_HORIZONTAL)
           || (!horizontal
-              && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent)) == GTK_ORIENTATION_VERTICAL))
+              && gtk_orientable_get_orientation (GTK_ORIENTABLE (parent))
+                  == GTK_ORIENTATION_VERTICAL))
         break;
     }
 
