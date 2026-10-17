@@ -39,6 +39,7 @@
 #include "terminal-encoding-action.h"
 #include "terminal-enum-types.h"
 #include "terminal-keys.h"
+#include "terminal-tmux.h"
 #include "terminal-marshal.h"
 #include "terminal-options.h"
 #include "terminal-panes.h"
@@ -573,6 +574,11 @@ static gboolean
 terminal_window_action_split_horizontal (TerminalWindow *window);
 static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window);
+static void
+terminal_window_start_tmux_mode (TerminalWindow *window,
+                                 TerminalScreen  *screen);
+static gboolean
+terminal_window_tmux_mode_idle (gpointer user_data);
 static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
 static gboolean
@@ -754,6 +760,9 @@ struct _TerminalWindowPrivate
   gchar **panes_layouts;
   gint panes_layout_index;
   guint panes_layout_idle;
+
+  /* tmux was already started for the first pane of this window */
+  guint tmux_started : 1;
 
   /* if this is a TerminalWindowDropdown */
   guint drop_down : 1;
@@ -2489,6 +2498,10 @@ terminal_window_notebook_page_added (GtkNotebook *notebook,
       window->priv->panes_layout_index++;
     }
 
+  /* tmux waits for the shell, and the shell starts after this handler */
+  g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, terminal_window_tmux_mode_idle,
+                   g_object_ref (window), g_object_unref);
+
   /* connect the screen signals for every pane in the tree */
   for (lp = screens; lp != NULL; lp = lp->next)
     {
@@ -3864,12 +3877,98 @@ terminal_window_add_fresh_tab_idle (gpointer user_data)
 
 
 
+/* The line that puts a pane into tmux, built out of the settings. An empty
+ * command field in the preferences means "build it", a line there is the
+ * user's own and is used as it is. */
+static gchar *
+terminal_window_build_tmux_command (void)
+{
+  TerminalPreferences *preferences = terminal_preferences_get ();
+  const gchar *command;
+  const gchar *session;
+  gboolean true_color;
+  gboolean mouse;
+  gchar *line;
+
+  g_object_get (G_OBJECT (preferences),
+                "misc-tmux-command", &command,
+                "misc-tmux-session", &session,
+                "misc-tmux-true-color", &true_color,
+                "misc-tmux-mouse", &mouse,
+                NULL);
+
+  line = terminal_tmux_build_command (command, session, true_color, mouse);
+
+  g_free ((gchar *) session);
+  g_free ((gchar *) command);
+
+  return line;
+}
+
+
+/* Put the pane into tmux right away: the session outlives the window, and the
+ * next window attaches back to it. Only the first pane of a window does this,
+ * otherwise every split would start a session of its own inside the first. */
+static void
+terminal_window_start_tmux_mode (TerminalWindow *window,
+                                 TerminalScreen  *screen)
+{
+  gboolean mode;
+
+  g_return_if_fail (TERMINAL_IS_WINDOW (window));
+  g_return_if_fail (TERMINAL_IS_SCREEN (screen));
+
+  if (window->priv->tmux_started)
+    return;
+
+  g_object_get (G_OBJECT (window->priv->preferences), "misc-tmux-mode", &mode, NULL);
+  if (!mode)
+    return;
+
+  /* a terminal started from inside tmux already is the session; a second
+   * tmux inside it would only get in the way */
+  if (g_getenv ("TMUX") != NULL)
+    return;
+
+  window->priv->tmux_started = TRUE;
+
+  {
+    gchar *command = terminal_window_build_tmux_command ();
+
+    terminal_screen_feed_text (screen, command);
+    terminal_screen_feed_text (screen, "\n");
+    g_free (command);
+  }
+}
+
+
+/* The pane is fed from an idle, not from the page-added handler itself: the
+ * shell of the first pane is started only after that handler returns, and text
+ * fed into a terminal whose shell has not started yet goes nowhere. Going
+ * through the notebook covers every way a window can come up: an ordinary
+ * start, a window restored from the session, and the drop-down panel. */
+static gboolean
+terminal_window_tmux_mode_idle (gpointer user_data)
+{
+  TerminalWindow *window = TERMINAL_WINDOW (user_data);
+  TerminalScreen *active;
+
+  if (!gtk_widget_in_destruction (GTK_WIDGET (window)))
+    {
+      active = window->priv->active;
+      if (active != NULL)
+        terminal_window_start_tmux_mode (window, active);
+    }
+
+  return G_SOURCE_REMOVE;
+}
+
+
 static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window)
 {
   TerminalScreen *active;
   gchar *cmd;
-  const gchar *pref;
 
   g_return_val_if_fail (TERMINAL_IS_WINDOW (window), FALSE);
 
@@ -3877,14 +3976,9 @@ terminal_window_action_start_tmux (TerminalWindow *window)
   if (active == NULL)
     return TRUE;
 
-  /* the command is user-editable; the default attaches to (or creates) the
-   * "main" session so it survives an SSH reconnect */
-  g_object_get (G_OBJECT (window->priv->preferences), "misc-tmux-command", &pref, NULL);
-  cmd = g_strdup ((pref != NULL && *pref != '\0') ? pref : "tmux new-session -A -s main");
-
+  cmd = terminal_window_build_tmux_command ();
   terminal_screen_feed_text (active, cmd);
   terminal_screen_feed_text (active, "\n");
-
   g_free (cmd);
 
   return TRUE;
