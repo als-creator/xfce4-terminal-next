@@ -66,7 +66,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
    - нормализация раскладки — `tests/bin/test-keys` (48 проверок);
    - панели — `python3 tests/build-test.py` и `tests/bin/test-panes` (67 проверок);
    - выпадающее окно и разделение режимов — `tests/stand-wm.sh`, затем
-     `dbus-run-session -- tests/split-test.sh` (и `panel-*.sh`/`plain-test.sh`).
+     `dbus-run-session -- tests/split-test.sh` (и `panel-*.sh`/`tests/plain-test.sh`).
 3. Новые строки интерфейса — перевести в `po/ru.po` и проверить
    `msgfmt -c --statistics -o /dev/null po/ru.po`.
 4. Если стенд не запускается в окружении (например, нет `Xvfb` или дисплея) —
@@ -87,7 +87,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 ничего нужного не держим, содержимое там теряется при перезагрузке.
 
 Стенды с окнами работают только на своём дисплее — `:99` (поднимает
-`tests/stand-wm.sh`, он и `keys-live-test.sh` отказываются работать на `:0`).
+`tests/stand-wm.sh`, он и `tests/keys-live-test.sh` отказываются работать на `:0`).
 `DISPLAY` из окружения для них брать нельзя: там может оказаться сессия
 пользователя, и тогда окно стенда перехватит фокус, а `setxkbmap` сменит
 раскладку пользователю. Это правило уже стоило вытеснения пользовательского
@@ -132,7 +132,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 (`xfwm4 --sm-client-disable --daemon`) — сами скрипты. Запускать внутри
 `dbus-run-session`, чтобы у стенда была своя шина.
 
-Пересобрать стенд панелей нужно после изменений в `terminal-panes.c`/`.h`.
+Пересобрать стенд панелей нужно после изменений в `terminal/terminal-panes.c`/`.h`.
 
 ## Строки интерфейса, которые нельзя менять по своему усмотрению
 

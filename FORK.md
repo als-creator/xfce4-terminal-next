@@ -95,7 +95,7 @@ needs those keys.
 ### Tray icon: StatusNotifierItem with a GtkStatusIcon fallback
 
 The icon is a StatusNotifierItem (`org.kde.StatusNotifierItem` on the session
-bus, `terminal-status-notifier.c`), which is what Xfce, KDE and the GNOME
+bus, `terminal/terminal-status-notifier.c`), which is what Xfce, KDE and the GNOME
 extension of AppIndicator understand, in an X11 session as well as in a
 Wayland one. It is a plain D-Bus interface, so nothing KDE is linked in: the
 dependencies of the package do not change.
@@ -297,7 +297,7 @@ reviewed on their own:
 
 | Branch | What it is |
 | --- | --- |
-| `upstream/pr-layout-accel` | only `terminal-keys.c`, plus the small hook in `terminal-window.c`. Layout independent accelerators, ~280 lines, no dependency on any other fork feature. |
+| `upstream/pr-layout-accel` | only `terminal/terminal-keys.c`, plus the small hook in `terminal/terminal-window.c`. Layout independent accelerators, ~280 lines, no dependency on any other fork feature. |
 | `master` | plain upstream, so that `master...feature/split-panes` is a readable diff of the whole fork |
 
 Compare the fork with upstream:
