@@ -25,10 +25,7 @@
 
 G_BEGIN_DECLS
 
-gchar *terminal_tmux_build_command (const gchar *command,
-                                    const gchar *session,
-                                    gboolean      true_color,
-                                    gboolean      mouse);
+gchar *terminal_tmux_build_command (const gchar *command);
 
 G_END_DECLS
 

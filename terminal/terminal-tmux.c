@@ -1,12 +1,9 @@
 /*
  * The line that puts a pane into tmux.
  *
- * The preferences hand over four answers — a session name and three
- * checkboxes — and this builds the command out of them. It is kept apart from
- * the window so that it can be tested without a display: tmux 3.8 gives no way
- * to tell from the outside whether an option was set by us or is just the
- * server default (mouse is on by default there), so the only honest place to
- * check the line is the code that builds it.
+ * One field in the preferences, one line out: whatever the user wrote is used
+ * as it is, and an empty field falls back to the default line below. It is kept
+ * apart from the window so that it can be tested without a display.
  *
  * Copyright (c) 2026 als-creator
  *
@@ -33,41 +30,34 @@
 
 #include "terminal-tmux.h"
 
-/* The settings go after the session command because tmux applies them to the
- * session it has just attached to: that is where passthrough (24-bit colour)
- * and the window size are wanted, and where the mouse belongs too — though
- * only when it is asked for, since it takes the mouse away from selecting text
- * in the terminal.
+/* The default line, and what each part is for:
  *
- * "\\;" is the shell quoting of tmux's own command separator: the shell must
+ *   TERM=tmux-256color          programs inside tmux are told that 256 colours
+ *                               are there
+ *   tmux new-session            a new session
+ *   -A                          attach to the session instead of making a
+ *                               second one when it is already there
+ *   -s main                     the name of that session
+ *   \; set -g allow-passthrough on
+ *                               programs may pass 24-bit colour through tmux
+ *                               (neovim, imgcat, fzf with icons), instead of
+ *                               having it rounded to the nearest of 256
+ *   \; set -g window-size latest
+ *                               the pane takes the size of the last-sized
+ *                               client window, so resizing the terminal resizes
+ *                               tmux and leaves no scrollbars behind
+ *
+ * "\\;" is the shell quoting of tmux's own command separator: the shell has to
  * hand both commands to tmux instead of running the second one itself.
- *
- * An empty @command means "build it here"; a line in @command is the user's
- * own and replaces the whole thing, options included.
  *
  * Returns a newly allocated string. */
 gchar *
-terminal_tmux_build_command (const gchar *command,
-                             const gchar *session,
-                             gboolean      true_color,
-                             gboolean      mouse)
+terminal_tmux_build_command (const gchar *command)
 {
-  GString *line;
-
   if (command != NULL && *command != '\0')
     return g_strdup (command);
 
-  if (session == NULL || *session == '\0')
-    session = "main";
-
-  line = g_string_new ("TERM=tmux-256color tmux new-session -A -s ");
-  g_string_append (line, session);
-
-  if (true_color)
-    g_string_append (line, " \\; set -g allow-passthrough on");
-  g_string_append (line, " \\; set -g window-size latest");
-  if (mouse)
-    g_string_append (line, " \\; set -g mouse on");
-
-  return g_string_free (line, FALSE);
+  return g_strdup ("TERM=tmux-256color tmux new-session -A -s main"
+                   " \\; set -g allow-passthrough on"
+                   " \\; set -g window-size latest");
 }

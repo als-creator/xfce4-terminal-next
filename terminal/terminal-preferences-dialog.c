@@ -565,71 +565,8 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_widget_show (button);
 
 
-  /* section: tmux launch options */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux Launch Options"));
-  button = terminal_preferences_dialog_check_button_new (_("Start tmux in every _window"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-mode",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Put the first pane of every window into tmux: the"
-                                         " session stays alive when the window is closed, and"
-                                         " the next window attaches back to it."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 3, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
-  label = gtk_label_new_with_mnemonic (_("_Session name:"));
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-  gtk_widget_show (label);
-
-  entry = gtk_entry_new ();
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-session",
-                          G_OBJECT (entry), "text",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-mode",
-                          G_OBJECT (entry), "sensitive",
-                          G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (entry, _("The session the terminal attaches to, or creates"
-                                        " when there is none."));
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
-  gtk_widget_set_hexpand (entry, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
-  gtk_widget_show (entry);
-
-  /* the two settings of the session live in one row: they are the same kind
-   * of choice — what tmux is allowed to do on its own */
-  row++;
-
-  button = terminal_preferences_dialog_check_button_new (_("Let 24-bit _colour through"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-true-color",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-mode",
-                          G_OBJECT (button), "sensitive",
-                          G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Programs that ask for 24-bit colour show it as it"
-                                         " is, instead of the nearest of 256."));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
-  button = terminal_preferences_dialog_check_button_new (_("Let tmux use the _mouse"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-mouse",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-mode",
-                          G_OBJECT (button), "sensitive",
-                          G_BINDING_SYNC_CREATE);
-  gtk_widget_set_tooltip_text (button, _("Clicks reach the program running inside tmux."
-                                         " The text can no longer be selected with the"
-                                         " mouse in the terminal itself."));
-  gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
+  /* section: tmux */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux"));
   label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
   gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
   gtk_widget_show (label);
@@ -638,11 +575,12 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
                           G_OBJECT (entry), "text",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_entry_set_placeholder_text (GTK_ENTRY (entry), _("built from the settings above"));
-  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by Ctrl+Shift+M and the"
-                                        " \"Start tmux Session\" menu entry.\n"
-                                        "Left empty it is built out of the settings above;"
-                                        " a line here replaces it whole."));
+  gtk_entry_set_placeholder_text (GTK_ENTRY (entry), _("the default line below"));
+  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by \"Start tmux Session\""
+                                        " in the context menu (Ctrl+Shift+M).\n"
+                                        "Left empty it runs the default line, which attaches"
+                                        " to the session \"main\" and lets programs pass"
+                                        " 24-bit colour through."));
   gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
   gtk_widget_set_hexpand (entry, TRUE);
   gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
@@ -845,8 +783,10 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
   gtk_widget_show (button);
 
-  /* the field speaks for itself: the path it holds says what it is, so the
-   * word "File" before it only takes room away from the path */
+  /* The field speaks for itself: the path it holds says what it is, so the
+   * word "File" before it only takes room away from the path. It stands next
+   * to the check box that switches the whole thing on — in the same cell the
+   * two would lie on top of each other. */
   entry = gtk_entry_new ();
   gtk_widget_set_hexpand (entry, TRUE);
   /* the dialog is not resizable, so an entry grows only as far as its own
@@ -863,7 +803,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
                           G_OBJECT (entry), "sensitive",
                           G_BINDING_SYNC_CREATE);
-  gtk_grid_attach (GTK_GRID (grid), entry, 0, row, 3, 1);
+  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
   gtk_widget_show (entry);
 
 

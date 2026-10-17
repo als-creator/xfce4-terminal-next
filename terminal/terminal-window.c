@@ -576,11 +576,6 @@ static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window);
 static void
 terminal_window_action_lock_pane (TerminalWindow *window);
-static void
-terminal_window_start_tmux_mode (TerminalWindow *window,
-                                 TerminalScreen  *screen);
-static gboolean
-terminal_window_tmux_mode_idle (gpointer user_data);
 static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
 static gboolean
@@ -770,7 +765,6 @@ struct _TerminalWindowPrivate
   guint panes_layout_idle;
 
   /* tmux was already started for the first pane of this window */
-  guint tmux_started : 1;
 
   /* if this is a TerminalWindowDropdown */
   guint drop_down : 1;
@@ -2524,10 +2518,6 @@ terminal_window_notebook_page_added (GtkNotebook *notebook,
       window->priv->panes_layout_index++;
     }
 
-  /* tmux waits for the shell, and the shell starts after this handler */
-  g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, terminal_window_tmux_mode_idle,
-                   g_object_ref (window), g_object_unref);
-
   /* connect the screen signals for every pane in the tree */
   for (lp = screens; lp != NULL; lp = lp->next)
     {
@@ -3316,6 +3306,11 @@ terminal_window_get_context_menu (TerminalScreen *screen,
 
   terminal_window_menu_add_section (window, context_menu, MENU_SECTION_SPLIT, FALSE);
 
+  /* Лок панели и запуск tmux: из меню окна до них надо ещё добраться, а в
+   * контекстном меню терминала их как раз и ищут. */
+  xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_LOCK_PANE), G_OBJECT (window), terminal_screen_get_locked (window->priv->active), GTK_MENU_SHELL (context_menu));
+  xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (context_menu));
+
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (context_menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_PREFERENCES), G_OBJECT (window), GTK_MENU_SHELL (context_menu));
 
@@ -3964,83 +3959,14 @@ static gchar *
 terminal_window_build_tmux_command (void)
 {
   TerminalPreferences *preferences = terminal_preferences_get ();
-  const gchar *command;
-  const gchar *session;
-  gboolean true_color;
-  gboolean mouse;
+  gchar *command = NULL;
   gchar *line;
 
-  g_object_get (G_OBJECT (preferences),
-                "misc-tmux-command", &command,
-                "misc-tmux-session", &session,
-                "misc-tmux-true-color", &true_color,
-                "misc-tmux-mouse", &mouse,
-                NULL);
-
-  line = terminal_tmux_build_command (command, session, true_color, mouse);
-
-  g_free ((gchar *) session);
-  g_free ((gchar *) command);
+  g_object_get (G_OBJECT (preferences), "misc-tmux-command", &command, NULL);
+  line = terminal_tmux_build_command (command);
+  g_free (command);
 
   return line;
-}
-
-
-/* Put the pane into tmux right away: the session outlives the window, and the
- * next window attaches back to it. Only the first pane of a window does this,
- * otherwise every split would start a session of its own inside the first. */
-static void
-terminal_window_start_tmux_mode (TerminalWindow *window,
-                                 TerminalScreen  *screen)
-{
-  gboolean mode;
-
-  g_return_if_fail (TERMINAL_IS_WINDOW (window));
-  g_return_if_fail (TERMINAL_IS_SCREEN (screen));
-
-  if (window->priv->tmux_started)
-    return;
-
-  g_object_get (G_OBJECT (window->priv->preferences), "misc-tmux-mode", &mode, NULL);
-  if (!mode)
-    return;
-
-  /* a terminal started from inside tmux already is the session; a second
-   * tmux inside it would only get in the way */
-  if (g_getenv ("TMUX") != NULL)
-    return;
-
-  window->priv->tmux_started = TRUE;
-
-  {
-    gchar *command = terminal_window_build_tmux_command ();
-
-    terminal_screen_feed_text (screen, command);
-    terminal_screen_feed_text (screen, "\n");
-    g_free (command);
-  }
-}
-
-
-/* The pane is fed from an idle, not from the page-added handler itself: the
- * shell of the first pane is started only after that handler returns, and text
- * fed into a terminal whose shell has not started yet goes nowhere. Going
- * through the notebook covers every way a window can come up: an ordinary
- * start, a window restored from the session, and the drop-down panel. */
-static gboolean
-terminal_window_tmux_mode_idle (gpointer user_data)
-{
-  TerminalWindow *window = TERMINAL_WINDOW (user_data);
-  TerminalScreen *active;
-
-  if (!gtk_widget_in_destruction (GTK_WIDGET (window)))
-    {
-      active = window->priv->active;
-      if (active != NULL)
-        terminal_window_start_tmux_mode (window, active);
-    }
-
-  return G_SOURCE_REMOVE;
 }
 
 

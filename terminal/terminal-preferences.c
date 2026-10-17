@@ -136,10 +136,6 @@ enum
   PROP_MISC_SESSION_ACTIVE_TAB_INDEX,
   PROP_MISC_SESSION_ACTIVE_PANE_INDEX,
   PROP_MISC_TMUX_COMMAND,
-  PROP_MISC_TMUX_MODE,
-  PROP_MISC_TMUX_SESSION,
-  PROP_MISC_TMUX_TRUE_COLOR,
-  PROP_MISC_TMUX_MOUSE,
   PROP_MISC_PINNED_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
@@ -1360,58 +1356,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                          "MiscTmuxCommand",
                          NULL,
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-tmux-mode:
-   *
-   * Start tmux in the first pane of every window, so the session lives on
-   * after the window is closed and a new window attaches back to it.
-   **/
-  preferences_props[PROP_MISC_TMUX_MODE] =
-    g_param_spec_boolean ("misc-tmux-mode",
-                          NULL,
-                          "MiscTmuxMode",
-                          FALSE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-tmux-session:
-   *
-   * Name of the session the terminal attaches to (or creates) in tmux mode.
-   **/
-  preferences_props[PROP_MISC_TMUX_SESSION] =
-    g_param_spec_string ("misc-tmux-session",
-                         NULL,
-                         "MiscTmuxSession",
-                         "main",
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-tmux-true-color:
-   *
-   * Let 24-bit colour through tmux untouched, so that programs using it
-   * show the colours they ask for instead of an approximation out of 256.
-   **/
-  preferences_props[PROP_MISC_TMUX_TRUE_COLOR] =
-    g_param_spec_boolean ("misc-tmux-true-color",
-                          NULL,
-                          "MiscTmuxTrueColor",
-                          TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-tmux-mouse:
-   *
-   * Turn on tmux mouse handling. It makes clicking work inside full-screen
-   * programs, and stops the terminal from selecting text with the mouse, so
-   * it stays off unless it is asked for.
-   **/
-  preferences_props[PROP_MISC_TMUX_MOUSE] =
-    g_param_spec_boolean ("misc-tmux-mouse",
-                          NULL,
-                          "MiscTmuxMouse",
-                          FALSE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-pinned-command:
