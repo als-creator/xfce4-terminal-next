@@ -40,7 +40,7 @@
 ## Сборка
 
 ```
-cd /mnt/Data/Projects/xfce4-terminal
+cd /mnt/Data/Projects/xfce4-terminal-next
 PATH=$PWD/.venv/bin:$PATH meson compile -C build
 ```
 
@@ -76,7 +76,7 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
    (с показом, что именно удаляется).
 6. Отчёт пользователю — по-русски, коротко: что изменилось, чем проверено, и
    после этого команда установки
-   (`sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-<версия>-<pkgrel>-x86_64.pkg.tar.zst`).
+   (`sudo pacman -U /mnt/Data/Projects/xfce4-terminal-next/xfce4-terminal-next-<версия>-<pkgrel>-x86_64.pkg.tar.zst`).
    что осталось непроверенным.
 
 ## Тесты
@@ -173,19 +173,19 @@ msgmerge --no-fuzzy-matching --update po/ru.po po/xfce4-terminal.pot
 
 ## Arch-пакет
 
-И сборка, и готовый пакет — **в папке проекта** (`/mnt/Data/Projects/xfce4-terminal`).
+И сборка, и готовый пакет — **в папке проекта** (`/mnt/Data/Projects/xfce4-terminal-next`).
 Сборка идёт в `pkgbuild/` (в `.gitignore`), результат `makepkg` копируется в
 корень этого же репозитория. Ни в `/tmp` (это tmpfs, содержимое пропадает при
 перезагрузке), ни в домашнем каталоге ничего не оставляем.
 
 ```
-cd /mnt/Data/Projects/xfce4-terminal
+cd /mnt/Data/Projects/xfce4-terminal-next
 mkdir -p pkgbuild/src
 git archive HEAD | tar -C pkgbuild/src -xf -
 cp PKGBUILD xfce4-terminal-next.install pkgbuild/
 cd pkgbuild
-PATH=/mnt/Data/Projects/xfce4-terminal/.venv/bin:$PATH makepkg -f --noconfirm --nodeps
-cp xfce4-terminal-next-*.pkg.tar.zst /mnt/Data/Projects/xfce4-terminal/
+PATH=/mnt/Data/Projects/xfce4-terminal-next/.venv/bin:$PATH makepkg -f --noconfirm --nodeps
+cp xfce4-terminal-next-*.pkg.tar.zst /mnt/Data/Projects/xfce4-terminal-next/
 ```
 
 `pkgrel` поднимать на единицу при каждой пересборке. Готовый пакет лежит в
@@ -196,7 +196,7 @@ cp xfce4-terminal-next-*.pkg.tar.zst /mnt/Data/Projects/xfce4-terminal/
 команда установки:
 
 ```
-sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-<версия>-<pkgrel>-x86_64.pkg.tar.zst
+sudo pacman -U /mnt/Data/Projects/xfce4-terminal-next/xfce4-terminal-next-<версия>-<pkgrel>-x86_64.pkg.tar.zst
 ```
 
 Установка в `/usr/local`, бинарник `xfce4-terminal-next`, D-Bus
@@ -223,6 +223,14 @@ sudo pacman -U /mnt/Data/Projects/xfce4-terminal/xfce4-terminal-next-<верси
 - один коммит на одну тему, без «fixup» в истории PR: переписывать историю
   можно, но в коммит, который поехал в апстрим, попадает всё, что нужно;
 - строки интерфейса переводятся в `po/ru.po` отдельно, в PR не входит.
+
+## Соотношение с апстримом
+
+- По умолчанию всё как в апстриме: те же диалоги, те же строки меню, тот же
+  порядок настроек, те же подписи и единицы. Своё добавляем рядом, а не вместо.
+- Отступление от апстрима — только когда без него не работает наша функция, и
+  всегда с причиной: в коммите и в `FORK.md`.
+- Из решений апстрима пользуемся свободно, чужой код не копируем.
 
 ## Стиль кода XFCE
 
