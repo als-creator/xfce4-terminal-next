@@ -6605,13 +6605,6 @@ terminal_window_menu_add_section (TerminalWindow *window,
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SPLIT_HORIZONTAL), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SPLIT_VERTICAL), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
       xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_CLOSE_PANE), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_append_separator (GTK_MENU_SHELL (insert_to_menu));
-      xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (insert_to_menu));
-      /* check box: the pane says in the menu whether it is locked now */
-      xfce_gtk_toggle_menu_item_new_from_action_entry (
-        get_action_entry (TERMINAL_WINDOW_ACTION_LOCK_PANE), G_OBJECT (window),
-        terminal_screen_get_locked (window->priv->active),
-        GTK_MENU_SHELL (insert_to_menu));
     }
 
   if (sections & MENU_SECTION_VIEW)
@@ -6756,6 +6749,10 @@ terminal_window_update_terminal_menu (TerminalWindow *window,
 
   terminal_window_menu_clean (GTK_MENU (menu));
   terminal_window_menu_add_section (window, menu, MENU_SECTION_SPLIT, TRUE);
+  /* lock and tmux stand beside the split section, not inside it: in one menu
+   * they are looked for by themselves, and every entry must occur once */
+  xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_LOCK_PANE), G_OBJECT (window), terminal_screen_get_locked (window->priv->active), GTK_MENU_SHELL (menu));
+  xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SET_TITLE), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SET_TITLE_COLOR), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (menu));
