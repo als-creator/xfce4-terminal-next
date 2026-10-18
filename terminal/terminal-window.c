@@ -4711,7 +4711,7 @@ terminal_window_add_slots_menu (TerminalWindow *window,
               gchar *label = terminal_window_slot_label (i + 1, clipboard_slots[i]);
 
               G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-              radio_action = gtk_radio_action_new (name, NULL, label, NULL, (gint) i);
+              radio_action = gtk_radio_action_new (name, label, NULL, NULL, (gint) i);
               gtk_radio_action_set_current_value (radio_action, (gint) clipboard_slot);
               gtk_action_set_sensitive (GTK_ACTION (radio_action), clipboard_slots[i] != NULL);
               G_GNUC_END_IGNORE_DEPRECATIONS
