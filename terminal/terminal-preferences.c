@@ -108,8 +108,6 @@ enum
   PROP_MISC_CLIPBOARD_SLOTS,
   PROP_MISC_CLIPBOARD_SLOTS_ENABLED,
   PROP_MISC_CLIPBOARD_SLOTS_FORMAT,
-  PROP_MISC_CLIPBOARD_SLOTS_COPY,
-  PROP_MISC_CLIPBOARD_SLOTS_PASTE,
   PROP_MISC_CLIPBOARD_SLOTS_NESTED,
   PROP_MISC_CLIPBOARD_SLOTS_SAVE,
   PROP_MISC_CLIPBOARD_SLOTS_FILE,
@@ -1068,26 +1066,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                          "MiscClipboardSlotsFormat",
                          "text",
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-clipboard-slots-copy:
-   **/
-  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_COPY] =
-    g_param_spec_boolean ("misc-clipboard-slots-copy",
-                          NULL,
-                          "MiscClipboardSlotsCopy",
-                          TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-clipboard-slots-paste:
-   **/
-  preferences_props[PROP_MISC_CLIPBOARD_SLOTS_PASTE] =
-    g_param_spec_boolean ("misc-clipboard-slots-paste",
-                          NULL,
-                          "MiscClipboardSlotsPaste",
-                          TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
    * TerminalPreferences:misc-clipboard-slots-nested:

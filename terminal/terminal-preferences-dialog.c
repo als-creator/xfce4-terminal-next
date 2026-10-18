@@ -590,7 +590,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   /*
    * Session and Memory
    */
-  label = gtk_label_new (_("Session & Memory"));
+  label = gtk_label_new (_("Session"));
   if (vbox != NULL)
     {
       terminal_preferences_dialog_check_buttons (vbox, check_buttons);
@@ -730,29 +730,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   terminal_preferences_dialog_slot_format_radio (
     dialog, first_format, "html", _("_HTML"), grid, 2, row);
   gtk_label_set_mnemonic_widget (GTK_LABEL (label), first_format);
-
-  /* which of the two directions the menus offer, and how */
-  row++;
-
-  button = terminal_preferences_dialog_check_button_new (_("Copy into _slots"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-copy",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
-                          G_OBJECT (button), "sensitive",
-                          G_BINDING_SYNC_CREATE);
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 1, 1);
-  gtk_widget_show (button);
-
-  button = terminal_preferences_dialog_check_button_new (_("_Paste from slots"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-paste",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-clipboard-slots-enabled",
-                          G_OBJECT (button), "sensitive",
-                          G_BINDING_SYNC_CREATE);
-  gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
-  gtk_widget_show (button);
 
   row++;
 
@@ -1967,8 +1944,8 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   g_free (current);
 
 
-  /* section: Bookmarks and log */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Bookmarks and Log"));
+  /* section: Bookmarks */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("Bookmarks"));
 
   label = gtk_label_new_with_mnemonic (_("Directory _bookmarks:"));
   gtk_widget_set_halign (label, GTK_ALIGN_START);
