@@ -762,7 +762,10 @@ msgid ""
 "(Ctrl+Shift+M).\n"
 "Left empty it runs the default line, which attaches to the session \"main\" "
 "and lets programs pass 24-bit colour through."
-msgstr ""
+msgstr "Команда, выполняемая в панели пунктом «Запустить сеанс tmux» контекстного "
+       "меню (Ctrl+Shift+M).\n"
+       "Пустое поле — строка по умолчанию: подключается к сеансу «main» и "
+       "разрешает программам передавать 24-битный цвет."
 
 #. section: Clipboard
 #: terminal/terminal-preferences-dialog.c:675
