@@ -91,7 +91,10 @@ static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
  * panes at a glance. */
 static const gchar *CSS_PANE_STYLES =
   "paned.pane-locked > separator {"
-  "  background-color: @accent_color;"
+  /* the theme accent is not a variable GTK3 has to define: in themes like
+   * Adwaita the rule was dropped whole and the mark never appeared. The
+   * selected color is one every GTK3 theme defines */
+  "  background-color: @theme_selected_bg_color;"
   "  min-width: 5px;"
   "  min-height: 5px;"
   "}";
