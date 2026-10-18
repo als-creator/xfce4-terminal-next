@@ -144,19 +144,14 @@ PATH=$PWD/.venv/bin:$PATH meson setup --reconfigure build
 | Где | Строка (как показывается) | Оригинал в коде |
 | --- | --- | --- |
 | Вкладка «Выпадающий», надпись сверху | Вне зависимости от настроек ниже вы получаете выпадающее окно терминала, если добавите хоткей для команды `xfce4-terminal-next --drop-down`. | `"Regardless of the settings below, you get the drop-down terminal window if you add a hotkey for \"xfce4-terminal-next --drop-down\"."` |
-| Вкладка «Выпадающий», галка хоткея | Использовать _системную горячую клавишу для скрытия и появления терминала | `"Use a _system shortcut to hide and show the terminal"` |
+| Вкладка «Выпадающий», галка хоткея | Использовать _горячую клавишу для скрытия и появления терминала (XFCE) | `"Use a _hotkey to hide and show the terminal (XFCE)"` |
 | Раздел «Сессия», галка | Сохранять сессию с расположением _сплитов | `"Save the session with the _split layout"` |
 | Раздел «Сессия», галка | Возвращать на место _активную вкладку | `"Bring back the _active tab"` |
 | Раздел «Сессия», галка | Возвращать на место _активную панель | `"Bring back the _active pane"` |
-| Раздел «Разное», галка | Подсвечивать сплит с _фокусом | `"_Highlight the focused split"` |
-| Раздел «Закладки и журнал», галка | Писать, что на экране, в файл журнала | `"_Write what is on the screen to the log file"` |
-| Раздел «Закладки и журнал», поле | Каталоги-_закладки | `"Directory _bookmarks:"` |
-| Раздел «Закладки и журнал», поле | Файл _журнала | `"_Log file:"` |
 | Меню «Правка» / контекстное, пункт | Скопировать в ячейку обмена | `"Copy to Clipboard Slot"` |
 | Меню «Правка» / контекстное, пункт | Вставить из ячейки обмена | `"Paste from Clipboard Slot"` |
 | Контекстное меню, пункт | Скопировать в ячейку обмена %u | `"Copy to Clipboard Slot %u"` |
 | Контекстное меню, пункт | Вставить из ячейки обмена %u | `"Paste from Clipboard Slot %u"` |
-| Раздел «Разное», поле | Ячейки _обмена | `"Clipboard _slots:"` |
 
 ## Шаблон перевода
 
