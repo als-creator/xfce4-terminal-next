@@ -86,17 +86,10 @@ static GParamSpec *panes_properties[N_PROPERTIES];
 
 static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
 
-/* the stylesheet and the provider that carries it, shared by every pane tree */
+/* The stylesheet of the pane marks, shared by every pane tree: a locked pane
+ * gets a wider band along its edge, so that a lock is seen in a split of many
+ * panes at a glance. */
 static const gchar *CSS_PANE_STYLES =
-  /* the pane with the keyboard: a thin accent line along its edge */
-  "paned.pane-active > separator {"
-  "  background-color: @accent_color;"
-  "  min-width: 2px;"
-  "  min-height: 2px;"
-  "}"
-  /* a locked pane: a wider band with a border, so that a lock is seen in a
-   * split of many panes at a glance and does not pass for the mark of the
-   * active pane */
   "paned.pane-locked > separator {"
   "  background-color: @accent_color;"
   "  min-width: 5px;"
@@ -105,12 +98,8 @@ static const gchar *CSS_PANE_STYLES =
 static GtkCssProvider *panes_style_provider = NULL;
 
 
-
-/* The pane that has the keyboard is marked, so that it can be told from the
- * others at a glance in a split of many panes. The mark is a style class; what
- * it looks like is up to the stylesheet in terminal-widget.c. */
 static void
-panes_update_active_style (TerminalPanes *panes)
+panes_update_styles (TerminalPanes *panes)
 {
   GSList *screens, *lp;
 
@@ -130,11 +119,6 @@ panes_update_active_style (TerminalPanes *panes)
         screen = parent;
 
       context = gtk_widget_get_style_context (screen);
-      if (TERMINAL_SCREEN (lp->data) == panes->active)
-        gtk_style_context_add_class (context, "pane-active");
-      else
-        gtk_style_context_remove_class (context, "pane-active");
-
       if (terminal_screen_get_locked (TERMINAL_SCREEN (lp->data)))
         gtk_style_context_add_class (context, "pane-locked");
       else
@@ -146,9 +130,9 @@ panes_update_active_style (TerminalPanes *panes)
 
 
 void
-terminal_panes_update_active_style (TerminalPanes *panes)
+terminal_panes_update_styles (TerminalPanes *panes)
 {
-  panes_update_active_style (panes);
+  panes_update_styles (panes);
 }
 
 
@@ -156,8 +140,6 @@ static void
 panes_emit_active_changed (TerminalPanes *panes,
                            TerminalScreen *screen)
 {
-  panes_update_active_style (panes);
-
   g_signal_emit (panes, panes_signals[TERMINAL_PANES_ACTIVE_SCREEN_CHANGED], 0,
                  screen);
   g_object_notify (G_OBJECT (panes), "title");

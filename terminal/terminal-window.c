@@ -493,8 +493,6 @@ terminal_window_action_copy_to_slot (TerminalWindow *window);
 static gboolean
 terminal_window_action_goto_bookmark (GtkMenuItem *item,
                                      TerminalWindow *window);
-static void
-terminal_window_panes_highlight_changed (TerminalWindow *window);
 static gboolean
 terminal_window_action_paste_from_slot (GtkRadioAction *action,
                                         TerminalWindow  *window);
@@ -1707,10 +1705,6 @@ terminal_window_init (TerminalWindow *window)
   window->priv->panes_layout_idle = g_idle_add (terminal_window_panes_layout_restore_idle, window);
 
   gtk_window_add_accel_group (GTK_WINDOW (window), window->priv->accel_group);
-
-  /* the mark of the pane with the keyboard follows its setting, too */
-  g_signal_connect_swapped (G_OBJECT (window->priv->preferences), "notify::misc-highlight-active-pane",
-                            G_CALLBACK (terminal_window_panes_highlight_changed), window);
 
   window->menubar = gtk_menu_bar_new ();
   terminal_window_create_menu (window, TERMINAL_WINDOW_ACTION_FILE_MENU, G_CALLBACK (terminal_window_update_file_menu));
@@ -4003,7 +3997,7 @@ terminal_window_action_lock_pane (TerminalWindow *window)
     TerminalPanes *panes = terminal_window_screen_get_panes (active);
 
     if (panes != NULL)
-      terminal_panes_update_active_style (panes);
+      terminal_panes_update_styles (panes);
   }
 }
 
@@ -4552,23 +4546,6 @@ terminal_window_action_copy_as (TerminalWindow *window)
 
 
 
-/* The screen log is a snapshot now and then, each snapshot under a line with
- * the time it was taken: what was on the screen at that moment is what the log
- * has to say, the terminal cannot know what the commands under it meant. */
-static void
-terminal_window_panes_highlight_changed (TerminalWindow *window)
-{
-  gint n_pages, n;
-
-  n_pages = gtk_notebook_get_n_pages (GTK_NOTEBOOK (window->priv->notebook));
-  for (n = 0; n < n_pages; n++)
-    {
-      GtkWidget *page = gtk_notebook_get_nth_page (GTK_NOTEBOOK (window->priv->notebook), n);
-
-      if (page != NULL && TERMINAL_IS_PANES (page))
-        terminal_panes_update_active_style (TERMINAL_PANES (page));
-    }
-}
 
 
 static gboolean

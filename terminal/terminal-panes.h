@@ -158,14 +158,14 @@ void
 terminal_panes_focus_previous (TerminalPanes *panes);
 
 /**
- * terminal_panes_update_active_style:
+ * terminal_panes_update_styles:
  * @panes: a #TerminalPanes
  *
  * Marks the pane that has the keyboard again, for when the setting that draws
  * the mark has been switched.
  */
 void
-terminal_panes_update_active_style (TerminalPanes *panes);
+terminal_panes_update_styles      (TerminalPanes *panes);
 
 /**
  * Moves the pane focus in the given direction based on pane geometry.

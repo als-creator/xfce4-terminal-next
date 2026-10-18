@@ -267,7 +267,11 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
   /* configure the dialog properties */
   gtk_window_set_icon_name (GTK_WINDOW (dialog), "org.xfce.terminal");
-  gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+  /* The window can be stretched: eight tabs do not fit the width the content
+   * asks for, and a notebook that does not fit shows arrows instead of the
+   * tabs — which reads as a carousel and hides where the setting lives. */
+  gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
+  gtk_window_set_default_size (GTK_WINDOW (dialog), 1040, -1);
   gtk_window_set_title (GTK_WINDOW (dialog), _("Terminal Preferences"));
 
 #if !LIBXFCE4UI_CHECK_VERSION(4, 19, 3)
@@ -565,30 +569,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_widget_show (button);
 
 
-  /* section: tmux */
-  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux"));
-  label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
-  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
-  gtk_widget_show (label);
-
-  entry = gtk_entry_new ();
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
-                          G_OBJECT (entry), "text",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_entry_set_placeholder_text (GTK_ENTRY (entry), _("the default line below"));
-  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by \"Start tmux Session\""
-                                        " in the context menu (Ctrl+Shift+M).\n"
-                                        "Left empty it runs the default line, which attaches"
-                                        " to the session \"main\" and lets programs pass"
-                                        " 24-bit colour through."));
-  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
-  gtk_widget_set_hexpand (entry, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
-  gtk_widget_show (entry);
-
-  /* next row */
-  row++;
-
   /* The latch itself lives in the pane and is switched from the menu, while
    * the program is a thing of the terminal: one for every pane. */
   label = gtk_label_new_with_mnemonic (_("Program of the _locked pane:"));
@@ -663,7 +643,32 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_grid_attach (GTK_GRID (grid), button, 1, row, 1, 1);
   gtk_widget_show (button);
 
+  /* next row */
+  row++;
 
+  /* section: tmux */
+  terminal_preferences_dialog_new_section (&frame, &vbox, &grid, &label, &row, _("tmux"));
+  label = gtk_label_new_with_mnemonic (_("Command to _start tmux:"));
+  gtk_grid_attach (GTK_GRID (grid), label, 0, row, 1, 1);
+  gtk_widget_show (label);
+
+  entry = gtk_entry_new ();
+  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tmux-command",
+                          G_OBJECT (entry), "text",
+                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+  gtk_entry_set_placeholder_text (GTK_ENTRY (entry), _("the default line below"));
+  gtk_widget_set_tooltip_text (entry, _("Command run in the pane by \"Start tmux Session\""
+                                        " in the context menu (Ctrl+Shift+M).\n"
+                                        "Left empty it runs the default line, which attaches"
+                                        " to the session \"main\" and lets programs pass"
+                                        " 24-bit colour through."));
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
+  gtk_widget_set_hexpand (entry, TRUE);
+  gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
+  gtk_widget_show (entry);
+
+  /* next row */
+  row++;
 
 
   /* section: Clipboard */
@@ -2013,19 +2018,6 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
   button = terminal_preferences_dialog_check_button_new (_("_Use middle mouse click to close tabs"));
   g_object_bind_property (G_OBJECT (dialog->preferences), "misc-tab-close-middle-click",
-                          G_OBJECT (button), "active",
-                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-  gtk_grid_attach (GTK_GRID (grid), button, 0, row, 2, 1);
-  gtk_widget_show (button);
-
-  /* next row */
-  row++;
-
-  button = terminal_preferences_dialog_check_button_new (_("_Highlight the focused split"));
-  gtk_widget_set_tooltip_text (button, _("A thin accent line along the edge of the pane "
-                                        "that has the keyboard, so that it can be told "
-                                        "from the others in a split of many panes"));
-  g_object_bind_property (G_OBJECT (dialog->preferences), "misc-highlight-active-pane",
                           G_OBJECT (button), "active",
                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
   gtk_grid_attach (GTK_GRID (grid), button, 0, row, 2, 1);

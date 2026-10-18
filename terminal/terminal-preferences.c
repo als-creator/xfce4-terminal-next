@@ -105,7 +105,6 @@ enum
   PROP_MISC_TAB_CLOSE_MIDDLE_CLICK,
   PROP_MISC_TAB_POSITION,
   PROP_MISC_HIGHLIGHT_URLS,
-  PROP_MISC_HIGHLIGHT_ACTIVE_PANE,
   PROP_MISC_CLIPBOARD_SLOTS,
   PROP_MISC_CLIPBOARD_SLOTS_ENABLED,
   PROP_MISC_CLIPBOARD_SLOTS_FORMAT,
@@ -281,6 +280,8 @@ static GParamSpec *preferences_props[N_PROPERTIES] = {
 static void
 terminal_preferences_class_init (TerminalPreferencesClass *klass)
 {
+  GdkRGBA default_pane_color;
+
   GObjectClass *gobject_class;
   guint i;
   const GType enum_types[] = {
@@ -1034,16 +1035,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
-   * TerminalPreferences:misc-highlight-active-pane:
-   **/
-  preferences_props[PROP_MISC_HIGHLIGHT_ACTIVE_PANE] =
-    g_param_spec_boolean ("misc-highlight-active-pane",
-                          NULL,
-                          "MiscHighlightActivePane",
-                          TRUE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
    * TerminalPreferences:misc-clipboard-slots:
    **/
   preferences_props[PROP_MISC_CLIPBOARD_SLOTS] =
@@ -1547,6 +1538,7 @@ terminal_preferences_init (TerminalPreferences *preferences)
 
   g_signal_connect (G_OBJECT (preferences->channel), "property-changed",
                     G_CALLBACK (terminal_preferences_prop_changed), preferences);
+
 }
 
 
