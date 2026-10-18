@@ -196,6 +196,9 @@ void
 terminal_window_add_panes (TerminalWindow *window,
                            TerminalPanes *panes);
 
+void
+terminal_window_save_panes_layouts (TerminalWindow *window);
+
 guint
 terminal_window_get_n_tabs (TerminalWindow *window);
 

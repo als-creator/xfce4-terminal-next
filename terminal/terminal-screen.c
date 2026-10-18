@@ -134,8 +134,6 @@ terminal_screen_get_child_command (TerminalScreen *screen,
                                    gchar **command,
                                    gchar ***argv,
                                    GError **error);
-static void
-terminal_screen_relaunch_locked (TerminalScreen *screen);
 static gchar *
 terminal_screen_parse_title (TerminalScreen *screen,
                              const gchar *title);
@@ -259,8 +257,8 @@ struct _TerminalScreen
   guint hold : 1;
   guint has_random_bg_color : 1;
 
-  /* the pane is locked: its shell ending is not the end of the pane, and the
-   * program below is what runs in it from then on */
+  /* the pane is locked: it is written down with the session, and the program
+   * below is what it comes back with at the next start */
   gchar *pinned_command;
   guint locked : 1;
 
@@ -1560,12 +1558,20 @@ terminal_screen_vte_child_exited (VteTerminal *terminal,
 
   g_object_get (G_OBJECT (screen->preferences), "misc-show-relaunch-dialog", &show_relaunch_dialog, NULL);
 
-  if (G_LIKELY (!screen->hold && !screen->locked))
-    gtk_widget_destroy (GTK_WIDGET (screen));
-  else if (screen->locked && screen->pinned_command != NULL && *screen->pinned_command != '\0')
+  if (G_LIKELY (!screen->hold))
     {
-      /* the pane is locked on this program, so it simply runs it again */
-      terminal_screen_relaunch_locked (screen);
+      /* A locked pane closes like any other, but its lock goes into the layout
+       * beforehand: written down after the destroy, the pane would already be
+       * out of the tree and the next session would not bring it back. */
+      if (screen->locked)
+        {
+          GtkWidget *toplevel = gtk_widget_get_toplevel (GTK_WIDGET (screen));
+
+          if (TERMINAL_IS_WINDOW (toplevel))
+            terminal_window_save_panes_layouts (TERMINAL_WINDOW (toplevel));
+        }
+
+      gtk_widget_destroy (GTK_WIDGET (screen));
     }
   else if (show_relaunch_dialog)
     {
@@ -1603,33 +1609,20 @@ terminal_screen_vte_child_exited (VteTerminal *terminal,
 
 
 
-/* Start the program of a locked pane again: its shell is gone and nobody is
- * waiting for it, the pane stands and carries on with its program. */
-static void
-terminal_screen_relaunch_locked (TerminalScreen *screen)
-{
-  terminal_screen_launch_child (screen);
-  terminal_screen_focus (screen);
-}
-
-
-
 /**
  * terminal_screen_set_locked:
  * @screen: a #TerminalScreen
- * @locked: %TRUE to keep the pane when its shell ends
- * @command: (nullable): the program to run in the pane
- * @restart: %TRUE to start that program right away
+ * @locked: %TRUE to keep the pane for the next session
+ * @command: (nullable): the program to run in the pane after restore
  *
- * Lock the pane: its shell ending no longer ends the pane, and the program
- * from @command runs there from then on — on the next start of the shell and,
- * with @restart, right now.
+ * Lock the pane: it is written down with the session and, on restore, runs the
+ * program from @command instead of a new shell. The pane itself closes with
+ * Ctrl+D as it always did; the lock is what the next session remembers.
  */
 void
 terminal_screen_set_locked (TerminalScreen *screen,
                             gboolean        locked,
-                            const gchar    *command,
-                            gboolean        restart)
+                            const gchar    *command)
 {
   g_return_if_fail (TERMINAL_IS_SCREEN (screen));
 
@@ -1637,9 +1630,6 @@ terminal_screen_set_locked (TerminalScreen *screen,
 
   g_free (screen->pinned_command);
   screen->pinned_command = (locked && command != NULL) ? g_strdup (command) : NULL;
-
-  if (locked && restart && screen->pinned_command != NULL && *screen->pinned_command != '\0')
-    terminal_screen_relaunch_locked (screen);
 }
 
 
@@ -1647,7 +1637,7 @@ terminal_screen_set_locked (TerminalScreen *screen,
  * terminal_screen_get_locked:
  * @screen: a #TerminalScreen
  *
- * Whether the pane survives its shell.
+ * Whether the pane is kept for the next session.
  *
  * Returns: %TRUE while the pane is locked.
  */

@@ -635,8 +635,6 @@ static void
 terminal_window_restore_panes_pins (TerminalPanes *panes,
                                      const gchar   *record);
 static void
-terminal_window_save_panes_layouts (TerminalWindow *window);
-static void
 terminal_window_save_session_state (TerminalWindow *window);
 static void
 terminal_window_restore_session_state (TerminalWindow *window);
@@ -1265,8 +1263,8 @@ static XfceGtkActionEntry action_entries[] = {
     "<control><shift>l",
     XFCE_GTK_CHECK_MENU_ITEM,
     N_ ("_Lock this pane"),
-    N_ ("Keep the pane when its program ends; the pinned program runs in it"
-       " instead (Ctrl+D no longer closes it)"),
+    N_ ("Keep the pane for the next session: it closes with Ctrl+D like any\n"
+       "other pane, and comes back at the next start with its program"),
     "object-frozen",
     G_CALLBACK (terminal_window_action_lock_pane),
   },
@@ -3576,8 +3574,7 @@ terminal_window_restore_panes_pins (TerminalPanes *panes,
 
       terminal_screen_set_locked (TERMINAL_SCREEN (lp->data),
                                   pin->locked,
-                                  pin->command,
-                                  FALSE);
+                                  pin->command);
     }
   g_slist_free (screens);
 
@@ -3625,7 +3622,7 @@ terminal_window_panes_layouts_enabled (TerminalWindow *window)
 
 
 
-static void
+void
 terminal_window_save_panes_layouts (TerminalWindow *window)
 {
   GPtrArray *layouts;
@@ -3940,11 +3937,10 @@ terminal_window_action_start_tmux (TerminalWindow *window)
 
 
 
-/* Lock the pane: from here on Ctrl+D (or the program ending on its own) does
- * not take the pane away. What runs in the pane right now keeps running — the
- * lock is a wall, not a restart; the program from the settings is what the
- * pane starts when this one ends, and what a pane restored in the next session
- * comes up with. */
+/* Lock the pane: what runs in it right now keeps running, and the pane is
+ * written down with the session — the lock is what brings it back at the next
+ * start, together with the program from the settings. Ctrl+D closes the pane
+ * like any other; the lock decides whether the next session remembers it. */
 static void
 terminal_window_action_lock_pane (TerminalWindow *window)
 {
@@ -3962,7 +3958,7 @@ terminal_window_action_lock_pane (TerminalWindow *window)
   if (!locked)
     g_object_get (G_OBJECT (window->priv->preferences), "misc-pinned-command", &command, NULL);
 
-  terminal_screen_set_locked (active, !locked, command, FALSE);
+  terminal_screen_set_locked (active, !locked, command);
   g_free ((gchar *) command);
 
   /* the layout is written down here, while the lock is fresh: a window that is

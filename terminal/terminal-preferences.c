@@ -1307,9 +1307,9 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
   /**
    * TerminalPreferences:misc-pinned-command:
    *
-   * The program a locked pane runs: after its shell ends the pane starts this
-   * one again, and a restored pane starts with it right away. Empty means the
-   * pane is simply kept, waiting for a key.
+   * The program a locked pane comes back with at the next start: the pane is
+   * saved with the session and runs this program as it is restored. Empty
+   * means the pane comes back with the usual shell.
    **/
   preferences_props[PROP_MISC_PINNED_COMMAND] =
     g_param_spec_string ("misc-pinned-command",

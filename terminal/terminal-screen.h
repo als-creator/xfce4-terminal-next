@@ -39,8 +39,7 @@ void
 terminal_screen_launch_child (TerminalScreen *screen);
 void         terminal_screen_set_locked (TerminalScreen *screen,
                                          gboolean        locked,
-                                         const gchar    *command,
-                                         gboolean        restart);
+                                         const gchar    *command);
 gboolean     terminal_screen_get_locked (TerminalScreen *screen);
 const gchar *terminal_screen_get_pinned_command (TerminalScreen *screen);
 
