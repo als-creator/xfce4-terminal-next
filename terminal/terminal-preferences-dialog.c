@@ -267,11 +267,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
 
   /* configure the dialog properties */
   gtk_window_set_icon_name (GTK_WINDOW (dialog), "org.xfce.terminal");
-  /* The window can be stretched: eight tabs do not fit the width the content
-   * asks for, and a notebook that does not fit shows arrows instead of the
-   * tabs — which reads as a carousel and hides where the setting lives. */
-  gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
-  gtk_window_set_default_size (GTK_WINDOW (dialog), 1040, -1);
+  gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
   gtk_window_set_title (GTK_WINDOW (dialog), _("Terminal Preferences"));
 
 #if !LIBXFCE4UI_CHECK_VERSION(4, 19, 3)
