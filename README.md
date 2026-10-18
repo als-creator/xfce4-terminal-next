@@ -25,23 +25,27 @@ from scratch. The full list of changes and the reasoning behind them live in
 * **Drop-down terminal** — a system hotkey (`XFCE`) to hide and show it, and
   a `StatusNotifierItem` tray icon on X11 and Wayland.
 
-### Known quirk: the split hotkey and layout switching
+## FAQ
+
+<details>
+<summary>Why does <code>Ctrl+Shift+H</code> split only when Ctrl is pressed
+before Shift?</summary>
 
 With the layout switcher set to `Ctrl+Shift` (`grp:ctrl_shift_toggle`),
-`Ctrl+Shift+H` splits only if **Ctrl is pressed before Shift** (or both are
-pressed at once). Press Shift first and the XKB switcher takes over the
-modifier panel and hands the key back to the application **without Ctrl** —
-the modifier is lost in X11, before the terminal sees the event, so no code
-in the terminal can compensate. The same applies to any other
-`Ctrl+Shift+<letter>` hotkey.
+pressing Shift first makes the XKB switcher take over the modifier panel and
+hand the key back to the application **without Ctrl** — the modifier is lost
+in X11, before the terminal sees the event, so no code in the terminal can
+compensate. The same applies to any other `Ctrl+Shift+<letter>` hotkey.
 
 Two ways around it:
 
-* press Ctrl first — the split works on the first try, on any layout;
-* switch the layout toggle to another pair (for example `Alt+Shift`), which
+* press Ctrl first (or press both at once) — the split works on the first
+  try, on any layout;
+* switch the layout toggle to another pair, for example `Alt+Shift`, which
   frees `Ctrl+Shift+<letter>` entirely:
 
       % setxkbmap -option grp:alt_shift_toggle
+</details>
 
 ### Homepage
 
@@ -78,3 +82,87 @@ root; install it with `sudo pacman -U <package>`.
 Visit the [reporting bugs](https://docs.xfce.org/apps/xfce4-terminal/bugs)
 page of the upstream for bugs that also exist there; fork-specific problems
 please report with `tests/run-all.sh` output attached.
+
+---
+
+# xfce4-terminal-next (русская версия)
+
+Форк [xfce4-terminal](https://gitlab.xfce.org/apps/xfce4-terminal) со
+сплит-панелями, локом панели, ячейками обмена, tmux-режимом и восстановлением
+сессии. Всё построено поверх апстрима `master`; ни один файл апстрима не
+переписан с нуля. Полный список изменений и обоснования — в [FORK](FORK.md).
+
+## Что добавляет форк
+
+* **Сплит-панели** — дерево `GtkPaned` внутри вкладки: `Ctrl+Shift+H` /
+  `Ctrl+Shift+E` — разделение, `Ctrl+Shift+X` — закрыть, `Alt+стрелки` и
+  `Ctrl+Tab` — переход фокуса; сплит выбирается геометрически.
+* **Лок панели** (`Ctrl+Shift+L`) — панель переживает свою программу и
+  возвращается вместе с ней при следующем запуске; вместе с сохранённой
+  раскладкой возвращается всё дерево сплитов.
+* **Ячейки обмена** — до десяти именованных ячеек: заполняются копированием,
+  вставляются из меню или контекстного подменю, опционально хранятся в файле.
+* **tmux-режим** — одна настройка с командой запуска из меню, сессия
+  переживает окно.
+* **Сессия** — вкладки, раскладка сплитов и активная панель восстанавливаются
+  при следующем запуске.
+* **Выпадающий терминал** — системная горячая клавиша (`XFCE`) для скрытия и
+  появления, иконка в трее (`StatusNotifierItem`) на X11 и Wayland.
+
+## Часто задаваемые вопросы
+
+<details>
+<summary>Почему <code>Ctrl+Shift+H</code> делит только если Ctrl зажат раньше
+Shift?</summary>
+
+При переключателе раскладки `Ctrl+Shift` (`grp:ctrl_shift_toggle`), если
+зажать Shift раньше Ctrl, XKB-переключатель забирает панель модификаторов и
+возвращает клавишу приложению **уже без Ctrl** — модификатор теряется ещё в
+X11, до того как событие дойдёт до терминала, поэтому в коде терминала это
+не лечится. То же касается любой другой комбинации `Ctrl+Shift+<буква>`.
+
+Два обходных пути:
+
+* зажимать Ctrl первым (или обе клавиши одновременно) — разделение работает
+  с первого раза, на любой раскладке;
+* сменить переключатель раскладки на другую пару, например `Alt+Shift`, —
+  тогда `Ctrl+Shift+<буква>` вообще ничего не конфликтует:
+
+      % setxkbmap -option grp:alt_shift_toggle
+</details>
+
+### Главная страница
+
+[Документация xfce4-terminal](https://docs.xfce.org/apps/xfce4-terminal/start)
+
+### Исходный код
+
+[Исходный код xfce4-terminal](https://gitlab.xfce.org/apps/xfce4-terminal) —
+апстрим, поверх которого построен форк.
+
+## Сборка
+
+Из репозитория исходного кода:
+
+    % meson setup build
+    % meson compile -C build
+
+## Тесты
+
+Стенды изолированы (свой `HOME`, своя D-Bus, свой дисплей `:99`) и должны
+запускаться последовательно:
+
+    % bash tests/run-all.sh
+
+## Пакетирование (Arch)
+
+    % cd pkgbuild && PATH="$PWD/../.venv/bin:$PATH" makepkg -f --noconfirm --nodeps
+
+Пакет собирается из `git archive HEAD` и лежит в корне репозитория;
+установка: `sudo pacman -U <пакет>`.
+
+## Сообщение об ошибках
+
+Ошибки, которые есть и в апстриме, — на странице
+[reporting bugs](https://docs.xfce.org/apps/xfce4-terminal/bugs) апстрима;
+ошибки, специфичные для форка, присылайте с выводом `tests/run-all.sh`.
