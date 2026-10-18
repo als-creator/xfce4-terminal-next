@@ -25,6 +25,24 @@ from scratch. The full list of changes and the reasoning behind them live in
 * **Drop-down terminal** — a system hotkey (`XFCE`) to hide and show it, and
   a `StatusNotifierItem` tray icon on X11 and Wayland.
 
+### Known quirk: the split hotkey and layout switching
+
+With the layout switcher set to `Ctrl+Shift` (`grp:ctrl_shift_toggle`),
+`Ctrl+Shift+H` splits only if **Ctrl is pressed before Shift** (or both are
+pressed at once). Press Shift first and the XKB switcher takes over the
+modifier panel and hands the key back to the application **without Ctrl** —
+the modifier is lost in X11, before the terminal sees the event, so no code
+in the terminal can compensate. The same applies to any other
+`Ctrl+Shift+<letter>` hotkey.
+
+Two ways around it:
+
+* press Ctrl first — the split works on the first try, on any layout;
+* switch the layout toggle to another pair (for example `Alt+Shift`), which
+  frees `Ctrl+Shift+<letter>` entirely:
+
+      % setxkbmap -option grp:alt_shift_toggle
+
 ### Homepage
 
 [Xfce4-terminal documentation](https://docs.xfce.org/apps/xfce4-terminal/start)
