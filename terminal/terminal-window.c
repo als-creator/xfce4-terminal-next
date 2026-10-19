@@ -840,7 +840,7 @@ static XfceGtkActionEntry action_entries[] = {
   {
     TERMINAL_WINDOW_ACTION_CLOSE_TABS_RIGHT,
     "<Actions>/terminal-window/close-tabs-right",
-    "<control><shift>w",
+    "",
     XFCE_GTK_IMAGE_MENU_ITEM,
     N_ ("Close Tabs to the _Right"),
     NULL,
@@ -5792,26 +5792,6 @@ terminal_window_do_close_tab (TerminalScreen *screen,
     return;
 
   notebook = GTK_NOTEBOOK (window->priv->notebook);
-
-  /* close just the pane when the tab has more than one pane */
-  if (terminal_panes_get_n_screens (panes) > 1)
-    {
-      TerminalScreen *new_active;
-
-      /* collect the attributes of the pane being closed so the undo
-       * close only deals with whole tabs; a closed split can't be
-       * restored, so we don't record it */
-      if (terminal_panes_remove_screen (panes, screen))
-        {
-          new_active = terminal_panes_get_active (panes);
-          if (new_active != NULL)
-            {
-              terminal_window_set_active_screen (window, panes, new_active);
-              terminal_screen_focus (new_active);
-            }
-        }
-      return;
-    }
 
   /* store attrs of the tab being closed */
   {

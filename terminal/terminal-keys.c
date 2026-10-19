@@ -33,16 +33,11 @@
 #include <X11/XKBlib.h>
 #endif
 
-/* Whether the shift key is held down right now.
- *
- * When Ctrl+Shift is the layout switch (grp:ctrl_shift_toggle) the group
- * change consumes the shift: it never reaches event->state, and the key press
- * looks exactly like Ctrl+<key> without shift. The layout switch sits below
- * GDK, but the X server still knows the real state of the physical keys, so
- * ask it directly. Wayland has no such query here, the fallback keeps the old
- * behaviour. */
+/* Whether one of the keys is held down right now, asked of the X server
+ * directly (see terminal_keys_shift_held() below for why). */
 static gboolean
-terminal_keys_shift_held (void)
+terminal_keys_keys_held (const guint32 *keyvals,
+                         guint          n_keyvals)
 {
 #ifdef GDK_WINDOWING_X11
   GdkDisplay *display;
@@ -50,7 +45,6 @@ terminal_keys_shift_held (void)
   GdkKeymap *keymap;
   guchar keys[32];
   gboolean held = FALSE;
-  guint32 keyvals[2] = { GDK_KEY_Shift_L, GDK_KEY_Shift_R };
   guint i;
 
   display = gdk_display_get_default ();
@@ -64,7 +58,7 @@ terminal_keys_shift_held (void)
 
   XQueryKeymap (xdisplay, (gchar *) keys);
 
-  for (i = 0; i < G_N_ELEMENTS (keyvals) && !held; i++)
+  for (i = 0; i < n_keyvals && !held; i++)
     {
       GdkKeymapKey *entries = NULL;
       gint n_entries = 0;
@@ -86,8 +80,39 @@ terminal_keys_shift_held (void)
 
   return held;
 #else
+  (void) keyvals;
+  (void) n_keyvals;
+
   return FALSE;
 #endif
+}
+
+/* Whether the shift key is held down right now.
+ *
+ * When Ctrl+Shift is the layout switch (grp:ctrl_shift_toggle) the group
+ * change consumes the shift: it never reaches event->state, and the key press
+ * looks exactly like Ctrl+<key> without shift. The layout switch sits below
+ * GDK, but the X server still knows the real state of the physical keys, so
+ * ask it directly. Wayland has no such query here, the fallback keeps the old
+ * behaviour. */
+static gboolean
+terminal_keys_shift_held (void)
+{
+  static const guint32 keyvals[2] = { GDK_KEY_Shift_L, GDK_KEY_Shift_R };
+
+  return terminal_keys_keys_held (keyvals, G_N_ELEMENTS (keyvals));
+}
+
+/* Whether the control key is held down right now; the same question as
+ * terminal_keys_shift_held() asked about the other half of the switch. With
+ * the shift pressed first the group change consumes the control instead, and
+ * the key press arrives with shift alone in the state. */
+static gboolean
+terminal_keys_control_held (void)
+{
+  static const guint32 keyvals[2] = { GDK_KEY_Control_L, GDK_KEY_Control_R };
+
+  return terminal_keys_keys_held (keyvals, G_N_ELEMENTS (keyvals));
 }
 
 /* The latin symbol of a physical key, asked from the X server itself.
