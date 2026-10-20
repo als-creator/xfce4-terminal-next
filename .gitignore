@@ -21,3 +21,10 @@
 /build/
 /build-asan/
 /build-vanilla/
+
+# документы для агента и форка: в апстрим не идут, в git не входят
+/AGENTS.md
+/CONTEXT.md
+/FORK.md
+/GITLAB-FORK.md
+/STYLE.md
