@@ -2064,6 +2064,7 @@ terminal_window_key_press_event (GtkWidget *widget,
 {
   TerminalWindow *window = TERMINAL_WINDOW (widget);
   gboolean shift_held;
+  gboolean ctrl_held;
 
   /* F1 shows and hides a drop-down window. A normal window keeps the upstream
    * binding and opens the help, since there the key is more useful there. */
@@ -2075,17 +2076,22 @@ terminal_window_key_press_event (GtkWidget *widget,
       return TRUE;
     }
 
-  /* the layout switch may have swallowed the shift out of the event state: ask
-   * once about the physical key, normalize the key press for the accelerators
-   * here, and put the modifier back into the event for every consumer below
-   * (the tab handler, the menu bindings, the terminal widget) */
+  /* the layout switch may have swallowed a modifier out of the event state
+   * (shift with Ctrl pressed first, control with Shift pressed first): ask
+   * once about the physical keys, normalize the key press for the
+   * accelerators here, and put the modifiers back into the event for every
+   * consumer below (the tab handler, the menu bindings, the terminal widget) */
   shift_held = terminal_keys_swallowed_shift (event);
+  ctrl_held = terminal_keys_swallowed_ctrl (event);
 
   if (terminal_window_activate_layout_accel (window, event, shift_held))
     return TRUE;
 
   if (shift_held)
     event->state |= GDK_SHIFT_MASK;
+
+  if (ctrl_held)
+    event->state |= GDK_CONTROL_MASK;
 
   if (xfce_gtk_handle_tab_accels (event, window->priv->accel_group, window, action_entries, G_N_ELEMENTS (action_entries)))
     return TRUE;

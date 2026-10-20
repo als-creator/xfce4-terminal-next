@@ -244,6 +244,24 @@ terminal_keys_swallowed_shift (GdkEventKey *event)
   return terminal_keys_shift_may_be_swallowed (event) && terminal_keys_shift_held ();
 }
 
+/* Whether the layout switch swallowed the control of @event (see
+ * terminal_keys_control_held()). When Shift was pressed before Control,
+ * grp:ctrl_shift_toggle consumes the control modifier and the event carries
+ * only %GDK_SHIFT_MASK; the X server still knows Control is held down. */
+gboolean
+terminal_keys_swallowed_ctrl (GdkEventKey *event)
+{
+  g_return_val_if_fail (event != NULL, FALSE);
+
+  if ((event->state & GDK_CONTROL_MASK) != 0)
+    return FALSE;
+
+  if ((event->state & (GDK_SHIFT_MASK | GDK_MOD1_MASK | GDK_SUPER_MASK)) == 0)
+    return FALSE;
+
+  return !terminal_keys_keyval_is_modifier (event->keyval) && terminal_keys_control_held ();
+}
+
 /**
  * terminal_keys_normalize_layout_accel:
  * @event: a key press event
@@ -310,12 +328,17 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
   g_return_val_if_fail (mods != NULL, FALSE);
 
   state = event->state;
+  gboolean ctrl_held = terminal_keys_swallowed_ctrl (event);
   if (shift_held)
     state |= GDK_SHIFT_MASK;
+  if (ctrl_held)
+    state |= GDK_CONTROL_MASK;
 
   /* a key press that does not depend on the layout at all: the accelerators
-   * handle it as it is */
-  if (event->keyval <= 0x7e && !shift_held)
+   * handle it as it is. With a swallowed control it does depend: the event
+   * carries no %GDK_CONTROL_MASK and no accelerator of ctrl+shift would match
+   * it, so the press has to be normalized */
+  if (event->keyval <= 0x7e && !shift_held && !ctrl_held)
     return FALSE;
 
   keymap = gdk_keymap_get_for_display (gdk_display_get_default ());
@@ -362,7 +385,7 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
    * translates to a plain tab, so the shift binding needs no special case) */
   if (symbol == 0 || symbol > 0x7e)
     {
-      if (!shift_held)
+      if (!shift_held && !ctrl_held)
         return FALSE;
 
       *keyval = symbol == 0 ? event->keyval : symbol;
@@ -373,7 +396,7 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
 
   /* the key press already carries the latin symbol of the physical key and the
    * modifiers of the event: there is nothing to normalize */
-  if (symbol == event->keyval && !shift_held)
+  if (symbol == event->keyval && !shift_held && !ctrl_held)
     return FALSE;
 
   *keyval = symbol;

@@ -28,21 +28,20 @@ from scratch. The full list of changes and the reasoning behind them live in
 ## FAQ
 
 <details>
-<summary>Why does <code>Ctrl+Shift+H</code> split only when Ctrl is pressed
-before Shift?</summary>
+<summary>Why does <code>Ctrl+Shift+H</code> behave differently depending on
+the order the two modifiers are pressed?</summary>
 
-With the layout switcher set to `Ctrl+Shift` (`grp:ctrl_shift_toggle`),
-pressing Shift first makes the XKB switcher take over the modifier panel and
-hand the key back to the application **without Ctrl** — the modifier is lost
-in X11, before the terminal sees the event, so no code in the terminal can
-compensate. The same applies to any other `Ctrl+Shift+<letter>` hotkey.
+With the layout switcher set to `Ctrl+Shift` (`grp:ctrl_shift_toggle`), pressing
+Shift first makes the XKB switcher take over the modifier panel and hand the
+key back to the application **without Ctrl** — the modifier is lost in X11,
+before the terminal sees the event. The terminal compensates for this: it asks
+the X server about the physical Ctrl key and puts the modifier back into the
+event, so on X11 the split and every other `Ctrl+Shift+<letter>` hotkey work in
+any order of the two keys.
 
-Two ways around it:
-
-* press Ctrl first (or press both at once) — the split works on the first
-  try, on any layout;
-* switch the layout toggle to another pair, for example `Alt+Shift`, which
-  frees `Ctrl+Shift+<letter>` entirely:
+On Wayland the physical keys cannot be queried this way, so there the original
+behaviour stands: press Ctrl first (or press both at once), or free the pair by
+switching the layout toggle to another combination, for example `Alt+Shift`:
 
       % setxkbmap -option grp:alt_shift_toggle
 </details>
@@ -112,21 +111,21 @@ please report with `tests/run-all.sh` output attached.
 ## Часто задаваемые вопросы
 
 <details>
-<summary>Почему <code>Ctrl+Shift+H</code> делит только если Ctrl зажат раньше
-Shift?</summary>
+<summary>Почему <code>Ctrl+Shift+H</code> вёл себя иначе в зависимости от
+порядка нажатия модификаторов?</summary>
 
 При переключателе раскладки `Ctrl+Shift` (`grp:ctrl_shift_toggle`), если
 зажать Shift раньше Ctrl, XKB-переключатель забирает панель модификаторов и
 возвращает клавишу приложению **уже без Ctrl** — модификатор теряется ещё в
-X11, до того как событие дойдёт до терминала, поэтому в коде терминала это
-не лечится. То же касается любой другой комбинации `Ctrl+Shift+<буква>`.
+X11, до того как событие дойдёт до терминала. Терминал это компенсирует:
+он спрашивает X-сервер о физическом состоянии Ctrl и возвращает модификатор в
+событие, поэтому на X11 сплит и любая другая комбинация `Ctrl+Shift+<буква>`
+работают при любом порядке нажатия этих двух клавиш.
 
-Два обходных пути:
-
-* зажимать Ctrl первым (или обе клавиши одновременно) — разделение работает
-  с первого раза, на любой раскладке;
-* сменить переключатель раскладки на другую пару, например `Alt+Shift`, —
-  тогда `Ctrl+Shift+<буква>` вообще ничего не конфликтует:
+На Wayland физическое состояние клавиш так не опросить, поэтому там остаётся
+исходное поведение: зажимать Ctrl первым (или обе клавиши одновременно) либо
+освободить пару, сменив переключатель раскладки на другую комбинацию,
+например `Alt+Shift`:
 
       % setxkbmap -option grp:alt_shift_toggle
 </details>

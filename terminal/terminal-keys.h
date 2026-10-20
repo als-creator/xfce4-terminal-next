@@ -29,6 +29,7 @@ G_BEGIN_DECLS
  * server about the real state of the physical keys. Returns %TRUE when the
  * shift is held down but missing from the event. */
 gboolean terminal_keys_swallowed_shift (GdkEventKey *event);
+gboolean terminal_keys_swallowed_ctrl  (GdkEventKey *event);
 
 gboolean terminal_keys_normalize_layout_accel (GdkEventKey  *event,
                                                guint32      *keyval,
