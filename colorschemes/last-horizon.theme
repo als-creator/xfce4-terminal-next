@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme last-horizon
+[Scheme]
+Name=Last Horizon
+ColorForeground=#e2dddc
+ColorBackground=#0c0b0c
+ColorPalette=#0c0b0c;#c38b7b;#87a9b0;#6B5E73;#b59790;#c4d8e2;#a5a0b6;#FAFCFB;#584e51;#c38b7b;#87a9b0;#6B5E73;#b59790;#c4d8e2;#a5a0b6;#e2dddc

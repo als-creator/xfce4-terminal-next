@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme lupine
+[Scheme]
+Name=Lupine
+ColorForeground=#000000
+ColorBackground=#fafafa
+ColorPalette=#fafafa;#c900c4;#4a2fd0;#026fde;#3264eb;#8a4ad7;#0c67de;#212121;#9e9e9e;#f930fb;#9f85e0;#358fff;#5482ff;#b363ff;#3986ff;#000000

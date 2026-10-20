@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme vantablack
+[Scheme]
+Name=Vantablack
+ColorForeground=#ffffff
+ColorBackground=#000000
+ColorPalette=#000000;#a4a4a4;#b6b6b6;#cecece;#8d8d8d;#9b9b9b;#b0b0b0;#ffffff;#7a7a7a;#a4a4a4;#b6b6b6;#cecece;#8d8d8d;#9b9b9b;#b0b0b0;#ffffff

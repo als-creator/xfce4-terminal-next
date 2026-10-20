@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme matte-black
+[Scheme]
+Name=Matte Black
+ColorForeground=#bebebe
+ColorBackground=#121212
+ColorPalette=#121212;#D35F5F;#FFC107;#b91c1c;#e68e0d;#D35F5F;#bebebe;#bebebe;#333333;#B91C1C;#FFC107;#b90a0a;#f59e0b;#B91C1C;#eaeaea;#bebebe

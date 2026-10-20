@@ -6,7 +6,7 @@ Everything is built on top of upstream master; no upstream file is rewritten
 from scratch. The full list of changes and the reasoning behind them live in
 [FORK](FORK.md).
 
-[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](COPYING)
+[![License](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](COPYING)
 
 ## What the fork adds
 

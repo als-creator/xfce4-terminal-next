@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme catppuccin-latte
+[Scheme]
+Name=Catppuccin Latte
+ColorForeground=#4c4f69
+ColorBackground=#eff1f5
+ColorPalette=#eff1f5;#d20f39;#40a02b;#df8e1d;#1e66f5;#ea76cb;#179299;#4c4f69;#acb0be;#d20f39;#40a02b;#df8e1d;#1e66f5;#ea76cb;#179299;#4c4f69

@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme ethereal
+[Scheme]
+Name=Ethereal
+ColorForeground=#ffcead
+ColorBackground=#060B1E
+ColorPalette=#060B1E;#ED5B5A;#92a593;#E9BB4F;#7d82d9;#c89dc1;#a3bfd1;#ffcead;#6d7db6;#faaaa9;#c4cfc4;#f7dc9c;#c2c4f0;#ead7e7;#dfeaf0;#ffcead

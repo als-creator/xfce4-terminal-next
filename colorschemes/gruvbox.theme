@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme gruvbox
+[Scheme]
+Name=Gruvbox
+ColorForeground=#d4be98
+ColorBackground=#282828
+ColorPalette=#282828;#ea6962;#a9b665;#d8a657;#7daea3;#d3869b;#89b482;#d4be98;#665c54;#ea6962;#a9b665;#d8a657;#7daea3;#d3869b;#89b482;#d4be98

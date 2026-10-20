@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme flexoki-light
+[Scheme]
+Name=Flexoki Light
+ColorForeground=#100F0F
+ColorBackground=#FFFCF0
+ColorPalette=#FFFCF0;#D14D41;#879A39;#D0A215;#205EA6;#CE5D97;#3AA99F;#100F0F;#B7B5AC;#D14D41;#879A39;#D0A215;#4385BE;#CE5D97;#3AA99F;#100F0F

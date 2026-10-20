@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme solitude
+[Scheme]
+Name=Solitude
+ColorForeground=#a5aeb4
+ColorBackground=#101315
+ColorPalette=#101315;#565d60;#9fa5a9;#d9dbdc;#798186;#aeaeae;#707070;#cacccc;#4b4e55;#de6145;#343d41;#c9c2b4;#5d6367;#9a9a9a;#707070;#a5aeb4

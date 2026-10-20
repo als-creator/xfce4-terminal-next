@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme everforest
+[Scheme]
+Name=Everforest
+ColorForeground=#d3c6aa
+ColorBackground=#2d353b
+ColorPalette=#2d353b;#e67e80;#a7c080;#dbbc7f;#7fbbb3;#d699b6;#83c092;#d3c6aa;#475258;#e67e80;#a7c080;#dbbc7f;#7fbbb3;#d699b6;#83c092;#d3c6aa

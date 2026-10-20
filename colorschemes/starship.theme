@@ -1,0 +1,7 @@
+# Palette data (colors only), generated for the xfce4-terminal fork.
+# Source: omarchy themes (MIT), theme starship
+[Scheme]
+Name=Starship
+ColorForeground=#ffffff
+ColorBackground=#1c1c1e
+ColorPalette=#1c1c1e;#ff5f4a;#ff9f0a;#ffc27a;#8fb8de;#ff8fa3;#a6dcef;#f5f5f7;#8e8e93;#ff8373;#ffb340;#ffd8a8;#b5d0ea;#ffb3c1;#cdeefa;#ffffff
