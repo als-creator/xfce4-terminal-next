@@ -24,6 +24,14 @@
 
 G_BEGIN_DECLS
 
+/* The line the pane gets when the setting is empty.  The same text is the
+ * default value of the setting, so the field in the preferences shows what
+ * will actually run. */
+#define TERMINAL_TMUX_DEFAULT_COMMAND \
+  "TERM=tmux-256color tmux new-session -A -s main" \
+  " \\; set -g allow-passthrough on" \
+  " \\; set -g window-size latest"
+
 gchar *terminal_tmux_build_command (const gchar *command);
 
 G_END_DECLS

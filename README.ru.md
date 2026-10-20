@@ -121,8 +121,11 @@ English version: [README.md](README.md)
 ### tmux
 
 <kbd>Ctrl+Shift+M</kbd> (или меню *Разделить*) запускает в панели настроенную
-строку tmux — по умолчанию `tmux new-session -A -s main`, правится в
-*Настройки → Параметры запуска tmux*.
+строку tmux — по умолчанию
+`TERM=tmux-256color tmux new-session -A -s main \; set -g allow-passthrough on
+\; set -g window-size latest`: 256 цветов и true color внутри, сессия `main`
+и размер панели, не оставляющий скроллбаров. Поле в *Настройки → Параметры
+запуска tmux* заполнено этой строкой, так что её можно укоротить или заменить.
 
 <details>
 <summary>Как это устроено</summary>

@@ -55,7 +55,5 @@ terminal_tmux_build_command (const gchar *command)
   if (command != NULL && *command != '\0')
     return g_strdup (command);
 
-  return g_strdup ("TERM=tmux-256color tmux new-session -A -s main"
-                   " \\; set -g allow-passthrough on"
-                   " \\; set -g window-size latest");
+  return g_strdup (TERMINAL_TMUX_DEFAULT_COMMAND);
 }

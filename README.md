@@ -121,8 +121,12 @@ terminal then always starts with a single pane.
 ### tmux
 
 <kbd>Ctrl+Shift+M</kbd> (or the *Split* menu) starts the configured tmux line
-in the pane — `tmux new-session -A -s main` by default, editable in *Settings →
-tmux Launch Options*.
+in the pane — by default
+`TERM=tmux-256color tmux new-session -A -s main \; set -g allow-passthrough on
+\; set -g window-size latest`: 256 colours and true colour inside, the session
+called `main`, and the pane sizing that leaves no scrollbars behind. The field
+in *Settings → tmux Launch Options* is pre-filled with this line, so it can be
+shortened or replaced.
 
 <details>
 <summary>Technical implementation</summary>

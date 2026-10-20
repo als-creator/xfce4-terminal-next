@@ -33,6 +33,7 @@
 #include "terminal-enum-types.h"
 #include "terminal-preferences.h"
 #include "terminal-private.h"
+#include "terminal-tmux.h"
 
 #define TERMINALRC "xfce4/terminal/terminalrc"
 #define TERMINALRC_OLD "Terminal/terminalrc"
@@ -1298,7 +1299,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_string ("misc-tmux-command",
                          NULL,
                          "MiscTmuxCommand",
-                         NULL,
+                         TERMINAL_TMUX_DEFAULT_COMMAND,
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
