@@ -14,11 +14,34 @@
 
 ## Состояние
 
-Пакет в корне репозитория — `xfce4-terminal-next-1.2.0-67-x86_64.pkg.tar.zst`.
+Пакет в корне репозитория — `xfce4-terminal-next-1.2.0-68-x86_64.pkg.tar.zst`.
 
 ```
-sudo pacman -U /mnt/Data/Projects/xfce4-terminal-next/xfce4-terminal-next-1.2.0-67-x86_64.pkg.tar.zst
+sudo pacman -U /mnt/Data/Projects/xfce4-terminal-next/xfce4-terminal-next-1.2.0-68-x86_64.pkg.tar.zst
 ```
+
+Что в 68 (плюс всё из 67/66/65/64/63/62, прошу проверить у себя):
+- **24 пресета цветов** в диалоге настроек (коммит `3d6e3c34`): Orange-Green
+  («Оранжево-зеленый на темном» — ваши текущие настройки, Name[ru] вшит
+  в файл) + Tokyo Night + 22 темы omarchy; всего пресетов стало 32
+  (8 апстрима + 24);
+- файлы `colorschemes/*.theme`, формат `[Scheme]` диалога форка; в шапке
+  каждого — источник: omarchy themes (MIT) / user's own terminal settings;
+  палитральные hex-данные, юридически чисто; скачанные `colors.toml`
+  лежат в `tests/work/omarchy` (в .gitignore, в пакет не попадают);
+- генератор — `python3 tests/work/gen-themes.py` (одноразовый);
+- установка: `own_presets` + `install_data` в `colorschemes/meson.build`,
+  `meson install --destdir` даёт 32 файла;
+- проверено в стенде фактами: диалог читает схемы без предупреждений
+  формата; выбор в комбоблоке применяет настройки — Tokyo Night →
+  `bg=#1a1b26`, Orange-Green → палитра `#E01B24;#68D123;#E66100`;
+  механика выбора в стенде: клик по комбоблоку открывает меню, подсвеченный
+  пункт в at-spi помечен `SELECTED` (не `FOCUSED`), читается
+  `tests/work/selected-item.py`;
+- README: бейдж лицензии исправлен на GPL v2+ (заголовки кода
+  GPL-2.0-or-later включают и v3);
+- полный прогон: 0 провалов (все стенды + style-check/test-keys/test-tmux/
+  test-panes/shortcuts).
 
 Что в 67 (плюс всё из 66/65/64/63/62, прошу проверить у себя):
 - **лок панели убран целиком** (действие/меню/`Ctrl+Shift+L`/полоса/поле
