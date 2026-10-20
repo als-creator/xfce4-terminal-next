@@ -213,7 +213,7 @@ submenu by name, the current one is marked, empty ones are greyed out.
 <details>
 <summary>Technical implementation</summary>
 
-* the count is a setting, 2 to 6 slots (three by default): the useful number
+* the count is a setting, from 2 to 10 slots (three by default): the useful number
   is the number of places a string is carried between, and the menu entries
   are numbered by it; lowering the count drops the extra slots, raising it
   starts the new ones empty;
