@@ -1,6 +1,4 @@
-/*
- * terminal-tmux.h
- *
+/*-
  * Copyright (c) 2026 als-creator
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -10,16 +8,17 @@
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
- * Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __TERMINAL_TMUX_H__
-#define __TERMINAL_TMUX_H__
+/* The line that puts a pane into tmux. */
+
+#ifndef TERMINAL_TMUX_H
+#define TERMINAL_TMUX_H
 
 #include <glib.h>
 
@@ -29,4 +28,4 @@ gchar *terminal_tmux_build_command (const gchar *command);
 
 G_END_DECLS
 
-#endif /* __TERMINAL_TMUX_H__ */
+#endif /* TERMINAL_TMUX_H */

@@ -1,10 +1,4 @@
-/*
- * The line that puts a pane into tmux.
- *
- * One field in the preferences, one line out: whatever the user wrote is used
- * as it is, and an empty field falls back to the default line below. It is kept
- * apart from the window so that it can be tested without a display.
- *
+/*-
  * Copyright (c) 2026 als-creator
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -14,13 +8,17 @@
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
- * Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* The line that puts a pane into tmux: one field in the preferences,
+ * one line out.  Whatever the user wrote is used as it is, and an
+ * empty field falls back to the default line.  It is kept apart from
+ * the window so that it can be tested without a display. */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

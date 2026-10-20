@@ -1,8 +1,6 @@
 /*-
  * Copyright (c) 2026 als-creator
  *
- * Split-pane container for xfce4-terminal.
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 2 of the License, or (at your option)
@@ -13,9 +11,13 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* The split-pane container of a tab: a tree whose leaves are screens
+ * and whose branches are panes; the container owns the tree and keeps
+ * the active pane. */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -30,9 +32,9 @@
 
 
 
-static void panes_paned_position_half (GtkWidget *paned);
-static void panes_paned_set_fraction (GtkWidget *paned,
-                                      gdouble    fraction);
+static void terminal_panes_paned_position_half (GtkWidget *paned);
+static void terminal_panes_paned_set_fraction (GtkWidget *paned,
+                                               gdouble    fraction);
 
 struct _TerminalPanes
 {
@@ -85,16 +87,16 @@ enum
   N_PROPERTIES
 };
 
-static GParamSpec *panes_properties[N_PROPERTIES];
+static GParamSpec *terminal_panes_properties[N_PROPERTIES];
 
-static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
+static guint terminal_panes_signals[TERMINAL_PANES_N_SIGNALS];
 
 
 static void
-panes_emit_active_changed (TerminalPanes *panes,
-                           TerminalScreen *screen)
+terminal_panes_emit_active_changed (TerminalPanes *panes,
+                                    TerminalScreen *screen)
 {
-  g_signal_emit (panes, panes_signals[TERMINAL_PANES_ACTIVE_SCREEN_CHANGED], 0,
+  g_signal_emit (panes, terminal_panes_signals[TERMINAL_PANES_ACTIVE_SCREEN_CHANGED], 0,
                  screen);
   g_object_notify (G_OBJECT (panes), "title");
 }
@@ -154,19 +156,19 @@ terminal_panes_class_init (TerminalPanesClass *klass)
    *
    * Title of the active terminal inside the pane tree.
    **/
-  panes_properties[PROP_TITLE] =
+  terminal_panes_properties[PROP_TITLE] =
     g_param_spec_string ("title", "title", "Title of the active terminal",
                          NULL,
                          G_PARAM_READWRITE);
 
-  g_object_class_install_properties (gobject_class, N_PROPERTIES, panes_properties);
+  g_object_class_install_properties (gobject_class, N_PROPERTIES, terminal_panes_properties);
 
   /**
    * TerminalPanes::active-screen-changed:
    *
    * Emitted when the focused terminal inside the pane tree changed.
    **/
-  panes_signals[TERMINAL_PANES_ACTIVE_SCREEN_CHANGED] =
+  terminal_panes_signals[TERMINAL_PANES_ACTIVE_SCREEN_CHANGED] =
     g_signal_new (I_ ("active-screen-changed"),
                   G_TYPE_FROM_CLASS (klass),
                   G_SIGNAL_RUN_LAST,
@@ -188,8 +190,8 @@ terminal_panes_init (TerminalPanes *panes)
 
 /* returns TRUE when the widget could be identified as a screen */
 static gboolean
-panes_tree_has_screen (GtkWidget *node,
-                       TerminalScreen *screen)
+terminal_panes_tree_has_screen (GtkWidget *node,
+                                TerminalScreen *screen)
 {
   if (node == NULL)
     return FALSE;
@@ -201,9 +203,9 @@ panes_tree_has_screen (GtkWidget *node,
     {
       GtkPaned *paned = GTK_PANED (node);
 
-      if (panes_tree_has_screen (gtk_paned_get_child1 (paned), screen))
+      if (terminal_panes_tree_has_screen (gtk_paned_get_child1 (paned), screen))
         return TRUE;
-      if (panes_tree_has_screen (gtk_paned_get_child2 (paned), screen))
+      if (terminal_panes_tree_has_screen (gtk_paned_get_child2 (paned), screen))
         return TRUE;
     }
 
@@ -213,8 +215,8 @@ panes_tree_has_screen (GtkWidget *node,
 
 
 static void
-panes_collect_screens (GtkWidget *node,
-                       GSList **screens)
+terminal_panes_collect_screens (GtkWidget *node,
+                                GSList **screens)
 {
   if (node == NULL)
     return;
@@ -229,8 +231,8 @@ panes_collect_screens (GtkWidget *node,
     {
       GtkPaned *paned = GTK_PANED (node);
 
-      panes_collect_screens (gtk_paned_get_child1 (paned), screens);
-      panes_collect_screens (gtk_paned_get_child2 (paned), screens);
+      terminal_panes_collect_screens (gtk_paned_get_child1 (paned), screens);
+      terminal_panes_collect_screens (gtk_paned_get_child2 (paned), screens);
     }
 }
 
@@ -238,12 +240,12 @@ panes_collect_screens (GtkWidget *node,
 
 /* returns the first screen in the subtree, or NULL */
 static TerminalScreen *
-panes_tree_first_screen (GtkWidget *node)
+terminal_panes_tree_first_screen (GtkWidget *node)
 {
   GSList *screens = NULL;
   TerminalScreen *screen;
 
-  panes_collect_screens (node, &screens);
+  terminal_panes_collect_screens (node, &screens);
 
   screen = (screens != NULL) ? TERMINAL_SCREEN (screens->data) : NULL;
 
@@ -255,9 +257,9 @@ panes_tree_first_screen (GtkWidget *node)
 
 
 static gboolean
-panes_screen_focus_in (GtkWidget *widget,
-                       GdkEventFocus *event G_GNUC_UNUSED,
-                       TerminalPanes *panes)
+terminal_panes_screen_focus_in (GtkWidget *widget,
+                                GdkEventFocus *event G_GNUC_UNUSED,
+                                TerminalPanes *panes)
 {
   terminal_panes_set_active (panes, TERMINAL_SCREEN (widget));
 
@@ -268,9 +270,9 @@ panes_screen_focus_in (GtkWidget *widget,
 
 /* focus-in on the embedded terminal; @screen is the user data */
 static gboolean
-panes_terminal_focus_in (GtkWidget *widget G_GNUC_UNUSED,
-                         GdkEventFocus *event G_GNUC_UNUSED,
-                         TerminalScreen *screen)
+terminal_panes_terminal_focus_in (GtkWidget *widget G_GNUC_UNUSED,
+                                  GdkEventFocus *event G_GNUC_UNUSED,
+                                  TerminalScreen *screen)
 {
   TerminalPanes *panes = g_object_get_data (G_OBJECT (screen), "terminal-panes");
 
@@ -283,9 +285,9 @@ panes_terminal_focus_in (GtkWidget *widget G_GNUC_UNUSED,
 
 
 static void
-panes_screen_title_changed (TerminalScreen *screen,
-                            GParamSpec *pspec G_GNUC_UNUSED,
-                            TerminalPanes *panes)
+terminal_panes_screen_title_changed (TerminalScreen *screen,
+                                     GParamSpec *pspec G_GNUC_UNUSED,
+                                     TerminalPanes *panes)
 {
   /* only re-emit the title change when the screen is the active pane */
   if (panes->active == screen)
@@ -300,7 +302,7 @@ panes_screen_title_changed (TerminalScreen *screen,
  * the pane tree has to react, otherwise the page survives with no child and
  * renders as an empty grey rectangle. */
 static gboolean
-panes_destroy_idle (gpointer user_data)
+terminal_panes_destroy_idle (gpointer user_data)
 {
   TerminalPanes *panes = TERMINAL_PANES (user_data);
 
@@ -319,8 +321,8 @@ panes_destroy_idle (gpointer user_data)
  * that should take @node's place in its parent (NULL when the subtree is
  * empty). */
 static GtkWidget *
-panes_collapse_single_child_paneds (TerminalPanes *panes,
-                                    GtkWidget     *node)
+terminal_panes_collapse_single_child_paneds (TerminalPanes *panes,
+                                             GtkWidget     *node)
 {
   GtkWidget *child1, *child2;
 
@@ -330,8 +332,8 @@ panes_collapse_single_child_paneds (TerminalPanes *panes,
   child1 = gtk_paned_get_child1 (GTK_PANED (node));
   child2 = gtk_paned_get_child2 (GTK_PANED (node));
 
-  child1 = panes_collapse_single_child_paneds (panes, child1);
-  child2 = panes_collapse_single_child_paneds (panes, child2);
+  child1 = terminal_panes_collapse_single_child_paneds (panes, child1);
+  child2 = terminal_panes_collapse_single_child_paneds (panes, child2);
 
   /* still a real split */
   if (child1 != NULL && child2 != NULL)
@@ -385,32 +387,32 @@ panes_collapse_single_child_paneds (TerminalPanes *panes,
 
 
 static void
-panes_normalize_after_screen_destroy (TerminalPanes *panes)
+terminal_panes_normalize_after_screen_destroy (TerminalPanes *panes)
 {
   GtkWidget *new_root;
 
   if (panes->root == NULL)
     return;
 
-  new_root = panes_collapse_single_child_paneds (panes, panes->root);
+  new_root = terminal_panes_collapse_single_child_paneds (panes, panes->root);
   panes->root = new_root;
 
   /* no screens left: the tab has to disappear as a whole */
   if (panes->root == NULL)
     {
       g_object_ref (panes);
-      g_idle_add (panes_destroy_idle, panes);
+      g_idle_add (terminal_panes_destroy_idle, panes);
       return;
     }
 
   /* the active screen may have been the destroyed one */
   if (panes->active == NULL
-      || !panes_tree_has_screen (panes->root, panes->active))
+      || !terminal_panes_tree_has_screen (panes->root, panes->active))
     {
-      TerminalScreen *new_active = panes_tree_first_screen (panes->root);
+      TerminalScreen *new_active = terminal_panes_tree_first_screen (panes->root);
 
       panes->active = new_active;
-      panes_emit_active_changed (panes, new_active);
+      terminal_panes_emit_active_changed (panes, new_active);
 
       /* the focused terminal was the destroyed pane; move the focus to the
        * survivor so the keyboard keeps working */
@@ -441,8 +443,8 @@ panes_normalize_after_screen_destroy (TerminalPanes *panes)
 
 
 static void
-panes_screen_destroyed (GtkWidget *screen,
-                        gpointer   user_data)
+terminal_panes_screen_destroyed (GtkWidget *screen,
+                                 gpointer   user_data)
 {
   TerminalPanes *panes = TERMINAL_PANES (user_data);
 
@@ -462,25 +464,25 @@ panes_screen_destroyed (GtkWidget *screen,
        * page and the tab closes instead of showing an empty grey area. Defer
        * the destroy because we are inside the screen's own destruction. */
       g_object_ref (panes);
-      g_idle_add (panes_destroy_idle, panes);
+      g_idle_add (terminal_panes_destroy_idle, panes);
       return;
     }
 
   /* a split lost one of its panes: collapse it, repair root/active */
-  panes_normalize_after_screen_destroy (panes);
+  terminal_panes_normalize_after_screen_destroy (panes);
 }
 
 
 
 static void
-panes_watch_screen (TerminalPanes *panes,
-                    TerminalScreen *screen)
+terminal_panes_watch_screen (TerminalPanes *panes,
+                             TerminalScreen *screen)
 {
   GtkWidget *terminal = terminal_screen_get_terminal_widget (screen);
 
   /* the screen may be destroyed on its own when its child process exits */
   g_signal_connect (G_OBJECT (screen), "destroy",
-                    G_CALLBACK (panes_screen_destroyed), panes);
+                    G_CALLBACK (terminal_panes_screen_destroyed), panes);
 
   /* remember which pane tree owns this screen so the terminal's focus
    * handler can find it again */
@@ -490,19 +492,19 @@ panes_watch_screen (TerminalPanes *panes,
    * focus-in events are delivered to the focused widget, not to parents */
   if (terminal != NULL)
     g_signal_connect (G_OBJECT (terminal), "focus-in-event",
-                      G_CALLBACK (panes_terminal_focus_in), screen);
+                      G_CALLBACK (terminal_panes_terminal_focus_in), screen);
   g_signal_connect (G_OBJECT (screen), "focus-in-event",
-                    G_CALLBACK (panes_screen_focus_in), panes);
+                    G_CALLBACK (terminal_panes_screen_focus_in), panes);
   g_signal_connect (G_OBJECT (screen), "notify::title",
-                    G_CALLBACK (panes_screen_title_changed), panes);
+                    G_CALLBACK (terminal_panes_screen_title_changed), panes);
 }
 
 
 
 static void
-panes_paned_size_allocate (GtkWidget *widget,
-                           GtkAllocation *allocation,
-                           gpointer user_data G_GNUC_UNUSED)
+terminal_panes_paned_size_allocate (GtkWidget *widget,
+                                    GtkAllocation *allocation,
+                                    gpointer user_data G_GNUC_UNUSED)
 {
   GtkOrientation orientation;
   gint size, half, current, ours, position, percent;
@@ -560,12 +562,12 @@ panes_paned_size_allocate (GtkWidget *widget,
 
 
 static void
-panes_paned_position_half (GtkWidget *paned)
+terminal_panes_paned_position_half (GtkWidget *paned)
 {
   /* wait for an allocation so the position can be computed from the real
    * pane size; the handler keeps the divider centered until the user moves it */
   g_signal_connect (paned, "size-allocate",
-                    G_CALLBACK (panes_paned_size_allocate), NULL);
+                    G_CALLBACK (terminal_panes_paned_size_allocate), NULL);
 }
 
 
@@ -585,7 +587,7 @@ terminal_panes_new_with_screen (TerminalScreen *screen)
   gtk_container_add (GTK_CONTAINER (panes), GTK_WIDGET (screen));
   gtk_widget_show (GTK_WIDGET (screen));
 
-  panes_watch_screen (panes, screen);
+  terminal_panes_watch_screen (panes, screen);
 
   return panes;
 }
@@ -608,7 +610,7 @@ terminal_panes_split_screen_at (TerminalPanes *panes,
   g_return_if_fail (TERMINAL_IS_SCREEN (new_screen));
 
   /* the screen must be part of this pane tree */
-  if (!panes_tree_has_screen (panes->root, screen))
+  if (!terminal_panes_tree_has_screen (panes->root, screen))
     {
       g_warning ("TerminalPanes: screen to split is not part of the pane tree");
       return;
@@ -661,14 +663,14 @@ terminal_panes_split_screen_at (TerminalPanes *panes,
 
   g_object_unref (screen);
 
-  panes_watch_screen (panes, new_screen);
+  terminal_panes_watch_screen (panes, new_screen);
 
   /* put the divider where the caller asked for */
-  panes_paned_set_fraction (paned, fraction);
+  terminal_panes_paned_set_fraction (paned, fraction);
 
   /* make the new pane active */
   panes->active = new_screen;
-  panes_emit_active_changed (panes, new_screen);
+  terminal_panes_emit_active_changed (panes, new_screen);
   terminal_screen_focus (new_screen);
 }
 
@@ -677,8 +679,8 @@ terminal_panes_split_screen_at (TerminalPanes *panes,
 /* put the divider at @fraction of the split, keeping both sides usable; while
  * the paned is not allocated yet the divider is simply centered */
 static void
-panes_paned_set_fraction (GtkWidget *paned,
-                          gdouble    fraction)
+terminal_panes_paned_set_fraction (GtkWidget *paned,
+                                   gdouble    fraction)
 {
   GtkAllocation alloc;
   gint size, position;
@@ -695,7 +697,7 @@ panes_paned_set_fraction (GtkWidget *paned,
       gint percent = (gint) (CLAMP (fraction, 0.0, 1.0) * 100.0 + 0.5);
 
       g_object_set_data (G_OBJECT (paned), PANES_WANTED_PERCENT, GINT_TO_POINTER (percent));
-      panes_paned_position_half (paned);
+      terminal_panes_paned_position_half (paned);
       return;
     }
 
@@ -711,11 +713,11 @@ panes_paned_set_fraction (GtkWidget *paned,
  * side and V for children stacked, and percent is the divider position.
  *
  * The format is replayable with terminal_panes_split_screen_at(), because every
- * split of the fork anchors on a single pane: the tree of a split is always
+ * split anchors on a single pane: the tree of a split is always
  * "grow the left side further, then the right side". */
 static void
-panes_layout_append (GString   *str,
-                     GtkWidget *widget)
+terminal_panes_layout_append (GString   *str,
+                              GtkWidget *widget)
 {
   if (GTK_IS_PANED (widget))
     {
@@ -740,9 +742,9 @@ panes_layout_append (GString   *str,
                                 == GTK_ORIENTATION_HORIZONTAL ? 'H' : 'V',
                               (gint) (fraction * 100.0 + 0.5));
 
-      panes_layout_append (str, child1);
+      terminal_panes_layout_append (str, child1);
       g_string_append_c (str, ',');
-      panes_layout_append (str, child2);
+      terminal_panes_layout_append (str, child2);
       g_string_append_c (str, ')');
     }
   else if (widget != NULL)
@@ -761,7 +763,7 @@ terminal_panes_get_layout (TerminalPanes *panes)
   g_return_val_if_fail (TERMINAL_IS_PANES (panes), NULL);
 
   str = g_string_new (NULL);
-  panes_layout_append (str, panes->root);
+  terminal_panes_layout_append (str, panes->root);
   if (str->len == 0)
     g_string_append_c (str, '.');
 
@@ -985,7 +987,7 @@ terminal_panes_session_cdirs (const gchar *record)
 
 
 static TerminalScreen *
-panes_screen_from_focus (TerminalPanes *panes)
+terminal_panes_screen_from_focus (TerminalPanes *panes)
 {
   GtkWidget *widget;
 
@@ -1061,7 +1063,7 @@ terminal_panes_move_pane (TerminalPanes *panes,
   position_new = CLAMP (position_new, PANES_MIN_PANE_SIZE, size - PANES_MIN_PANE_SIZE);
 
   gtk_paned_set_position (GTK_PANED (parent), position_new);
-  panes_paned_set_fraction (parent, (gdouble) position_new / (gdouble) size);
+  terminal_panes_paned_set_fraction (parent, (gdouble) position_new / (gdouble) size);
 }
 
 
@@ -1092,7 +1094,7 @@ terminal_panes_remove_screen (TerminalPanes *panes,
   if (panes->root == GTK_WIDGET (screen))
     return FALSE;
 
-  if (!panes_tree_has_screen (panes->root, screen))
+  if (!terminal_panes_tree_has_screen (panes->root, screen))
     {
       g_warning ("TerminalPanes: screen to remove is not part of the pane tree");
       return FALSE;
@@ -1160,7 +1162,7 @@ terminal_panes_remove_screen (TerminalPanes *panes,
       }
 
     /* destroy the screen first (removes it from the paned), then the paned.
-     * Flag the removal so panes_screen_destroyed() leaves the tree alone. */
+     * Flag the removal so terminal_panes_screen_destroyed() leaves the tree alone. */
     panes->removing = TRUE;
     gtk_widget_destroy (GTK_WIDGET (screen));
     gtk_widget_destroy (GTK_WIDGET (paned));
@@ -1202,13 +1204,13 @@ terminal_panes_remove_screen (TerminalPanes *panes,
         if (TERMINAL_IS_SCREEN (other))
           new_active = TERMINAL_SCREEN (other);
         else if (GTK_IS_PANED (other))
-          new_active = panes_tree_first_screen (other);
+          new_active = terminal_panes_tree_first_screen (other);
 
         panes->active = new_active;
 
         if (new_active != NULL)
           {
-            panes_emit_active_changed (panes, new_active);
+            terminal_panes_emit_active_changed (panes, new_active);
             terminal_screen_focus (new_active);
           }
       }
@@ -1227,7 +1229,7 @@ terminal_panes_get_active (TerminalPanes *panes)
   g_return_val_if_fail (TERMINAL_IS_PANES (panes), NULL);
 
   /* the focus decides as long as it is inside this pane tree */
-  screen = panes_screen_from_focus (panes);
+  screen = terminal_panes_screen_from_focus (panes);
   if (screen != NULL)
     {
       /* keep the cache warm; the signal is emitted by the focus handlers */
@@ -1246,7 +1248,7 @@ terminal_panes_set_active (TerminalPanes *panes,
 {
   g_return_if_fail (TERMINAL_IS_PANES (panes));
 
-  if (screen != NULL && !panes_tree_has_screen (panes->root, screen))
+  if (screen != NULL && !terminal_panes_tree_has_screen (panes->root, screen))
     return;
 
   if (G_UNLIKELY (panes->active == screen))
@@ -1254,7 +1256,7 @@ terminal_panes_set_active (TerminalPanes *panes,
 
   panes->active = screen;
 
-  panes_emit_active_changed (panes, screen);
+  terminal_panes_emit_active_changed (panes, screen);
 }
 
 
@@ -1266,7 +1268,7 @@ terminal_panes_get_screens (TerminalPanes *panes)
 
   g_return_val_if_fail (TERMINAL_IS_PANES (panes), NULL);
 
-  panes_collect_screens (panes->root, &screens);
+  terminal_panes_collect_screens (panes->root, &screens);
 
   return screens;
 }
@@ -1299,7 +1301,7 @@ terminal_panes_contains (TerminalPanes *panes,
   g_return_val_if_fail (TERMINAL_IS_PANES (panes), FALSE);
   g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), FALSE);
 
-  found = panes_tree_has_screen (panes->root, screen);
+  found = terminal_panes_tree_has_screen (panes->root, screen);
 
   return found;
 }
@@ -1308,9 +1310,9 @@ terminal_panes_contains (TerminalPanes *panes,
 
 /* translates the allocation of @widget into coordinates relative to @panes */
 static void
-panes_get_rect (TerminalPanes *panes,
-                GtkWidget *widget,
-                GtkAllocation *rect)
+terminal_panes_get_rect (TerminalPanes *panes,
+                         GtkWidget *widget,
+                         GtkAllocation *rect)
 {
   GtkAllocation alloc;
   gint x = 0, y = 0;
@@ -1336,9 +1338,9 @@ panes_get_rect (TerminalPanes *panes,
 
 
 static TerminalScreen *
-panes_find_neighbor (TerminalPanes *panes,
-                     TerminalScreen *current,
-                     TerminalPanesDirection direction)
+terminal_panes_find_neighbor (TerminalPanes *panes,
+                              TerminalScreen *current,
+                              TerminalPanesDirection direction)
 {
   GSList *screens;
   GSList *lp;
@@ -1348,7 +1350,7 @@ panes_find_neighbor (TerminalPanes *panes,
   gdouble best_primary = 0.0;
   gdouble best_secondary = 0.0;
 
-  panes_get_rect (panes, GTK_WIDGET (current), &cur);
+  terminal_panes_get_rect (panes, GTK_WIDGET (current), &cur);
   cur_cx = cur.x + cur.width / 2.0;
   cur_cy = cur.y + cur.height / 2.0;
 
@@ -1366,7 +1368,7 @@ panes_find_neighbor (TerminalPanes *panes,
       if (screen == current)
         continue;
 
-      panes_get_rect (panes, GTK_WIDGET (screen), &rect);
+      terminal_panes_get_rect (panes, GTK_WIDGET (screen), &rect);
       cx = rect.x + rect.width / 2.0;
       cy = rect.y + rect.height / 2.0;
 
@@ -1428,8 +1430,8 @@ panes_find_neighbor (TerminalPanes *panes,
 
 
 static void
-panes_focus_relative (TerminalPanes *panes,
-                      gint offset)
+terminal_panes_focus_relative (TerminalPanes *panes,
+                               gint offset)
 {
   GSList *screens;
   GSList *lp;
@@ -1477,7 +1479,7 @@ panes_focus_relative (TerminalPanes *panes,
 void
 terminal_panes_focus_next (TerminalPanes *panes)
 {
-  panes_focus_relative (panes, 1);
+  terminal_panes_focus_relative (panes, 1);
 }
 
 
@@ -1485,7 +1487,7 @@ terminal_panes_focus_next (TerminalPanes *panes)
 void
 terminal_panes_focus_previous (TerminalPanes *panes)
 {
-  panes_focus_relative (panes, -1);
+  terminal_panes_focus_relative (panes, -1);
 }
 
 
@@ -1501,7 +1503,7 @@ terminal_panes_focus_direction (TerminalPanes *panes,
   if (panes->active == NULL)
     return;
 
-  neighbor = panes_find_neighbor (panes, panes->active, direction);
+  neighbor = terminal_panes_find_neighbor (panes, panes->active, direction);
 
   if (neighbor != NULL)
     {
