@@ -2,6 +2,7 @@ preset_files = [
   'black-on-white.desktop.in',
   'dark-pastels.desktop.in',
   'green-on-black.desktop.in',
+  'orange-green.desktop.in',
   'solarized-dark.desktop.in',
   'solarized-light.desktop.in',
   'tango.desktop.in',
@@ -19,13 +20,3 @@ foreach file : preset_files
     install_dir: get_option('prefix') / get_option('datadir') / 'xfce4' / 'terminal' / 'colorschemes',
   )
 endforeach
-
-# own presets: color data with a ready-made localization, no translation pipeline
-own_presets = [
-  'orange-green.theme',
-]
-
-install_data(
-  own_presets,
-  install_dir: get_option('prefix') / get_option('datadir') / 'xfce4' / 'terminal' / 'colorschemes',
-)

@@ -45,6 +45,10 @@ msgstr "Тёмная пастель"
 msgid "Green on Black"
 msgstr "Зелёное на чёрном"
 
+#: colorschemes/orange-green.desktop.in:2
+msgid "Orange-Green"
+msgstr "Оранжево-зеленый на темном"
+
 #: colorschemes/solarized-dark.desktop.in:2
 msgid "Solarized (dark)"
 msgstr "Solarized (тёмный)"

@@ -1,8 +1,0 @@
-# Palette data (colors only), generated for the xfce4-terminal fork.
-# Source: user's own terminal settings
-[Scheme]
-Name=Orange-Green
-Name[ru]=Оранжево-зеленый на темном
-ColorForeground=#17f018
-ColorBackground=#000000
-ColorPalette=#000000;#E01B24;#68D123;#AA5500;#3584E4;#E66100;#00AAAA;#AAAAAA;#555555;#E01B24;#55FF55;#FFFF55;#3584E4;#E66100;#55FFFF;#FFFFFF
