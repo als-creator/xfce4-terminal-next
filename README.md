@@ -33,6 +33,13 @@ handling alone (`terminal/terminal-keys.c` plus a small hook in
 `terminal/terminal-window.c`), kept separate so that the approach can be
 reviewed and reused for the shortcut handling of Xfce and GTK themselves.
 
+The fork ran into the same wall itself: the dialog that registers the panel's
+system shortcut stored the raw keystroke, so on a Russian layout it wrote
+`<Primary>0x442` into the settings — a name `gtk_accelerator_parse()` cannot
+read back (it returns `0x0`). The keystroke is normalized there too now, but
+the case shows how far the text form of a shortcut reaches: it is not only
+the matching in one application that has to know about layouts.
+
 <details>
 <summary>Technical implementation</summary>
 
