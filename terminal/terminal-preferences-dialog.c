@@ -21,6 +21,7 @@
 
 #include "terminal-encoding-action.h"
 #include "terminal-enum-types.h"
+#include "terminal-keys.h"
 #include "terminal-preferences-dialog.h"
 #include "terminal-private.h"
 #include "terminal-shortcuts.h"
@@ -2379,7 +2380,7 @@ terminal_preferences_dialog_grab_key_press (GtkWidget *widget,
                                             gpointer   user_data)
 {
   GtkWidget *dialog = GTK_WIDGET (user_data);
-  guint keyval = event->keyval;
+  guint32 keyval = event->keyval;
   guint mods = event->state & gtk_accelerator_get_default_mod_mask ();
   gchar *name;
 
@@ -2408,6 +2409,12 @@ terminal_preferences_dialog_grab_key_press (GtkWidget *widget,
     default:
       break;
     }
+
+  /* the binding is kept as text, so it has to be the text the accelerators
+   * are stored in: on a non-latin layout the press arrives as a cyrillic
+   * keysym and the name below comes out as hex nobody can parse back (see
+   * terminal-keys.c) */
+  terminal_keys_normalize_layout_accel (event, &keyval, &mods);
 
   name = gtk_accelerator_name (keyval, mods);
   if (G_UNLIKELY (name == NULL || *name == '\0'))
