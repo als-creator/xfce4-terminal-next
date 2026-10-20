@@ -70,9 +70,12 @@ struct _TerminalPanes
 /* the same separator as a string, for splitting a record into fields */
 #define PANES_CDIR_SEPARATOR_STR "|"
 
-/* tells the pin fields apart from the directories that come before them: a
- * directory is a path, and no path looks like this word */
-#define PANES_PINS_MARKER "pins"
+/* tells the command fields apart from the directories that come before them:
+ * a directory is a path, and no path looks like this word */
+#define PANES_COMMANDS_MARKER "cmds"
+/* the same block written by older versions: the lock it recorded is gone,
+ * only the command of a pane is still read from it */
+#define PANES_LEGACY_PINS_MARKER "pins"
 
 
 
@@ -85,58 +88,6 @@ enum
 static GParamSpec *panes_properties[N_PROPERTIES];
 
 static guint panes_signals[TERMINAL_PANES_N_SIGNALS];
-
-/* The stylesheet of the pane marks, shared by every pane tree: a locked pane
- * gets a wider band along its edge, so that a lock is seen in a split of many
- * panes at a glance. */
-static const gchar *CSS_PANE_STYLES =
-  "paned.pane-locked > separator {"
-  /* the theme accent is not a variable GTK3 has to define: in themes like
-   * Adwaita the rule was dropped whole and the mark never appeared. The
-   * selected color is one every GTK3 theme defines */
-  "  background-color: @theme_selected_bg_color;"
-  "  min-width: 5px;"
-  "  min-height: 5px;"
-  "}";
-static GtkCssProvider *panes_style_provider = NULL;
-
-
-static void
-panes_update_styles (TerminalPanes *panes)
-{
-  GSList *screens, *lp;
-
-  screens = terminal_panes_get_screens (panes);
-  for (lp = screens; lp != NULL; lp = lp->next)
-    {
-      GtkStyleContext *context;
-
-      GtkWidget *screen = GTK_WIDGET (lp->data);
-      GtkWidget *parent = gtk_widget_get_parent (screen);
-
-      /* a stylesheet border on the terminal itself is not drawn: Vte paints its
-       * own window over it. The divider is a normal widget, so the mark goes
-       * there — a thin accent line along the edge of the pane with the
-       * keyboard, instead of a frame that would ring two panes at once */
-      if (parent != NULL && GTK_IS_PANED (parent))
-        screen = parent;
-
-      context = gtk_widget_get_style_context (screen);
-      if (terminal_screen_get_locked (TERMINAL_SCREEN (lp->data)))
-        gtk_style_context_add_class (context, "pane-locked");
-      else
-        gtk_style_context_remove_class (context, "pane-locked");
-    }
-  g_slist_free (screens);
-}
-
-
-
-void
-terminal_panes_update_styles (TerminalPanes *panes)
-{
-  panes_update_styles (panes);
-}
 
 
 static void
@@ -231,17 +182,6 @@ terminal_panes_init (TerminalPanes *panes)
 {
   panes->root = NULL;
   panes->active = NULL;
-
-  /* the frame around the pane that has the keyboard; the stylesheet is put on
-   * the screen, because the paned it applies to is not this widget */
-  if (panes_style_provider == NULL)
-    {
-      panes_style_provider = gtk_css_provider_new ();
-      gtk_style_context_add_provider_for_screen (gtk_widget_get_screen (GTK_WIDGET (panes)),
-                                                 GTK_STYLE_PROVIDER (panes_style_provider),
-                                                 GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-      gtk_css_provider_load_from_data (panes_style_provider, CSS_PANE_STYLES, -1, NULL);
-    }
 }
 
 
@@ -878,25 +818,23 @@ terminal_panes_get_session_layout (TerminalPanes *panes)
         }
     }
 
-  /* A locked pane and the program it runs: the lock is meant to outlive the
-   * terminal, otherwise it is one click away from being forgotten. */
+  /* The command of every pane: the session brings each split back running
+   * what it ran before, without any lock of its own. */
   if (screens != NULL)
     {
       g_string_append_c (str, PANES_CDIR_SEPARATOR);
-      g_string_append (str, PANES_PINS_MARKER);
+      g_string_append (str, PANES_COMMANDS_MARKER);
 
       for (lp = screens; lp != NULL; lp = lp->next)
         {
-          TerminalScreen *screen = TERMINAL_SCREEN (lp->data);
-          const gchar *command = terminal_screen_get_pinned_command (screen);
+          gchar *command = terminal_screen_get_session_command (TERMINAL_SCREEN (lp->data));
           gchar *escaped;
-
-          g_string_append (str, terminal_screen_get_locked (screen) ? "|1" : "|0");
 
           g_string_append (str, "|cmd=");
           escaped = g_uri_escape_string (command != NULL ? command : "", NULL, FALSE);
           g_string_append (str, escaped != NULL ? escaped : "");
           g_free (escaped);
+          g_free (command);
         }
     }
   g_slist_free (screens);
@@ -905,31 +843,38 @@ terminal_panes_get_session_layout (TerminalPanes *panes)
 }
 
 
-static void
-terminal_panes_session_pin_free (TerminalPanePin *pin)
+/* the command field of one pane: "cmd=..." unescaped, an empty string when
+ * the field is missing or torn */
+static gchar *
+terminal_panes_command_field (const gchar *field)
 {
-  if (pin == NULL)
-    return;
+  gchar *command;
 
-  g_free (pin->command);
-  g_free (pin);
+  if (field == NULL || !g_str_has_prefix (field, "cmd="))
+    return g_strdup ("");
+
+  command = g_uri_unescape_string (field + 4, NULL);
+
+  return command != NULL ? command : g_strdup ("");
 }
 
 
 /**
- * terminal_panes_session_pins:
+ * terminal_panes_session_commands:
  * @record: (nullable): a record written by terminal_panes_get_session_layout()
  *
- * The locks and the programs of the panes, in the order the layout walks them.
- * A record written before the pins existed carries none.
+ * The command of every pane, in the order the layout walks them: the session
+ * brings each split back running what it ran before. A record written before
+ * the commands existed carries none; a record written by an older version
+ * still carrying the lock block is read for the commands alone.
  *
- * Returns: (transfer full) (element-type TerminalPanePin) (nullable): the pins,
- * to be freed with terminal_panes_session_pins_free().
+ * Returns: (transfer full) (element-type utf8) (nullable): the commands, to be
+ *   freed with terminal_panes_session_commands_free().
  */
 GPtrArray *
-terminal_panes_session_pins (const gchar *record)
+terminal_panes_session_commands (const gchar *record)
 {
-  GPtrArray *pins;
+  GPtrArray *commands;
   gchar **fields;
   gint i;
 
@@ -937,32 +882,32 @@ terminal_panes_session_pins (const gchar *record)
 
   fields = g_strsplit (record, PANES_CDIR_SEPARATOR_STR, -1);
 
-  pins = NULL;
+  commands = NULL;
   for (i = 0; fields[i] != NULL; i++)
     {
-      if (!g_str_equal (fields[i], PANES_PINS_MARKER))
+      gboolean legacy;
+
+      if (g_str_equal (fields[i], PANES_COMMANDS_MARKER))
+        legacy = FALSE;
+      else if (g_str_equal (fields[i], PANES_LEGACY_PINS_MARKER))
+        legacy = TRUE;
+      else
         continue;
 
-      pins = g_ptr_array_new_with_free_func ((GDestroyNotify) terminal_panes_session_pin_free);
+      commands = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 
-      /* two fields per pane from here: whether it is locked, then its program */
-      for (i++; fields[i] != NULL; i += 2)
+      if (legacy)
         {
-          TerminalPanePin *pin = g_new0 (TerminalPanePin, 1);
-
-          pin->locked = fields[i][0] == '1';
-
-          if (fields[i + 1] != NULL && g_str_has_prefix (fields[i + 1], "cmd="))
-            {
-              const gchar *raw = fields[i + 1] + 4;
-              gchar *command = g_uri_unescape_string (raw, NULL);
-
-              pin->command = command != NULL ? command : g_strdup ("");
-            }
-          else
-            pin->command = g_strdup ("");
-
-          g_ptr_array_add (pins, pin);
+          /* the lock block carried two fields per pane: the lock, then the
+           * program — the lock itself is read no more */
+          for (i++; fields[i] != NULL; i += 2)
+            g_ptr_array_add (commands, terminal_panes_command_field (fields[i + 1]));
+        }
+      else
+        {
+          /* one command per pane from here */
+          for (i++; fields[i] != NULL; i++)
+            g_ptr_array_add (commands, terminal_panes_command_field (fields[i]));
         }
 
       break;
@@ -970,20 +915,20 @@ terminal_panes_session_pins (const gchar *record)
 
   g_strfreev (fields);
 
-  return pins;
+  return commands;
 }
 
 
 /**
- * terminal_panes_session_pins_free:
- * @pins: (nullable) (element-type TerminalPanePin): pins from
- *   terminal_panes_session_pins()
+ * terminal_panes_session_commands_free:
+ * @commands: (nullable) (element-type utf8): commands from
+ *   terminal_panes_session_commands()
  */
 void
-terminal_panes_session_pins_free (GPtrArray *pins)
+terminal_panes_session_commands_free (GPtrArray *commands)
 {
-  if (pins != NULL)
-    g_ptr_array_unref (pins);
+  if (commands != NULL)
+    g_ptr_array_unref (commands);
 }
 
 
@@ -1012,8 +957,9 @@ terminal_panes_session_cdirs (const gchar *record)
    * number of directories is decided by the layout, not by the separators */
   while (*p != '\0')
     {
-      /* the pins follow the directories, and they are not directories */
-      if (g_str_has_prefix (p + 1, PANES_PINS_MARKER))
+      /* the commands follow the directories, and they are not directories */
+      if (g_str_has_prefix (p + 1, PANES_COMMANDS_MARKER)
+          || g_str_has_prefix (p + 1, PANES_LEGACY_PINS_MARKER))
         break;
 
       const gchar *start = p + 1;

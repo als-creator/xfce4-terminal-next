@@ -13,15 +13,13 @@ from scratch. The full list of changes and the reasoning behind them live in
 * **Split panes** — a tree of `GtkPaned` inside a tab: `Ctrl+Shift+H` /
   `Ctrl+Shift+E` split, `Ctrl+Shift+X` closes, `Alt+arrows` and `Ctrl+Tab`
   move the focus; the split to focus is chosen geometrically.
-* **Pane lock** (`Ctrl+Shift+L`) — the pane survives its program and comes
-  back with it at the next start; with the layout saved, the whole split tree
-  returns.
 * **Clipboard slots** — up to ten labelled slots, filled by copy and pasted
   from the menu or the context sub-menu, optionally kept in a file.
 * **tmux mode** — one setting with the command, launch from the menu, the
   session outlives the window.
-* **Session** — tabs, the split layout and the active pane are restored at
-  the next start.
+* **Session** — tabs, the split layout, the active pane and the command of
+  every pane are restored at the next start: each split comes back running
+  what it ran before.
 * **Drop-down terminal** — a system hotkey (`XFCE`) to hide and show it, and
   a `StatusNotifierItem` tray icon on X11 and Wayland.
 
@@ -96,15 +94,13 @@ please report with `tests/run-all.sh` output attached.
 * **Сплит-панели** — дерево `GtkPaned` внутри вкладки: `Ctrl+Shift+H` /
   `Ctrl+Shift+E` — разделение, `Ctrl+Shift+X` — закрыть, `Alt+стрелки` и
   `Ctrl+Tab` — переход фокуса; сплит выбирается геометрически.
-* **Лок панели** (`Ctrl+Shift+L`) — панель переживает свою программу и
-  возвращается вместе с ней при следующем запуске; вместе с сохранённой
-  раскладкой возвращается всё дерево сплитов.
 * **Ячейки обмена** — до десяти именованных ячеек: заполняются копированием,
   вставляются из меню или контекстного подменю, опционально хранятся в файле.
 * **tmux-режим** — одна настройка с командой запуска из меню, сессия
   переживает окно.
-* **Сессия** — вкладки, раскладка сплитов и активная панель восстанавливаются
-  при следующем запуске.
+* **Сессия** — вкладки, раскладка сплитов, активная панель и команда каждой
+  панели восстанавливаются при следующем запуске: каждый сплит возвращается
+  с той же командой, с которой работал.
 * **Выпадающий терминал** — системная горячая клавиша (`XFCE`) для скрытия и
   появления, иконка в трее (`StatusNotifierItem`) на X11 и Wayland.
 

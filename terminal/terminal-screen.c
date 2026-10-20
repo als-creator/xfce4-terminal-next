@@ -257,11 +257,6 @@ struct _TerminalScreen
   guint hold : 1;
   guint has_random_bg_color : 1;
 
-  /* the pane is locked: it is written down with the session, and the program
-   * below is what it comes back with at the next start */
-  gchar *pinned_command;
-  guint locked : 1;
-
   guint contents_changed_id;
   guint activity_timeout_id;
   time_t activity_resize_time;
@@ -474,7 +469,6 @@ terminal_screen_finalize (GObject *object)
   g_object_unref (screen->cancellable);
 
   g_strfreev (screen->custom_command);
-  g_free (screen->pinned_command);
   g_free (screen->working_directory);
   g_free (screen->custom_title);
   g_free (screen->initial_title);
@@ -764,16 +758,7 @@ terminal_screen_get_child_command (TerminalScreen *screen,
     "/bin/ksh", "/usr/bin/ksh"
   };
 
-  /* a locked pane runs the program it was locked on, whatever the terminal
-   * itself was told to start: that is the whole point of the lock */
-  if (screen->locked && screen->pinned_command != NULL && *screen->pinned_command != '\0')
-    {
-      if (!g_shell_parse_argv (screen->pinned_command, NULL, argv, error))
-        return FALSE;
-
-      *command = g_strdup ((*argv)[0]);
-    }
-  else if (screen->custom_command != NULL)
+  if (screen->custom_command != NULL)
     {
       *command = g_strdup (screen->custom_command[0]);
       *argv = g_strdupv (screen->custom_command);
@@ -1559,20 +1544,7 @@ terminal_screen_vte_child_exited (VteTerminal *terminal,
   g_object_get (G_OBJECT (screen->preferences), "misc-show-relaunch-dialog", &show_relaunch_dialog, NULL);
 
   if (G_LIKELY (!screen->hold))
-    {
-      /* A locked pane closes like any other, but its lock goes into the layout
-       * beforehand: written down after the destroy, the pane would already be
-       * out of the tree and the next session would not bring it back. */
-      if (screen->locked)
-        {
-          GtkWidget *toplevel = gtk_widget_get_toplevel (GTK_WIDGET (screen));
-
-          if (TERMINAL_IS_WINDOW (toplevel))
-            terminal_window_save_panes_layouts (TERMINAL_WINDOW (toplevel));
-        }
-
-      gtk_widget_destroy (GTK_WIDGET (screen));
-    }
+    gtk_widget_destroy (GTK_WIDGET (screen));
   else if (show_relaunch_dialog)
     {
       /* create "Relaunch" bar */
@@ -1610,62 +1582,67 @@ terminal_screen_vte_child_exited (VteTerminal *terminal,
 
 
 /**
- * terminal_screen_set_locked:
- * @screen: a #TerminalScreen
- * @locked: %TRUE to keep the pane for the next session
- * @command: (nullable): the program to run in the pane after restore
- *
- * Lock the pane: it is written down with the session and, on restore, runs the
- * program from @command instead of a new shell. The pane itself closes with
- * Ctrl+D as it always did; the lock is what the next session remembers.
- */
-void
-terminal_screen_set_locked (TerminalScreen *screen,
-                            gboolean        locked,
-                            const gchar    *command)
-{
-  g_return_if_fail (TERMINAL_IS_SCREEN (screen));
-
-  screen->locked = locked;
-
-  g_free (screen->pinned_command);
-  screen->pinned_command = (locked && command != NULL) ? g_strdup (command) : NULL;
-}
-
-
-/**
- * terminal_screen_get_locked:
+ * terminal_screen_get_session_command:
  * @screen: a #TerminalScreen
  *
- * Whether the pane is kept for the next session.
+ * The command the pane runs, written down with the session so that the pane
+ * comes back running what it ran before: an empty string when the pane runs
+ * what the terminal itself was told to start, and the next session starts it
+ * the same way anyway.
  *
- * Returns: %TRUE while the pane is locked.
+ * Returns: (transfer full): the command, to be freed with g_free().
  */
-gboolean
-terminal_screen_get_locked (TerminalScreen *screen)
+gchar *
+terminal_screen_get_session_command (TerminalScreen *screen)
 {
-  g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), FALSE);
+  GString *str;
+  guint i;
 
-  return screen->locked;
-}
-
-
-
-/**
- * terminal_screen_get_pinned_command:
- * @screen: a #TerminalScreen
- *
- * The program a locked pane runs: an empty string when the pane is locked
- * without a program and simply stays where it is.
- *
- * Returns: (transfer none) (nullable): the command, owned by the pane.
- */
-const gchar *
-terminal_screen_get_pinned_command (TerminalScreen *screen)
-{
   g_return_val_if_fail (TERMINAL_IS_SCREEN (screen), NULL);
 
-  return screen->pinned_command != NULL ? screen->pinned_command : "";
+  if (screen->custom_command == NULL)
+    return g_strdup ("");
+
+  /* every argument is quoted on its own, so that the record round trips
+   * through terminal_screen_set_session_command() unchanged */
+  str = g_string_new (NULL);
+  for (i = 0; screen->custom_command[i] != NULL; i++)
+    {
+      gchar *quoted = g_shell_quote (screen->custom_command[i]);
+
+      if (i > 0)
+        g_string_append_c (str, ' ');
+      g_string_append (str, quoted);
+      g_free (quoted);
+    }
+
+  return g_string_free (str, FALSE);
+}
+
+
+
+/**
+ * terminal_screen_set_session_command:
+ * @screen: a #TerminalScreen
+ * @command: (nullable): the command from the session record
+ *
+ * The other half of terminal_screen_get_session_command(): give the pane its
+ * command back before the shell is started. An empty or unparsable command
+ * leaves the pane with the defaults of the terminal.
+ */
+void
+terminal_screen_set_session_command (TerminalScreen *screen,
+                                     const gchar    *command)
+{
+  gchar **argv = NULL;
+
+  g_return_if_fail (TERMINAL_IS_SCREEN (screen));
+
+  if (command != NULL && *command != '\0'
+      && g_shell_parse_argv (command, NULL, &argv, NULL))
+    terminal_screen_set_custom_command (screen, argv);
+
+  g_strfreev (argv);
 }
 
 
@@ -1677,7 +1654,7 @@ terminal_screen_vte_eof (VteTerminal *terminal,
   g_return_if_fail (VTE_IS_TERMINAL (terminal));
   g_return_if_fail (TERMINAL_IS_SCREEN (screen));
 
-  if (G_LIKELY (!screen->hold && !screen->locked))
+  if (G_LIKELY (!screen->hold))
     gtk_widget_destroy (GTK_WIDGET (screen));
 }
 

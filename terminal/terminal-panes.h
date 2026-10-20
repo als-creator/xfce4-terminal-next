@@ -104,15 +104,8 @@ terminal_panes_get_session_layout (TerminalPanes *panes);
 gchar **
 terminal_panes_session_cdirs (const gchar *record);
 
-/* one pane of a saved tab: whether it was locked, and the program it ran */
-typedef struct
-{
-  gboolean locked;
-  gchar *command;
-} TerminalPanePin;
-
-GPtrArray *terminal_panes_session_pins (const gchar *record);
-void       terminal_panes_session_pins_free (GPtrArray *pins);
+GPtrArray *terminal_panes_session_commands (const gchar *record);
+void       terminal_panes_session_commands_free (GPtrArray *commands);
 
 /**
  * Removes @screen from the pane tree, collapsing the split.
@@ -156,16 +149,6 @@ terminal_panes_focus_next (TerminalPanes *panes);
 
 void
 terminal_panes_focus_previous (TerminalPanes *panes);
-
-/**
- * terminal_panes_update_styles:
- * @panes: a #TerminalPanes
- *
- * Marks the pane that has the keyboard again, for when the setting that draws
- * the mark has been switched.
- */
-void
-terminal_panes_update_styles      (TerminalPanes *panes);
 
 /**
  * Moves the pane focus in the given direction based on pane geometry.

@@ -674,25 +674,20 @@ msgstr "Мигающий курсор"
 msgid "This option controls whether the cursor will be blinking or not."
 msgstr "Этот параметр управляет миганием курсора."
 
-#. The latch itself lives in the pane and is switched from the menu, while
-#. * the program is a thing of the terminal: one for every pane.
-#: terminal/terminal-preferences-dialog.c:572
-msgid "Program of the _locked pane:"
-msgstr "Программа _закреплённой панели:"
+#~ msgid "Program of the _locked pane:"
+#~ msgstr "Программа _закреплённой панели:"
 
-#: terminal/terminal-preferences-dialog.c:580
-msgid "nothing: the pane simply stays"
-msgstr "ничего: панель просто остаётся"
+#~ msgid "nothing: the pane simply stays"
+#~ msgstr "ничего: панель просто остаётся"
 
-#: terminal/terminal-preferences-dialog.c:581
-msgid ""
-"Lock a pane with \"Lock this pane\" in the Terminal menu (Ctrl+Shift+L): "
-"after its program ends the pane starts this one again, and a pane restored "
-"in the next session comes back with it."
-msgstr ""
-"Закрепить панель можно пунктом «Закрепить панель» в меню «Терминал» "
-"(Ctrl+Shift+L): когда её программа закончится, панель запустит эту программу "
-"снова, а восстановленная в следующем запуске панель придёт с ней."
+#~ msgid ""
+#~ "Lock a pane with \"Lock this pane\" in the Terminal menu (Ctrl+Shift+L): "
+#~ "after its program ends the pane starts this one again, and a pane restored "
+#~ "in the next session comes back with it."
+#~ msgstr ""
+#~ "Закрепить панель можно пунктом «Закрепить панель» в меню «Терминал» "
+#~ "(Ctrl+Shift+L): когда её программа закончится, панель запустит эту программу "
+#~ "снова, а восстановленная в следующем запуске панель придёт с ней."
 
 #.
 #. * Session and Memory
@@ -2052,17 +2047,15 @@ msgstr "Запустить сеанс tmux"
 msgid "Run the configured tmux start command in this pane"
 msgstr "Выполнить настроенную команду запуска tmux в этой панели"
 
-#: terminal/terminal-window.c:1265
-msgid "_Lock this pane"
-msgstr "_Закрепить панель"
+#~ msgid "_Lock this pane"
+#~ msgstr "_Закрепить панель"
 
-#: terminal/terminal-window.c:1266
-msgid ""
-"Keep the pane for the next session: it closes with Ctrl+D like any\n"
-"other pane, and comes back at the next start with its program"
-msgstr ""
-"Сохранить панель для следующей сессии: она закрывается по Ctrl+D, как\n"
-"любая другая, и возвращается при следующем запуске вместе с программой"
+#~ msgid ""
+#~ "Keep the pane for the next session: it closes with Ctrl+D like any\n"
+#~ "other pane, and comes back at the next start with its program"
+#~ msgstr ""
+#~ "Сохранить панель для следующей сессии: она закрывается по Ctrl+D, как\n"
+#~ "любая другая, и возвращается при следующем запуске вместе с программой"
 
 #: terminal/terminal-window.c:1276
 msgid "Focus Pane _Up"
@@ -2281,10 +2274,6 @@ msgstr ""
 #: terminal/terminal-window.c:2193
 msgid "Close window?"
 msgstr "Закрыть окно?"
-
-#: terminal/terminal-window.c:3290
-msgid "locked pane"
-msgstr "панель закреплена"
 
 #: terminal/terminal-window.c:4182
 msgid "Failed to open directory"
@@ -2617,3 +2606,6 @@ msgstr "terminal;settings;preferences;configuration;configure;терминал;�
 
 #~ msgid "Focus Pane Right Alt"
 #~ msgstr "Панель правее (Ctrl+Alt+вправо)"
+
+#~ msgid "locked pane"
+#~ msgstr "панель закреплена"

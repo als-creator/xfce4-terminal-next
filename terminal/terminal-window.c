@@ -545,8 +545,6 @@ static gboolean
 terminal_window_action_split_horizontal (TerminalWindow *window);
 static gboolean
 terminal_window_action_start_tmux (TerminalWindow *window);
-static void
-terminal_window_action_lock_pane (TerminalWindow *window);
 static gboolean
 terminal_window_action_split_vertical (TerminalWindow *window);
 static gboolean
@@ -632,8 +630,8 @@ terminal_window_restore_panes_layout (TerminalWindow *window,
                                        TerminalPanes   *panes,
                                        const gchar     *layout);
 static void
-terminal_window_restore_panes_pins (TerminalPanes *panes,
-                                     const gchar   *record);
+terminal_window_restore_panes_commands (TerminalPanes *panes,
+                                        const gchar   *record);
 static void
 terminal_window_save_session_state (TerminalWindow *window);
 static void
@@ -1258,17 +1256,6 @@ static XfceGtkActionEntry action_entries[] = {
     G_CALLBACK (terminal_window_action_start_tmux),
   },
   {
-    TERMINAL_WINDOW_ACTION_LOCK_PANE,
-    "<Actions>/terminal-window/lock-pane",
-    "<control><shift>l",
-    XFCE_GTK_CHECK_MENU_ITEM,
-    N_ ("_Lock this pane"),
-    N_ ("Keep the pane for the next session: it closes with Ctrl+D like any\n"
-       "other pane, and comes back at the next start with its program"),
-    "object-frozen",
-    G_CALLBACK (terminal_window_action_lock_pane),
-  },
-  {
     TERMINAL_WINDOW_ACTION_FOCUS_UP,
     "<Actions>/terminal-window/focus-up",
     "<alt>Up",
@@ -1873,8 +1860,7 @@ terminal_window_delete_event (GtkWidget *widget,
        * by itself and panes that were closed by hand are already gone from the
        * tree, while nothing else saves after the handlers below are gone. A
        * window closed as a whole never sees a page removed, so this is the
-       * only moment left to write the layout down — without it a locked pane
-       * would be lost together with the window. */
+       * only moment left to write the layout down. */
       terminal_window_save_panes_layouts (window);
       terminal_window_save_session_state (window);
 
@@ -2462,9 +2448,9 @@ terminal_window_notebook_page_added (GtkNotebook *notebook,
         }
 
       terminal_window_restore_panes_layout (window, panes, record);
-      terminal_window_restore_panes_pins (panes, record);
+      terminal_window_restore_panes_commands (panes, record);
 
-      /* the pane that came back locked says so in the title like any other */
+      /* apply the title of the pane that came back */
       terminal_window_apply_title (window, terminal_panes_get_active (panes));
 
       window->priv->panes_layout_index++;
@@ -3258,9 +3244,8 @@ terminal_window_get_context_menu (TerminalScreen *screen,
 
   terminal_window_menu_add_section (window, context_menu, MENU_SECTION_SPLIT, FALSE);
 
-  /* Lock the pane and start tmux: from the window menu they are a detour,
-   * and in the terminal context menu that is where they are looked for. */
-  xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_LOCK_PANE), G_OBJECT (window), terminal_screen_get_locked (window->priv->active), GTK_MENU_SHELL (context_menu));
+  /* Start tmux: a detour from the window menu, and in the terminal context
+   * menu that is where it is looked for. */
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (context_menu));
 
   xfce_gtk_menu_append_separator (GTK_MENU_SHELL (context_menu));
@@ -3277,29 +3262,20 @@ terminal_window_get_context_menu (TerminalScreen *screen,
 
 
 
-/* The title of the pane, with the lock marked: a locked pane is something the
- * window has to say about itself, and looking into the menu for that is one
- * step too many. */
+/* The title of the pane. */
 static void
 terminal_window_apply_title (TerminalWindow *window,
                              TerminalScreen *screen)
 {
   gchar *title;
-  gchar *marked;
 
   if (screen == NULL)
     return;
 
   title = terminal_screen_get_title (screen);
 
-  if (terminal_screen_get_locked (screen))
-    marked = g_strdup_printf ("%s — %s", title, _("locked pane"));
-  else
-    marked = g_strdup (title);
+  gtk_window_set_title (GTK_WINDOW (window), title);
 
-  gtk_window_set_title (GTK_WINDOW (window), marked);
-
-  g_free (marked);
   g_free (title);
 }
 
@@ -3555,36 +3531,31 @@ terminal_window_restore_panes_layout (TerminalWindow *window,
 }
 
 
-/* Put the locks back before the shells are started, so a locked pane comes
- * up running its program instead of a shell that would have to be replaced a
+/* Put the commands back before the shells are started, so that a pane comes
+ * up running what it ran instead of a shell that would have to be replaced a
  * moment later. The panes are in the same order the record lists them. */
 static void
-terminal_window_restore_panes_pins (TerminalPanes *panes,
-                                    const gchar   *record)
+terminal_window_restore_panes_commands (TerminalPanes *panes,
+                                        const gchar   *record)
 {
-  GPtrArray *pins;
+  GPtrArray *commands;
   GSList *screens, *lp;
   guint n = 0;
 
   if (panes == NULL || record == NULL)
     return;
 
-  pins = terminal_panes_session_pins (record);
-  if (pins == NULL)
+  commands = terminal_panes_session_commands (record);
+  if (commands == NULL)
     return;
 
   screens = terminal_panes_get_screens (panes);
-  for (lp = screens; lp != NULL && n < pins->len; lp = lp->next, n++)
-    {
-      TerminalPanePin *pin = g_ptr_array_index (pins, n);
-
-      terminal_screen_set_locked (TERMINAL_SCREEN (lp->data),
-                                  pin->locked,
-                                  pin->command);
-    }
+  for (lp = screens; lp != NULL && n < commands->len; lp = lp->next, n++)
+    terminal_screen_set_session_command (TERMINAL_SCREEN (lp->data),
+                                         g_ptr_array_index (commands, n));
   g_slist_free (screens);
 
-  terminal_panes_session_pins_free (pins);
+  terminal_panes_session_commands_free (commands);
 }
 
 
@@ -3941,51 +3912,6 @@ terminal_window_action_start_tmux (TerminalWindow *window)
   return TRUE;
 }
 
-
-
-/* Lock the pane: what runs in it right now keeps running, and the pane is
- * written down with the session — the lock is what brings it back at the next
- * start, together with the program from the settings. Ctrl+D closes the pane
- * like any other; the lock decides whether the next session remembers it. */
-static void
-terminal_window_action_lock_pane (TerminalWindow *window)
-{
-  TerminalScreen *active;
-  const gchar *command = NULL;
-  gboolean locked;
-
-  g_return_if_fail (TERMINAL_IS_WINDOW (window));
-
-  active = window->priv->active;
-  if (active == NULL)
-    return;
-
-  locked = terminal_screen_get_locked (active);
-  if (!locked)
-    g_object_get (G_OBJECT (window->priv->preferences), "misc-pinned-command", &command, NULL);
-
-  terminal_screen_set_locked (active, !locked, command);
-  g_free ((gchar *) command);
-
-  /* the layout is written down here, while the lock is fresh: a window that is
-   * killed without a delete event never gets to save anything, and the lock is
-   * exactly what must not be lost with it */
-  terminal_window_save_panes_layouts (window);
-
-  /* the title says which pane is locked, so it is seen without opening the
-   * menu; the menu entry is a check box and has to show the same state */
-  terminal_window_apply_title (window, active);
-  gtk_widget_queue_draw (GTK_WIDGET (window));
-
-  /* and the pane itself is marked: a lock that shows nowhere but the title is
-   * a lock nobody notices */
-  {
-    TerminalPanes *panes = terminal_window_screen_get_panes (active);
-
-    if (panes != NULL)
-      terminal_panes_update_styles (panes);
-  }
-}
 
 
 static gboolean
@@ -6695,9 +6621,8 @@ terminal_window_update_terminal_menu (TerminalWindow *window,
 
   terminal_window_menu_clean (GTK_MENU (menu));
   terminal_window_menu_add_section (window, menu, MENU_SECTION_SPLIT, TRUE);
-  /* lock and tmux stand beside the split section, not inside it: in one menu
-   * they are looked for by themselves, and every entry must occur once */
-  xfce_gtk_toggle_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_LOCK_PANE), G_OBJECT (window), terminal_screen_get_locked (window->priv->active), GTK_MENU_SHELL (menu));
+  /* tmux stands beside the split section, not inside it: in one menu it is
+   * looked for by itself, and every entry must occur once */
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_START_TMUX), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SET_TITLE), G_OBJECT (window), GTK_MENU_SHELL (menu));
   xfce_gtk_menu_item_new_from_action_entry (get_action_entry (TERMINAL_WINDOW_ACTION_SET_TITLE_COLOR), G_OBJECT (window), GTK_MENU_SHELL (menu));

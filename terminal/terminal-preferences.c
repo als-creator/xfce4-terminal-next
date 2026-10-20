@@ -131,7 +131,6 @@ enum
   PROP_MISC_SESSION_ACTIVE_TAB_INDEX,
   PROP_MISC_SESSION_ACTIVE_PANE_INDEX,
   PROP_MISC_TMUX_COMMAND,
-  PROP_MISC_PINNED_COMMAND,
   PROP_SCROLLING_BAR,
   PROP_OVERLAY_SCROLLING,
   PROP_SCROLLING_LINES,
@@ -1301,20 +1300,6 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_string ("misc-tmux-command",
                          NULL,
                          "MiscTmuxCommand",
-                         NULL,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
-  /**
-   * TerminalPreferences:misc-pinned-command:
-   *
-   * The program a locked pane comes back with at the next start: the pane is
-   * saved with the session and runs this program as it is restored. Empty
-   * means the pane comes back with the usual shell.
-   **/
-  preferences_props[PROP_MISC_PINNED_COMMAND] =
-    g_param_spec_string ("misc-pinned-command",
-                         NULL,
-                         "MiscPinnedCommand",
                          NULL,
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
