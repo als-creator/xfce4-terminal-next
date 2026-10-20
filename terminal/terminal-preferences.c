@@ -412,7 +412,7 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
     g_param_spec_string ("color-foreground",
                          NULL,
                          "ColorForeground",
-                         "#ffffff",
+                         "#17f018",
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   /**
@@ -523,19 +523,19 @@ terminal_preferences_class_init (TerminalPreferencesClass *klass)
                          NULL,
                          "ColorPalette",
                          "#000000;"
-                         "#aa0000;"
-                         "#00aa00;"
+                         "#e01b24;"
+                         "#68d123;"
                          "#aa5500;"
-                         "#0000aa;"
-                         "#aa00aa;"
+                         "#3584e4;"
+                         "#e66100;"
                          "#00aaaa;"
                          "#aaaaaa;"
                          "#555555;"
-                         "#ff5555;"
+                         "#e01b24;"
                          "#55ff55;"
                          "#ffff55;"
-                         "#5555ff;"
-                         "#ff55ff;"
+                         "#3584e4;"
+                         "#e66100;"
                          "#55ffff;"
                          "#ffffff",
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);

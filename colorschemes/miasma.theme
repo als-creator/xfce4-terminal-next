@@ -1,7 +1,0 @@
-# Palette data (colors only), generated for the xfce4-terminal fork.
-# Source: omarchy themes (MIT), theme miasma
-[Scheme]
-Name=Miasma
-ColorForeground=#c2c2b0
-ColorBackground=#222222
-ColorPalette=#222222;#685742;#5f875f;#b36d43;#78824b;#bb7744;#c9a554;#c2c2b0;#666666;#685742;#5f875f;#b36d43;#78824b;#bb7744;#c9a554;#c2c2b0

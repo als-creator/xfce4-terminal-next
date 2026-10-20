@@ -1,7 +1,0 @@
-# Palette data (colors only), generated for the xfce4-terminal fork.
-# Source: omarchy themes (MIT), theme lumon
-[Scheme]
-Name=Lumon
-ColorForeground=#f2fcff
-ColorBackground=#16242d
-ColorPalette=#16242d;#4d86b0;#5e95bc;#6fa4c9;#6fb8e3;#8bc9eb;#b4e4f6;#d6e2ee;#304860;#73a6cb;#86b7d8;#9dcae5;#f2fcff;#b1d8ee;#d1eef8;#f2fcff

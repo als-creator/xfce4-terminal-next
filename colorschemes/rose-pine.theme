@@ -1,7 +1,0 @@
-# Palette data (colors only), generated for the xfce4-terminal fork.
-# Source: omarchy themes (MIT), theme rose-pine
-[Scheme]
-Name=Rose Pine
-ColorForeground=#575279
-ColorBackground=#faf4ed
-ColorPalette=#faf4ed;#b4637a;#286983;#ea9d34;#56949f;#907aa9;#d7827e;#575279;#cecacd;#b4637a;#286983;#ea9d34;#56949f;#907aa9;#d7827e;#575279

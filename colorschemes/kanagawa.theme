@@ -1,7 +1,0 @@
-# Palette data (colors only), generated for the xfce4-terminal fork.
-# Source: omarchy themes (MIT), theme kanagawa
-[Scheme]
-Name=Kanagawa
-ColorForeground=#dcd7ba
-ColorBackground=#1f1f28
-ColorPalette=#1f1f28;#c34043;#76946a;#c0a36e;#7e9cd8;#957fb8;#6a9589;#dcd7ba;#54546D;#e82424;#98bb6c;#e6c384;#7fb4ca;#938aa9;#7aa89f;#dcd7ba

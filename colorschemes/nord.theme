@@ -1,7 +1,0 @@
-# Palette data (colors only), generated for the xfce4-terminal fork.
-# Source: omarchy themes (MIT), theme nord
-[Scheme]
-Name=Nord
-ColorForeground=#d8dee9
-ColorBackground=#2e3440
-ColorPalette=#2e3440;#bf616a;#a3be8c;#ebcb8b;#81a1c1;#b48ead;#88c0d0;#d8dee9;#4c566a;#bf616a;#a3be8c;#ebcb8b;#81a1c1;#b48ead;#8fbcbb;#d8dee9
