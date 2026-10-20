@@ -760,6 +760,10 @@ msgstr ""
 "Пустое поле — строка по умолчанию: подключается к сеансу «main» и разрешает "
 "программам передавать 24-битный цвет."
 
+#: terminal/terminal-preferences-dialog.c:661
+msgid "tmux is not installed: the command will not run until it is."
+msgstr "tmux не установлен: команда не запустится, пока его нет в системе."
+
 #. section: Clipboard
 #: terminal/terminal-preferences-dialog.c:673
 msgid "Clipboard"

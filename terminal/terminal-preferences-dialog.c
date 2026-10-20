@@ -60,6 +60,11 @@ terminal_preferences_dialog_slot_format_toggled (GtkToggleButton *button,
 static void
 terminal_preferences_dialog_check_buttons (GtkWidget *page,
                                             gint        built);
+static gchar *
+terminal_preferences_dialog_tmux_program (const gchar *line);
+static void
+terminal_preferences_dialog_tmux_command_changed (GtkEditable *editable,
+                                                  gpointer     user_data);
 static PangoAttrList *
 terminal_pango_attr_list_small (void);
 static void
@@ -636,6 +641,26 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   gtk_widget_set_hexpand (entry, TRUE);
   gtk_grid_attach (GTK_GRID (grid), entry, 1, row, 2, 1);
   gtk_widget_show (entry);
+
+  /* next row */
+  row++;
+
+  /* the warning sits under the field: it appears while the line calls tmux
+   * and the program is missing, and stays quiet otherwise */
+  infobar = gtk_info_bar_new ();
+  gtk_container_set_border_width (GTK_CONTAINER (infobar), 1);
+  label = gtk_label_new (_("tmux is not installed: the command will not run until it is."));
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  box = gtk_info_bar_get_content_area (GTK_INFO_BAR (infobar));
+  gtk_container_add (GTK_CONTAINER (box), label);
+  gtk_info_bar_set_message_type (GTK_INFO_BAR (infobar), GTK_MESSAGE_WARNING);
+  gtk_grid_attach (GTK_GRID (grid), infobar, 1, row, 3, 1);
+  gtk_widget_show (label);
+  gtk_widget_hide (infobar);
+
+  g_signal_connect (G_OBJECT (entry), "changed",
+                    G_CALLBACK (terminal_preferences_dialog_tmux_command_changed), infobar);
+  terminal_preferences_dialog_tmux_command_changed (GTK_EDITABLE (entry), infobar);
 
   /* next row */
   row++;
@@ -2136,6 +2161,54 @@ terminal_preferences_dialog_check_button_new (const gchar *mnemonic)
 {
   check_buttons++;
   return gtk_check_button_new_with_mnemonic (mnemonic);
+}
+
+
+
+/* The command word of the tmux line, with any "NAME=value" prefixes skipped.
+ * An empty line means the built-in default, and that one calls tmux. The
+ * warning under the field only speaks about tmux itself: a line naming some
+ * other program is the user's own business. */
+static gchar *
+terminal_preferences_dialog_tmux_program (const gchar *line)
+{
+  gchar **words;
+  gchar *program = NULL;
+  guint i;
+
+  if (line == NULL || *line == '\0')
+    return g_strdup ("tmux");
+
+  words = g_strsplit_set (line, " \t", -1);
+  for (i = 0; words[i] != NULL; i++)
+    {
+      if (*words[i] == '\0' || strchr (words[i], '=') != NULL)
+        continue;
+      program = g_strdup (words[i]);
+      break;
+    }
+  g_strfreev (words);
+
+  return program;
+}
+
+
+
+/* Shows the warning under the tmux command field while the line is going to
+ * call tmux and tmux itself is not installed. */
+static void
+terminal_preferences_dialog_tmux_command_changed (GtkEditable *editable,
+                                                  gpointer     user_data)
+{
+  GtkWidget *infobar = GTK_WIDGET (user_data);
+  gchar *program;
+  gboolean missing;
+
+  program = terminal_preferences_dialog_tmux_program (gtk_entry_get_text (GTK_ENTRY (editable)));
+  missing = (g_strcmp0 (program, "tmux") == 0
+             && g_find_program_in_path ("tmux") == NULL);
+  gtk_widget_set_visible (infobar, missing);
+  g_free (program);
 }
 
 
