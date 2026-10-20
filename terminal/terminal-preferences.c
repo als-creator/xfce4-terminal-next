@@ -277,8 +277,6 @@ static GParamSpec *preferences_props[N_PROPERTIES] = {
 static void
 terminal_preferences_class_init (TerminalPreferencesClass *klass)
 {
-  GdkRGBA default_pane_color;
-
   GObjectClass *gobject_class;
   guint i;
   const GType enum_types[] = {
