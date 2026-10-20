@@ -102,7 +102,7 @@ terminal_window_clipboard_slots_flag (const gchar *property)
 
 
 /* One switch for the whole feature: off means no entry in any menu and no
- * slot accelerator working, exactly as if the fork had no slots at all. */
+ * slot accelerator working, exactly as if there were no slots at all. */
 static gboolean
 terminal_window_clipboard_slots_enabled (void)
 {
@@ -286,7 +286,16 @@ terminal_window_clipboard_slots_save (void)
   /* a failure here is not worth a dialog: the terminal is on its way out and
    * the reason is in the journal */
   if (!g_file_set_contents (path, data, (gssize) length, &error))
-    g_warning ("Failed to write the clipboard slots to %s: %s", path, error->message);
+    {
+      g_warning ("Failed to write the clipboard slots to %s: %s", path, error->message);
+    }
+  else
+    {
+      /* what the slots hold can be a password as well as a path: the file is
+       * for the owner alone, whatever the umask of the session says */
+      if (g_chmod (path, 0600) != 0)
+        g_warning ("Failed to restrict the clipboard slots file %s to its owner", path);
+    }
 
   g_clear_error (&error);
   g_free (data);
@@ -3362,7 +3371,7 @@ terminal_window_action_new_tab (TerminalWindow *window)
  * they were. The layout of a tab is a string built by terminal_panes_get_layout():
  * "." is a pane, "H50,.,." a horizontal split, "V30,.,." a vertical one.
  *
- * Every split of the fork anchors on a single pane, so replaying a layout is
+ * Every split anchors on a single pane, so replaying a layout is
  * just a sequence of terminal_panes_split_screen_at() calls: first split the
  * pane that is being restored, then grow its left side, then its right side. */
 typedef struct
@@ -4557,7 +4566,7 @@ terminal_window_add_slots_menu (TerminalWindow *window,
   guint i;
   gboolean nested;
 
-  /* off means off: no separator, no entry, as if the fork had none */
+  /* off means off: no separator, no entry, as if there were none */
   if (!terminal_window_clipboard_slots_enabled ())
     return;
 

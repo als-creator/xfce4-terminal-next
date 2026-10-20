@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 2026 The Xfce Terminal Local contributors
+ * Copyright (c) 2026 als-creator
  *
  * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any later
- * version.
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -12,9 +12,11 @@
  * more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
- * Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* StatusNotifierItem of the drop-down panel: a tray icon that works in
+ * an X11 and in a Wayland session without a toolkit-specific library. */
 
 #include <gio/gio.h>
 #include <string.h>
@@ -284,6 +286,26 @@ terminal_status_notifier_get_property (GDBusConnection  *connection,
 
 
 
+/* The calls of a tray host are written to the log only when asked for, so
+ * that the panel can be started with TERMINAL_DEBUG_MENU=1 and the calls read
+ * off the terminal. */
+static void
+terminal_status_notifier_debug_call (const gchar *kind,
+                                     const gchar *method_name,
+                                     GVariant    *parameters)
+{
+  gchar *printed;
+
+  if (g_getenv ("TERMINAL_DEBUG_MENU") == NULL)
+    return;
+
+  printed = parameters != NULL ? g_variant_print (parameters, TRUE) : g_strdup ("");
+  g_printerr ("%s call: %s(%s)\n", kind, method_name, printed);
+  g_free (printed);
+}
+
+
+
 static void
 terminal_status_notifier_method_call (GDBusConnection       *connection,
                                       const gchar           *sender,
@@ -296,9 +318,7 @@ terminal_status_notifier_method_call (GDBusConnection       *connection,
 {
   TerminalStatusNotifier *notifier = user_data;
 
-  if (g_getenv ("TERMINAL_DEBUG_MENU") != NULL)
-    g_printerr ("item call: %s(%s)\n", method_name,
-                parameters != NULL ? g_variant_print (parameters, TRUE) : "");
+  terminal_status_notifier_debug_call ("item", method_name, parameters);
 
   if (g_strcmp0 (method_name, "Activate") == 0
       || g_strcmp0 (method_name, "SecondaryActivate") == 0)
@@ -458,9 +478,7 @@ terminal_status_notifier_menu_method_call (GDBusConnection       *connection,
    * ContextMenu of the item.  The log is written only when asked for, so that
    * the panel can be started with TERMINAL_DEBUG_MENU=1 and the calls read off
    * the terminal. */
-  if (g_getenv ("TERMINAL_DEBUG_MENU") != NULL)
-    g_printerr ("menu call: %s(%s)\n", method_name,
-                parameters != NULL ? g_variant_print (parameters, TRUE) : "");
+  terminal_status_notifier_debug_call ("menu", method_name, parameters);
 
   if (g_strcmp0 (method_name, "GetLayout") == 0)
     {
