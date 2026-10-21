@@ -213,7 +213,8 @@ a fresh tab instead of the application quitting.
 The system clipboard holds one string; the slots hold a few more:
 <kbd>Ctrl+Alt+C</kbd> puts the selection into the current slot and moves on,
 <kbd>Ctrl+Alt+V</kbd> pastes it. The slots are in *Edit* and in the context
-submenu by name, the current one is marked, empty ones are greyed out.
+submenu by name, the one used last is the one <kbd>Ctrl+Alt+V</kbd> pastes,
+empty ones are greyed out.
 
 <details>
 <summary>Technical implementation</summary>
