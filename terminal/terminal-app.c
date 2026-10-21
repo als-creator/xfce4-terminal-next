@@ -1226,10 +1226,8 @@ terminal_app_open_window (TerminalApp *app,
       terminal_screen_force_resize_window (terminal_window_get_active (TERMINAL_WINDOW (window)),
                                            GTK_WINDOW (window), width, height);
 
-      if (reuse_window)
-        gtk_window_present (GTK_WINDOW (window));
-      else
-        gtk_widget_show (window);
+      gtk_window_present (GTK_WINDOW (window));
+      gtk_widget_show (window);
     }
 }
 
