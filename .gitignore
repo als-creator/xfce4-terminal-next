@@ -28,3 +28,7 @@
 /FORK.md
 /GITLAB-FORK.md
 /STYLE.md
+
+# весь маркдаун, кроме корневого README.md, в git не входит
+*.md
+!/README.md

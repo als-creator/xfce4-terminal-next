@@ -6,8 +6,6 @@ launch, clipboard slots, session restore and layout independent accelerators.
 Everything is built on top of upstream `master`; no upstream file is rewritten
 from scratch.
 
-Русская версия: [README.ru.md](README.ru.md)
-
 [![License](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](COPYING)
 
 ## Layout independent hotkeys
