@@ -26,7 +26,8 @@ G_BEGIN_DECLS
 
 /* The line the pane gets when the setting is empty.  The same text is the
  * default value of the setting, so the field in the preferences shows what
- * will actually run. */
+ * will actually run.  A leading space is added when the line runs, to keep
+ * it out of the shell history. */
 #define TERMINAL_TMUX_DEFAULT_COMMAND \
   "TERM=tmux-256color tmux new-session -A -s main" \
   " \\; set -g allow-passthrough on" \

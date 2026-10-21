@@ -52,8 +52,14 @@
 gchar *
 terminal_tmux_build_command (const gchar *command)
 {
-  if (command != NULL && *command != '\0')
+  /* The command the user wrote is used as it is.  The built-in one gets a
+   * leading space, which keeps it out of the shell history as far as the
+   * shell allows it: bash with HISTCONTROL=ignorespace, zsh with
+   * HIST_IGNORE_SPACE, fish out of the box.  The space does no harm to the
+   * command itself: the shell skips the spaces in front of it. */
+  if (command != NULL && *command != '\0'
+      && g_strcmp0 (command, TERMINAL_TMUX_DEFAULT_COMMAND) != 0)
     return g_strdup (command);
 
-  return g_strdup (TERMINAL_TMUX_DEFAULT_COMMAND);
+  return g_strconcat (" ", TERMINAL_TMUX_DEFAULT_COMMAND, NULL);
 }
