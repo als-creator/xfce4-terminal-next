@@ -124,7 +124,10 @@ in the pane — by default
 \; set -g window-size latest`: 256 colours and true colour inside, the session
 called `main`, and the pane sizing that leaves no scrollbars behind. The field
 in *Settings → tmux Launch Options* is pre-filled with this line, so it can be
-shortened or replaced.
+shortened or replaced. The built-in line is typed with a leading space, so
+that it stays out of the shell history (bash with `HISTCONTROL=ignorespace`,
+zsh with `HIST_IGNORE_SPACE`, fish out of the box); a command of your own is
+typed as it is.
 
 <details>
 <summary>Technical implementation</summary>
