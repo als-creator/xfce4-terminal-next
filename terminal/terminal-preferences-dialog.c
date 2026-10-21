@@ -172,6 +172,7 @@ struct _TerminalPreferencesDialog
   GtkLabel *dropdown_label;
   GtkBox *dropdown_vbox;
   GtkNotebook *dropdown_notebook;
+  gint dropdown_page;
   GtkWidget *file_chooser;
   GtkWidget *shortcut_check;
   GtkWidget *shortcut_key_label;
@@ -801,6 +802,7 @@ terminal_preferences_dialog_init (TerminalPreferencesDialog *dialog)
   dialog->dropdown_label = GTK_LABEL (label);
   dialog->dropdown_vbox = GTK_BOX (vbox);
   dialog->dropdown_notebook = GTK_NOTEBOOK (notebook);
+  dialog->dropdown_page = gtk_notebook_page_num (GTK_NOTEBOOK (notebook), vbox);
 
 
   /* section: Behavior */
@@ -3170,7 +3172,7 @@ terminal_preferences_dialog_new (gboolean show_drop_down,
   gtk_widget_set_visible (GTK_WIDGET (dialog->dropdown_vbox), show_drop_down);
 
   if (drop_down_mode)
-    gtk_notebook_set_current_page (GTK_NOTEBOOK (dialog->dropdown_notebook), 1);
+    gtk_notebook_set_current_page (GTK_NOTEBOOK (dialog->dropdown_notebook), dialog->dropdown_page);
 
   return GTK_WIDGET (dialog);
 }

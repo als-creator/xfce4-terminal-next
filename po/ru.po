@@ -1864,20 +1864,32 @@ msgid "Ask in which form the selection goes into the clipboard"
 msgstr "Выбрать, в каком виде выделение попадёт в буфер обмена"
 
 #: terminal/terminal-window.c:915
-msgid "Copy to Clipboard Slot"
-msgstr "Скопировать в ячейку обмена"
+#~ msgid "Copy to Clipboard Slot"
+#~ msgstr "Скопировать в ячейку обмена"
 
 #: terminal/terminal-window.c:916
-msgid "Put the selection into a slot of its own and go on to the next one"
-msgstr "Положить выделение в отдельную ячейку и перейти к следующей"
+#~ msgid "Put the selection into a slot of its own and go on to the next one"
+#~ msgstr "Положить выделение в отдельную ячейку и перейти к следующей"
 
 #: terminal/terminal-window.c:925
-msgid "Paste from Clipboard Slot"
-msgstr "Вставить из ячейки обмена"
+#~ msgid "Paste from Clipboard Slot"
+#~ msgstr "Вставить из ячейки обмена"
+
+#: terminal/terminal-window.c:929
+msgid "_Copy to Clipboard Slot"
+msgstr "_Скопировать в ячейку обмена"
+
+#: terminal/terminal-window.c:930
+msgid "Copy the selection into the next clipboard slot"
+msgstr "Скопировать выделение в следующую ячейку обмена"
 
 #: terminal/terminal-window.c:936
 msgid "Paste from clipboard"
 msgstr "Вставить из буфера обмена"
+
+#: terminal/terminal-window.c:940
+msgid "Paste the text of the last used clipboard slot"
+msgstr "Вставить текст из последней использованной ячейки обмена"
 
 #: terminal/terminal-window.c:945
 msgid "_Paste Alt"
@@ -2313,21 +2325,29 @@ msgstr "Обычный текст"
 
 #: terminal/terminal-window.c:4497
 msgid "HTML"
-msgstr ""
+msgstr "HTML"
 
 #: terminal/terminal-window.c:4498
 msgid "Links only"
 msgstr "Только ссылки"
 
+#: terminal/terminal-window.c:4555
+msgid "Paste from Clipboard Slot %u: %s"
+msgstr "Вставить из ячейки обмена %u: %s"
+
+#: terminal/terminal-window.c:4556
+msgid "Copy to Clipboard Slot %u: %s"
+msgstr "Скопировать в ячейку обмена %u: %s"
+
 #: terminal/terminal-window.c:4605
 #, c-format
-msgid "Clipboard Slot %u: %s"
-msgstr "Ячейка обмена %u: %s"
+#~ msgid "Clipboard Slot %u: %s"
+#~ msgstr "Ячейка обмена %u: %s"
 
 #: terminal/terminal-window.c:4607
 #, c-format
-msgid "Clipboard Slot %u"
-msgstr "Ячейка обмена %u"
+#~ msgid "Clipboard Slot %u"
+#~ msgstr "Ячейка обмена %u"
 
 #: terminal/terminal-window.c:4666
 msgid "Copy to Clipboard _Slot"
