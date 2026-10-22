@@ -33,86 +33,89 @@
 #include <X11/XKBlib.h>
 #endif
 
-/* Whether one of the keys is held down right now, asked of the X server
- * directly (see terminal_keys_shift_held() below for why). */
+/* Whether the physical key of @keyval is held down, according to the answer
+ * of the X server (the bit array of XQueryKeymap). */
 static gboolean
-terminal_keys_keys_held (const guint32 *keyvals,
-                         guint          n_keyvals)
+terminal_keys_key_down (GdkKeymap   *keymap,
+                        const guchar *keys,
+                        guint32      keyval)
+{
+  GdkKeymapKey *entries = NULL;
+  gint n_entries = 0;
+  gint j;
+  gboolean down = FALSE;
+
+  if (!gdk_keymap_get_entries_for_keyval (keymap, keyval, &entries, &n_entries)
+      || entries == NULL)
+    return FALSE;
+
+  for (j = 0; j < n_entries; j++)
+    if ((keys[entries[j].keycode >> 3] & (1 << (entries[j].keycode & 7))) != 0)
+      {
+        down = TRUE;
+        break;
+      }
+
+  g_free (entries);
+
+  return down;
+}
+
+/**
+ * terminal_keys_modifiers_held:
+ *
+ * The modifier keys that are held down right now.
+ *
+ * When the layout switch fires it eats one of the modifiers of its chord:
+ * with Ctrl+Shift as the switch (grp:ctrl_shift_toggle) the control or the
+ * shift is consumed, with Alt+Shift (grp:alt_shift_toggle) the alt or the
+ * shift is. The key press that follows arrives without that modifier in the
+ * state, and the accelerator that needs it never matches.
+ *
+ * The switch sits below GDK, but the X server still knows the real state of
+ * the physical keys, so ask it directly. Wayland has no such query here, the
+ * fallback keeps the old behaviour.
+ *
+ * Returns the modifiers that are held down: %GDK_SHIFT_MASK,
+ * %GDK_CONTROL_MASK and %GDK_MOD1_MASK in any combination.
+ */
+guint
+terminal_keys_modifiers_held (void)
 {
 #ifdef GDK_WINDOWING_X11
   GdkDisplay *display;
   Display *xdisplay;
   GdkKeymap *keymap;
   guchar keys[32];
-  gboolean held = FALSE;
-  guint i;
+  guint held = 0;
 
   display = gdk_display_get_default ();
   if (display == NULL || !GDK_IS_X11_DISPLAY (display))
-    return FALSE;
+    return 0;
 
   keymap = gdk_keymap_get_for_display (display);
   xdisplay = gdk_x11_display_get_xdisplay (display);
   if (keymap == NULL || xdisplay == NULL)
-    return FALSE;
+    return 0;
 
   XQueryKeymap (xdisplay, (gchar *) keys);
 
-  for (i = 0; i < n_keyvals && !held; i++)
-    {
-      GdkKeymapKey *entries = NULL;
-      gint n_entries = 0;
-      gint j;
+  if (terminal_keys_key_down (keymap, keys, GDK_KEY_Shift_L)
+      || terminal_keys_key_down (keymap, keys, GDK_KEY_Shift_R))
+    held |= GDK_SHIFT_MASK;
 
-      if (!gdk_keymap_get_entries_for_keyval (keymap, keyvals[i], &entries, &n_entries)
-          || entries == NULL)
-        continue;
+  if (terminal_keys_key_down (keymap, keys, GDK_KEY_Control_L)
+      || terminal_keys_key_down (keymap, keys, GDK_KEY_Control_R))
+    held |= GDK_CONTROL_MASK;
 
-      for (j = 0; j < n_entries; j++)
-        if ((keys[entries[j].keycode >> 3] & (1 << (entries[j].keycode & 7))) != 0)
-          {
-            held = TRUE;
-            break;
-          }
-
-      g_free (entries);
-    }
+  if (terminal_keys_key_down (keymap, keys, GDK_KEY_Alt_L)
+      || terminal_keys_key_down (keymap, keys, GDK_KEY_Alt_R))
+    held |= GDK_MOD1_MASK;
 
   return held;
 #else
-  (void) keyvals;
-  (void) n_keyvals;
-
-  return FALSE;
+  return 0;
 #endif
-}
-
-/* Whether the shift key is held down right now.
- *
- * When Ctrl+Shift is the layout switch (grp:ctrl_shift_toggle) the group
- * change consumes the shift: it never reaches event->state, and the key press
- * looks exactly like Ctrl+<key> without shift. The layout switch sits below
- * GDK, but the X server still knows the real state of the physical keys, so
- * ask it directly. Wayland has no such query here, the fallback keeps the old
- * behaviour. */
-static gboolean
-terminal_keys_shift_held (void)
-{
-  static const guint32 keyvals[2] = { GDK_KEY_Shift_L, GDK_KEY_Shift_R };
-
-  return terminal_keys_keys_held (keyvals, G_N_ELEMENTS (keyvals));
-}
-
-/* Whether the control key is held down right now; the same question as
- * terminal_keys_shift_held() asked about the other half of the switch. With
- * the shift pressed first the group change consumes the control instead, and
- * the key press arrives with shift alone in the state. */
-static gboolean
-terminal_keys_control_held (void)
-{
-  static const guint32 keyvals[2] = { GDK_KEY_Control_L, GDK_KEY_Control_R };
-
-  return terminal_keys_keys_held (keyvals, G_N_ELEMENTS (keyvals));
 }
 
 /* The latin symbol of a physical key, asked from the X server itself.
@@ -202,64 +205,36 @@ terminal_keys_keyval_is_modifier (guint32 keyval)
     }
 }
 
-/* Whether the shift key is worth asking about: a press that carries another
- * modifier but no shift. Plain typing stays free of a server round trip.
- *
- * Every such press needs the question, not only the ones with a latin symbol:
- * with tab, arrows and function keys nothing but the modifier is missing, and
- * with the latin letters of the layout the switch may have sent the key press
- * over to the latin group. */
-static gboolean
-terminal_keys_shift_may_be_swallowed (const GdkEventKey *event)
-{
-  if ((event->state & GDK_SHIFT_MASK) != 0)
-    return FALSE;
-
-  if ((event->state & (GDK_CONTROL_MASK | GDK_MOD1_MASK | GDK_SUPER_MASK)) == 0)
-    return FALSE;
-
-  return !terminal_keys_keyval_is_modifier (event->keyval);
-}
-
 /**
- * terminal_keys_swallowed_shift:
+ * terminal_keys_swallowed_modifiers:
  * @event: a key press event
+ * @mods_held: the modifiers that are held down, see
+ *              terminal_keys_modifiers_held()
  *
- * Whether the layout switch swallowed the shift of @event (see
- * terminal_keys_shift_held()). The caller can then either normalize the key
- * press with terminal_keys_normalize_layout_accel_ext() — which takes the state
- * of the shift as a parameter — or put %GDK_SHIFT_MASK back into the event so
- * that every other consumer of the key press (the tab handler, the menu
- * bindings, the terminal widget) sees the press the user really made. A key
- * without any latin symbol (Ctrl+Shift+Tab, Ctrl+Shift+Left) needs the latter,
- * since nothing but the modifier is missing for it.
+ * The modifiers of @event that the layout switch swallowed: they are held
+ * down but missing from the state of the event.
  *
- * Returns %TRUE if the shift is held down but missing from the event.
+ * Which one is swallowed depends on the order the user pressed the keys in:
+ * with Ctrl+Shift as the switch the control is eaten when the shift comes
+ * second and the shift when the control comes second, with Alt+Shift the alt
+ * or the shift the same way.
+ *
+ * A lone modifier press is no accelerator, so there is nothing to restore for
+ * it: the press of the switch itself arrives as a group switch keysym and must
+ * not be touched.
+ *
+ * Returns the modifiers that were swallowed.
  */
-gboolean
-terminal_keys_swallowed_shift (GdkEventKey *event)
+guint
+terminal_keys_swallowed_modifiers (GdkEventKey *event,
+                                   guint        mods_held)
 {
-  g_return_val_if_fail (event != NULL, FALSE);
+  g_return_val_if_fail (event != NULL, 0);
 
-  return terminal_keys_shift_may_be_swallowed (event) && terminal_keys_shift_held ();
-}
+  if (terminal_keys_keyval_is_modifier (event->keyval))
+    return 0;
 
-/* Whether the layout switch swallowed the control of @event (see
- * terminal_keys_control_held()). When Shift was pressed before Control,
- * grp:ctrl_shift_toggle consumes the control modifier and the event carries
- * only %GDK_SHIFT_MASK; the X server still knows Control is held down. */
-gboolean
-terminal_keys_swallowed_ctrl (GdkEventKey *event)
-{
-  g_return_val_if_fail (event != NULL, FALSE);
-
-  if ((event->state & GDK_CONTROL_MASK) != 0)
-    return FALSE;
-
-  if ((event->state & (GDK_SHIFT_MASK | GDK_MOD1_MASK | GDK_SUPER_MASK)) == 0)
-    return FALSE;
-
-  return !terminal_keys_keyval_is_modifier (event->keyval) && terminal_keys_control_held ();
+  return mods_held & ~event->state;
 }
 
 /**
@@ -283,38 +258,39 @@ terminal_keys_normalize_layout_accel (GdkEventKey  *event,
                                       guint32      *keyval,
                                       guint        *mods)
 {
-  gboolean shift_held;
+  guint mods_held;
 
   g_return_val_if_fail (event != NULL, FALSE);
   g_return_val_if_fail (keyval != NULL, FALSE);
   g_return_val_if_fail (mods != NULL, FALSE);
 
-  shift_held = terminal_keys_swallowed_shift (event);
+  mods_held = terminal_keys_modifiers_held ();
 
-  return terminal_keys_normalize_layout_accel_ext (event, shift_held, keyval, mods);
+  return terminal_keys_normalize_layout_accel_ext (event, mods_held, keyval, mods);
 }
 
 /**
  * terminal_keys_normalize_layout_accel_ext:
  * @event: a key press event
- * @shift_held: whether the shift key is really held down
+ * @mods_held: the modifiers that are held down, see
+ *              terminal_keys_modifiers_held()
  * @keyval: (out): the latin keysym of the physical key
  * @mods: (out): the modifiers of the key press
  *
  * The body of terminal_keys_normalize_layout_accel() with the state of the
- * shift key passed in. An accelerator of the window may be stored with shift
- * while the layout switch (Ctrl+Shift, grp:ctrl_shift_toggle) swallowed it and
- * the event carries no %GDK_SHIFT_MASK at all; the caller looks up the real
- * state of the key and hands it over, so the tests can cover the case without
- * a running X server. The switch may also turn the group over to the latin one
- * first, then the key press already carries the latin symbol and only the
- * modifier is missing.
+ * modifier keys passed in. An accelerator of the window may be stored with a
+ * modifier that the layout switch (Ctrl+Shift, grp:ctrl_shift_toggle, or
+ * Alt+Shift, grp:alt_shift_toggle) swallowed, and the event carries no trace
+ * of it at all; the caller looks up the real state of the keys and hands it
+ * over, so the tests can cover the case without a running X server. The
+ * switch may also turn the group over to the latin one first, then the key
+ * press already carries the latin symbol and only the modifier is missing.
  *
  * Returns %TRUE if the key press could be normalized.
  */
 gboolean
 terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
-                                         gboolean      shift_held,
+                                         guint         mods_held,
                                          guint32      *keyval,
                                          guint        *mods)
 {
@@ -322,23 +298,23 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
   guint keycode;
   guint32 symbol;
   guint state;
+  guint swallowed;
 
   g_return_val_if_fail (event != NULL, FALSE);
   g_return_val_if_fail (keyval != NULL, FALSE);
   g_return_val_if_fail (mods != NULL, FALSE);
 
-  state = event->state;
-  gboolean ctrl_held = terminal_keys_swallowed_ctrl (event);
-  if (shift_held)
-    state |= GDK_SHIFT_MASK;
-  if (ctrl_held)
-    state |= GDK_CONTROL_MASK;
+  /* the modifiers the layout switch ate: they are held down, but the event
+   * does not carry them, so the accelerators would never match */
+  swallowed = terminal_keys_swallowed_modifiers (event, mods_held);
+
+  state = event->state | swallowed;
 
   /* a key press that does not depend on the layout at all: the accelerators
-   * handle it as it is. With a swallowed control it does depend: the event
-   * carries no %GDK_CONTROL_MASK and no accelerator of ctrl+shift would match
+   * handle it as it is. With a swallowed modifier it does depend: the event
+   * carries no %GDK_SHIFT_MASK and no accelerator of ctrl+shift would match
    * it, so the press has to be normalized */
-  if (event->keyval <= 0x7e && !shift_held && !ctrl_held)
+  if (event->keyval <= 0x7e && swallowed == 0)
     return FALSE;
 
   keymap = gdk_keymap_get_for_display (gdk_display_get_default ());
@@ -379,13 +355,13 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
       return FALSE;
 
   /* a key without a latin symbol in the first group (tab, arrows, function
-   * keys) does not depend on the layout at all: with an unswallowed shift
+   * keys) does not depend on the layout at all: with an unswallowed modifier
    * nothing is to normalize, with a swallowed one only the modifier was missing
    * and the symbol of the physical key is the one to look up (a left tab
    * translates to a plain tab, so the shift binding needs no special case) */
   if (symbol == 0 || symbol > 0x7e)
     {
-      if (!shift_held && !ctrl_held)
+      if (swallowed == 0)
         return FALSE;
 
       *keyval = symbol == 0 ? event->keyval : symbol;
@@ -396,7 +372,7 @@ terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
 
   /* the key press already carries the latin symbol of the physical key and the
    * modifiers of the event: there is nothing to normalize */
-  if (symbol == event->keyval && !shift_held && !ctrl_held)
+  if (symbol == event->keyval && swallowed == 0)
     return FALSE;
 
   *keyval = symbol;

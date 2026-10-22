@@ -2014,14 +2014,14 @@ terminal_window_focus_in_event (GtkWidget *widget,
 static gboolean
 terminal_window_activate_layout_accel (TerminalWindow *window,
                                        GdkEventKey    *event,
-                                       gboolean        shift_held)
+                                       guint           mods_held)
 {
   guint32 keyval = 0;
   guint mods = 0;
   guint mask;
   gint e;
 
-  if (!terminal_keys_normalize_layout_accel_ext (event, shift_held, &keyval, &mods))
+  if (!terminal_keys_normalize_layout_accel_ext (event, mods_held, &keyval, &mods))
     return FALSE;
 
   mask = gtk_accelerator_get_default_mod_mask ();
@@ -2065,8 +2065,8 @@ terminal_window_key_press_event (GtkWidget *widget,
                                  GdkEventKey *event)
 {
   TerminalWindow *window = TERMINAL_WINDOW (widget);
-  gboolean shift_held;
-  gboolean ctrl_held;
+  guint mods_held;
+  guint swallowed;
 
   /* F1 shows and hides a drop-down window. A normal window keeps the upstream
    * binding and opens the help, since there the key is more useful there. */
@@ -2079,21 +2079,24 @@ terminal_window_key_press_event (GtkWidget *widget,
     }
 
   /* the layout switch may have swallowed a modifier out of the event state
-   * (shift with Ctrl pressed first, control with Shift pressed first): ask
-   * once about the physical keys, normalize the key press for the
-   * accelerators here, and put the modifiers back into the event for every
-   * consumer below (the tab handler, the menu bindings, the terminal widget) */
-  shift_held = terminal_keys_swallowed_shift (event);
-  ctrl_held = terminal_keys_swallowed_ctrl (event);
+   * (shift with Ctrl pressed first, control with Shift pressed first, alt
+   * with Shift pressed first): ask once about the physical keys, normalize the
+   * key press for the accelerators here, and put the modifiers back into the
+   * event for every consumer below (the tab handler, the menu bindings, the
+   * terminal widget). A press without any modifier needs no question: the
+   * switch always leaves the modifier it did not eat in the state. */
+  mods_held = 0;
+  if ((event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK
+                        | GDK_SUPER_MASK)) != 0)
+    mods_held = terminal_keys_modifiers_held ();
 
-  if (terminal_window_activate_layout_accel (window, event, shift_held))
+  swallowed = terminal_keys_swallowed_modifiers (event, mods_held);
+
+  if (terminal_window_activate_layout_accel (window, event, mods_held))
     return TRUE;
 
-  if (shift_held)
-    event->state |= GDK_SHIFT_MASK;
-
-  if (ctrl_held)
-    event->state |= GDK_CONTROL_MASK;
+  if (swallowed != 0)
+    event->state |= swallowed;
 
   if (xfce_gtk_handle_tab_accels (event, window->priv->accel_group, window, action_entries, G_N_ELEMENTS (action_entries)))
     return TRUE;

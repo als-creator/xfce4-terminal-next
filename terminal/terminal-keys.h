@@ -25,21 +25,26 @@
 
 G_BEGIN_DECLS
 
-/* Whether the layout switch swallowed the shift of this key press; ask the X
- * server about the real state of the physical keys. Returns %TRUE when the
- * shift is held down but missing from the event. */
-gboolean terminal_keys_swallowed_shift (GdkEventKey *event);
-gboolean terminal_keys_swallowed_ctrl (GdkEventKey *event);
+/* The modifier keys that are held down right now: the layout switch may have
+ * eaten one of them out of the event state. The answer comes from the X
+ * server; the bits are %GDK_SHIFT_MASK, %GDK_CONTROL_MASK and
+ * %GDK_MOD1_MASK. */
+guint terminal_keys_modifiers_held (void);
+
+/* The modifiers of a key press that the layout switch swallowed: they are
+ * held down but missing from the state of the event. */
+guint terminal_keys_swallowed_modifiers (GdkEventKey *event,
+                                         guint        mods_held);
 
 gboolean terminal_keys_normalize_layout_accel (GdkEventKey  *event,
                                                guint32      *keyval,
                                                guint        *mods);
 
-/* Internal: the body of the function above with the state of the shift key
- * passed in, so the tests can cover a swallowed Ctrl+Shift layout switch
- * without a running X server. */
+/* Internal: the body of the function above with the state of the modifier
+ * keys passed in, so the tests can cover a swallowed Ctrl+Shift or Alt+Shift
+ * layout switch without a running X server. */
 gboolean terminal_keys_normalize_layout_accel_ext (GdkEventKey  *event,
-                                                   gboolean      shift_held,
+                                                   guint         mods_held,
                                                    guint32      *keyval,
                                                    guint        *mods);
 
