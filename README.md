@@ -10,27 +10,28 @@ from scratch.
 
 ## Layout independent hotkeys
 
-**The headline change of the fork: the hotkeys work on any keyboard layout.**
-On a Russian, Hebrew or any other non-latin layout `Ctrl+Shift+<letter>` fires
-as it does on an English one — including the layout `grp:ctrl_shift_toggle`,
-where <kbd>Ctrl+Shift</kbd> is the layout switcher itself and eats one of the
-modifiers on the way. The same holds for `grp:alt_shift_toggle`, where the
-switcher eats the <kbd>Alt</kbd> or the <kbd>Shift</kbd> of the chord.
+**The headline change of the fork: the hotkeys work with a layout switcher.**
+With `grp:ctrl_shift_toggle` or `grp:alt_shift_toggle` the switcher eats one
+of the modifiers of its own chord — the one that was pressed second — and the
+key press that follows arrives without it. A shortcut that needs that modifier
+never fires, and it looks as if the shortcut itself was broken. The fork gives
+the modifier back, so <kbd>Ctrl+Shift+<letter></kbd> works on a Russian,
+Hebrew or any other layout, with or without a layout switcher.
 
 ### The problem is not terminal specific
 
-The same mismatch lives outside the terminal: a shortcut is stored as text —
-a GTK accelerator in a menu or a dialog, an application shortcut of the
-desktop — and is matched against the keysym of the current layout. On a
-non-latin layout those shortcuts miss as well, so it is not one application
-that is broken: **no hotkey beyond the English layout works**, and fixing only
-the terminal leaves the rest of the desktop without them.
+The switcher sits below the toolkit: the key press arrives with an incomplete
+modifier set, and every application that matches its shortcuts against that
+set loses the same shortcuts. The desktop side needs the same treatment, and
+this fork is meant to be the working example of it: the branch `pr-layout-accel`
+(MR !121) is the compensation alone (`terminal/terminal-keys.c` plus a small
+hook in `terminal/terminal-window.c`), kept separate so that the approach can
+be reviewed and reused for the shortcut handling of Xfce and GTK themselves.
 
-The desktop side needs the same treatment, and this fork is meant to be the
-working example of it: the branch `upstream/pr-layout-accel` is the layout
-handling alone (`terminal/terminal-keys.c` plus a small hook in
-`terminal/terminal-window.c`), kept separate so that the approach can be
-reviewed and reused for the shortcut handling of Xfce and GTK themselves.
+What does *not* need fixing is the layout itself: GTK3 matches an accelerator
+against the physical key and resolves the keysym over all groups of the
+layout, so `Ctrl+Shift+T` fires on a Russian layout as well. That was
+measured on a clean upstream build, not only in the fork.
 
 The fork ran into the same wall itself: the dialog that registers the panel's
 system shortcut stored the raw keystroke, so on a Russian layout it wrote
@@ -42,24 +43,26 @@ the matching in one application that has to know about layouts.
 <details>
 <summary>Technical implementation</summary>
 
-* accelerators are stored as latin keysyms, so a key press is mapped back to
-  the latin symbol of the same physical key: the symbol is taken from the
-  first group of the layout (xkb always keeps the us layout in group 0) at
-  level 0 with `gdk_keymap_translate_keyboard_state()`, which makes it
-  independent of the group the switch moved to and of the shift it swallowed
+* the layout switch eats a modifier — <kbd>Ctrl+Shift</kbd>
+  (`grp:ctrl_shift_toggle`) eats the Shift or the Control, <kbd>Alt+Shift</kbd>
+  (`grp:alt_shift_toggle`) eats the Shift or the <kbd>Alt</kbd> — and the key
+  press that follows arrives without it in the state. The handler asks the X
+  server for the real state of the physical keys (`XQueryKeymap()`) and puts
+  the modifier back, so <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep
+  their own meanings; the query runs only for presses that carry another
+  modifier and only on X11 — on Wayland the previous behaviour stays;
+* the fork matches its own table of layout independent hotkeys by keysym, so
+  a key press is mapped back to the latin symbol of the same physical key:
+  the symbol is taken from the first group of the layout (xkb always keeps
+  the us layout in group 0) at level 0 with
+  `gdk_keymap_translate_keyboard_state()`, which makes it independent of the
+  group the switch moved to and of the shift it swallowed
   (`terminal/terminal-keys.c`);
 * every other modifier is carried over as it is, so <kbd>Alt</kbd>,
   <kbd>Ctrl+Alt</kbd>, <kbd>Super</kbd> and <kbd>AltGr</kbd> presses are
   normalized the same way; keys without a latin symbol (Tab, arrows, function
   keys) are left to the accelerators as they are, and a rebound accelerator
   from the keyboard shortcuts dialog is honoured;
-* when the layout switch eats a modifier — <kbd>Ctrl+Shift</kbd>
-  (`grp:ctrl_shift_toggle`) eats the Shift or the Control, <kbd>Alt+Shift</kbd>
-  (`grp:alt_shift_toggle`) eats the Shift or the Alt — the handler asks the X
-  server for the real state of the physical keys (`XQueryKeymap()`) and puts
-  the modifier back, so <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep
-  their own meanings; the query runs only for presses that carry another
-  modifier and only on X11 — on Wayland the previous behaviour stays;
 * verified with the live stand `tests/keys-live-test.sh` on a private display:
   the Shift really is swallowed there and the accelerator still fires.
 </details>
