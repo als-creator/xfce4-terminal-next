@@ -14,7 +14,8 @@ from scratch.
 On a Russian, Hebrew or any other non-latin layout `Ctrl+Shift+<letter>` fires
 as it does on an English one — including the layout `grp:ctrl_shift_toggle`,
 where <kbd>Ctrl+Shift</kbd> is the layout switcher itself and eats one of the
-modifiers on the way.
+modifiers on the way. The same holds for `grp:alt_shift_toggle`, where the
+switcher eats the <kbd>Alt</kbd> or the <kbd>Shift</kbd> of the chord.
 
 ### The problem is not terminal specific
 
@@ -52,12 +53,13 @@ the matching in one application that has to know about layouts.
   normalized the same way; keys without a latin symbol (Tab, arrows, function
   keys) are left to the accelerators as they are, and a rebound accelerator
   from the keyboard shortcuts dialog is honoured;
-* when <kbd>Ctrl+Shift</kbd> is the layout switch (`grp:ctrl_shift_toggle`),
-  xkb consumes the Shift: the handler asks the X server for the real state of
-  the physical keys (`XQueryKeymap()`) and puts the modifier back, so
-  <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep their own meanings; the
-  query runs only for presses that carry another modifier and only on X11 —
-  on Wayland the previous behaviour stays;
+* when the layout switch eats a modifier — <kbd>Ctrl+Shift</kbd>
+  (`grp:ctrl_shift_toggle`) eats the Shift or the Control, <kbd>Alt+Shift</kbd>
+  (`grp:alt_shift_toggle`) eats the Shift or the Alt — the handler asks the X
+  server for the real state of the physical keys (`XQueryKeymap()`) and puts
+  the modifier back, so <kbd>Ctrl+O</kbd> and <kbd>Ctrl+Shift+O</kbd> keep
+  their own meanings; the query runs only for presses that carry another
+  modifier and only on X11 — on Wayland the previous behaviour stays;
 * verified with the live stand `tests/keys-live-test.sh` on a private display:
   the Shift really is swallowed there and the accelerator still fires.
 </details>
@@ -262,6 +264,10 @@ before the terminal sees the event. The terminal compensates for this: it asks
 the X server about the physical Ctrl key and puts the modifier back into the
 event, so on X11 the split and every other `Ctrl+Shift+<letter>` hotkey work in
 any order of the two keys.
+
+The same compensation covers the `Alt+Shift` switcher (`grp:alt_shift_toggle`):
+it eats the <kbd>Alt</kbd> or the <kbd>Shift</kbd> of the chord, and whichever
+one is missing is put back the same way.
 
 On Wayland the physical keys cannot be queried this way, so there the original
 behaviour stands: press Ctrl first (or press both at once), or free the pair by
