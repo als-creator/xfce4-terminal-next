@@ -25,11 +25,26 @@
 
 G_BEGIN_DECLS
 
-/* The modifier keys that are held down right now: the layout switch may have
- * eaten one of them out of the event state. The answer comes from the X
- * server; the bits are %GDK_SHIFT_MASK, %GDK_CONTROL_MASK and
- * %GDK_MOD1_MASK. */
+/* The modifier keys that are held down right now, as far as we know: the
+ * layout switch may have eaten one of them out of the event state, see
+ * terminal_keys_key_press(). The bits are %GDK_SHIFT_MASK, %GDK_CONTROL_MASK
+ * and %GDK_MOD1_MASK. */
 guint terminal_keys_modifiers_held (void);
+
+/* Put back the modifier that the layout switch ate out of the state of the
+ * key press, and keep track of the keys that are down. */
+void terminal_keys_key_press (GdkEventKey *event);
+
+/* Keep track of the keys that are up again. */
+void terminal_keys_key_release (GdkEventKey *event);
+
+/* The modifier keys may have been pressed while another window had the
+ * focus: ask for them when the focus comes in. */
+void terminal_keys_focus_in (void);
+
+/* The modifier keys may be released while another window has the focus:
+ * forget them when the focus goes out. */
+void terminal_keys_focus_out (void);
 
 /* The modifiers of a key press that the layout switch swallowed: they are
  * held down but missing from the state of the event. */

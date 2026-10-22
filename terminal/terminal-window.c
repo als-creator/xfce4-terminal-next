@@ -383,8 +383,14 @@ static gboolean
 terminal_window_focus_in_event (GtkWidget *widget,
                                 GdkEventFocus *event);
 static gboolean
+terminal_window_focus_out_event (GtkWidget *widget,
+                                 GdkEventFocus *event);
+static gboolean
 terminal_window_key_press_event (GtkWidget *widget,
                                  GdkEventKey *event);
+static gboolean
+terminal_window_key_release_event (GtkWidget *widget,
+                                   GdkEventKey *event);
 static gint
 terminal_window_confirm_close (TerminalScreen *screen,
                                TerminalWindow *window);
@@ -1598,7 +1604,9 @@ terminal_window_class_init (TerminalWindowClass *klass)
   gtkwidget_class->scroll_event = terminal_window_scroll_event;
   gtkwidget_class->map_event = terminal_window_map_event;
   gtkwidget_class->focus_in_event = terminal_window_focus_in_event;
+  gtkwidget_class->focus_out_event = terminal_window_focus_out_event;
   gtkwidget_class->key_press_event = terminal_window_key_press_event;
+  gtkwidget_class->key_release_event = terminal_window_key_release_event;
 
   xfce_gtk_translate_action_entries (action_entries, G_N_ELEMENTS (action_entries));
 
@@ -1996,7 +2004,23 @@ terminal_window_focus_in_event (GtkWidget *widget,
   /* reset activity indicator for the active tab when focusing window */
   terminal_screen_reset_activity (window->priv->active);
 
+  /* the modifier keys may have been pressed while another window had the
+   * focus */
+  terminal_keys_focus_in ();
+
   return (*GTK_WIDGET_CLASS (terminal_window_parent_class)->focus_in_event) (widget, event);
+}
+
+
+
+static gboolean
+terminal_window_focus_out_event (GtkWidget *widget,
+                                 GdkEventFocus *event)
+{
+  /* the modifier keys may be released while another window has the focus */
+  terminal_keys_focus_out ();
+
+  return (*GTK_WIDGET_CLASS (terminal_window_parent_class)->focus_out_event) (widget, event);
 }
 
 
@@ -2066,7 +2090,6 @@ terminal_window_key_press_event (GtkWidget *widget,
 {
   TerminalWindow *window = TERMINAL_WINDOW (widget);
   guint mods_held;
-  guint swallowed;
 
   /* F1 shows and hides a drop-down window. A normal window keeps the upstream
    * binding and opens the help, since there the key is more useful there. */
@@ -2080,28 +2103,30 @@ terminal_window_key_press_event (GtkWidget *widget,
 
   /* the layout switch may have swallowed a modifier out of the event state
    * (shift with Ctrl pressed first, control with Shift pressed first, alt
-   * with Shift pressed first): ask once about the physical keys, normalize the
-   * key press for the accelerators here, and put the modifiers back into the
-   * event for every consumer below (the tab handler, the menu bindings, the
-   * terminal widget). A press without any modifier needs no question: the
-   * switch always leaves the modifier it did not eat in the state. */
-  mods_held = 0;
-  if ((event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK
-                        | GDK_SUPER_MASK)) != 0)
-    mods_held = terminal_keys_modifiers_held ();
+   * with Shift pressed first): put it back, so the accelerators below (this
+   * table, the tab handler, the menu bindings, the terminal widget) see it */
+  terminal_keys_key_press (event);
 
-  swallowed = terminal_keys_swallowed_modifiers (event, mods_held);
+  mods_held = terminal_keys_modifiers_held ();
 
   if (terminal_window_activate_layout_accel (window, event, mods_held))
     return TRUE;
-
-  if (swallowed != 0)
-    event->state |= swallowed;
 
   if (xfce_gtk_handle_tab_accels (event, window->priv->accel_group, window, action_entries, G_N_ELEMENTS (action_entries)))
     return TRUE;
 
   return (*GTK_WIDGET_CLASS (terminal_window_parent_class)->key_press_event) (widget, event);
+}
+
+
+
+static gboolean
+terminal_window_key_release_event (GtkWidget *widget,
+                                   GdkEventKey *event)
+{
+  terminal_keys_key_release (event);
+
+  return (*GTK_WIDGET_CLASS (terminal_window_parent_class)->key_release_event) (widget, event);
 }
 
 

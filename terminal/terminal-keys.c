@@ -33,6 +33,18 @@
 #include <X11/XKBlib.h>
 #endif
 
+/* The modifiers that the layout switch can eat. */
+#define TERMINAL_KEYS_MODIFIERS (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)
+
+/* The modifier keys that are held down, as far as we know.
+ *
+ * The layout switch eats one of the modifiers of its chord, so the state of
+ * the events does not say everything that is true: the key is down, but its
+ * bit is missing from the state. The keys are tracked here instead, so that
+ * the state of an event can be completed without asking the X server on every
+ * key press. */
+static guint terminal_keys_held = 0;
+
 /* Whether the physical key of @keyval is held down, according to the answer
  * of the X server (the bit array of XQueryKeymap). */
 static gboolean
@@ -61,26 +73,17 @@ terminal_keys_key_down (GdkKeymap   *keymap,
   return down;
 }
 
-/**
- * terminal_keys_modifiers_held:
+/* Ask the X server which modifier keys are held down right now.
  *
- * The modifier keys that are held down right now.
- *
- * When the layout switch fires it eats one of the modifiers of its chord:
- * with Ctrl+Shift as the switch (grp:ctrl_shift_toggle) the control or the
- * shift is consumed, with Alt+Shift (grp:alt_shift_toggle) the alt or the
- * shift is. The key press that follows arrives without that modifier in the
- * state, and the accelerator that needs it never matches.
- *
- * The switch sits below GDK, but the X server still knows the real state of
- * the physical keys, so ask it directly. Wayland has no such query here, the
- * fallback keeps the old behaviour.
+ * The layout switch sits below GDK, but the X server still knows the real
+ * state of the physical keys, so ask it directly. Wayland has no such query
+ * here.
  *
  * Returns the modifiers that are held down: %GDK_SHIFT_MASK,
  * %GDK_CONTROL_MASK and %GDK_MOD1_MASK in any combination.
  */
-guint
-terminal_keys_modifiers_held (void)
+static guint
+terminal_keys_query_held (void)
 {
 #ifdef GDK_WINDOWING_X11
   GdkDisplay *display;
@@ -116,6 +119,20 @@ terminal_keys_modifiers_held (void)
 #else
   return 0;
 #endif
+}
+
+/**
+ * terminal_keys_modifiers_held:
+ *
+ * The modifier keys that are held down right now, as far as we know: the bits
+ * are %GDK_SHIFT_MASK, %GDK_CONTROL_MASK and %GDK_MOD1_MASK in any
+ * combination. See terminal_keys_key_press() for how the keys are tracked and
+ * why they are tracked at all.
+ */
+guint
+terminal_keys_modifiers_held (void)
+{
+  return terminal_keys_held;
 }
 
 /* The latin symbol of a physical key, asked from the X server itself.
@@ -194,6 +211,7 @@ terminal_keys_keyval_is_modifier (guint32 keyval)
     /* with Ctrl+Shift as the layout switch the key press of shift itself
      * arrives as a group switch keysym, not as Shift_L/Shift_R */
     case GDK_KEY_ISO_Next_Group:
+    case GDK_KEY_ISO_Next_Group_Lock:
     case GDK_KEY_ISO_Prev_Group:
     case GDK_KEY_ISO_First_Group:
     case GDK_KEY_ISO_Last_Group:
@@ -203,6 +221,163 @@ terminal_keys_keyval_is_modifier (guint32 keyval)
     default:
       return FALSE;
     }
+}
+
+/* The modifier of a modifier key, or 0 for a key that is no modifier. */
+static guint
+terminal_keys_keyval_modifier (guint32 keyval)
+{
+  switch (keyval)
+    {
+    case GDK_KEY_Shift_L:
+    case GDK_KEY_Shift_R:
+      return GDK_SHIFT_MASK;
+    case GDK_KEY_Control_L:
+    case GDK_KEY_Control_R:
+      return GDK_CONTROL_MASK;
+    case GDK_KEY_Alt_L:
+    case GDK_KEY_Alt_R:
+      return GDK_MOD1_MASK;
+    default:
+      return 0;
+    }
+}
+
+/* Whether the key press is the one where the layout switch fired: XKB reports
+ * the switch with a group switch keysym, and the modifier it ate comes with
+ * the same keysym. */
+static gboolean
+terminal_keys_keyval_is_group_switch (guint32 keyval)
+{
+  switch (keyval)
+    {
+    case GDK_KEY_ISO_Next_Group:
+    case GDK_KEY_ISO_Next_Group_Lock:
+    case GDK_KEY_ISO_Prev_Group:
+    case GDK_KEY_ISO_First_Group:
+    case GDK_KEY_ISO_Last_Group:
+    case GDK_KEY_ISO_Group_Latch:
+    case GDK_KEY_ISO_Group_Lock:
+      return TRUE;
+    default:
+      return FALSE;
+    }
+}
+
+/**
+ * terminal_keys_key_press:
+ * @event: a key press event
+ *
+ * Put back the modifier that the layout switch ate and keep track of the keys
+ * that are down.
+ *
+ * When the layout switch fires it eats one of the modifiers of its chord:
+ * with Ctrl+Shift as the switch (grp:ctrl_shift_toggle) the control or the
+ * shift is consumed, with Alt+Shift (grp:alt_shift_toggle) the alt or the
+ * shift is. The key press that follows arrives without that modifier in the
+ * state, and the accelerator that needs it never matches.
+ *
+ * Which one is eaten depends on the order the user pressed the keys in, so the
+ * eaten modifier is not known here: the keys that are down are tracked
+ * instead, and the modifier that is missing from the state of the event is put
+ * back.
+ */
+void
+terminal_keys_key_press (GdkEventKey *event)
+{
+#ifdef GDK_WINDOWING_X11
+  guint modifier;
+  guint swallowed;
+
+  g_return_if_fail (event != NULL);
+
+  if (terminal_keys_keyval_is_group_switch (event->keyval))
+    {
+      /* The switch eats the modifier of the key that was pressed last, so the
+       * event does not say which one it is: ask the server. */
+      terminal_keys_held = terminal_keys_query_held ();
+    }
+  else
+    {
+      modifier = terminal_keys_keyval_modifier (event->keyval);
+      if (modifier != 0)
+        {
+          terminal_keys_held |= modifier;
+        }
+      else if ((event->state & TERMINAL_KEYS_MODIFIERS) & ~terminal_keys_held)
+        {
+          /* The event carries a modifier that the tracked keys do not have:
+           * it was pressed before the window got the focus. Ask the server. */
+          terminal_keys_held = terminal_keys_query_held ();
+        }
+    }
+
+  swallowed = terminal_keys_held & ~event->state & TERMINAL_KEYS_MODIFIERS;
+
+  /* A lone modifier press is no accelerator, so there is nothing to restore
+   * for it: the press of the switch itself arrives as a group switch keysym
+   * and must not be touched. */
+  if (!terminal_keys_keyval_is_modifier (event->keyval))
+    event->state |= swallowed;
+#else
+  (void) event;
+#endif
+}
+
+/**
+ * terminal_keys_key_release:
+ * @event: a key release event
+ *
+ * Keep track of the keys that are up again.
+ */
+void
+terminal_keys_key_release (GdkEventKey *event)
+{
+#ifdef GDK_WINDOWING_X11
+  guint modifier;
+
+  g_return_if_fail (event != NULL);
+
+  if (terminal_keys_keyval_is_group_switch (event->keyval))
+    {
+      /* The key of the switch is released and the event does not say which
+       * modifier it was: ask the server. */
+      terminal_keys_held = terminal_keys_query_held ();
+      return;
+    }
+
+  modifier = terminal_keys_keyval_modifier (event->keyval);
+  if (modifier != 0)
+    terminal_keys_held &= ~modifier;
+#else
+  (void) event;
+#endif
+}
+
+/**
+ * terminal_keys_focus_in:
+ *
+ * Ask the server which modifier keys are down: they may have been pressed
+ * while another window had the focus.
+ */
+void
+terminal_keys_focus_in (void)
+{
+#ifdef GDK_WINDOWING_X11
+  terminal_keys_held = terminal_keys_query_held ();
+#endif
+}
+
+/**
+ * terminal_keys_focus_out:
+ *
+ * Forget the modifier keys: they may be released while another window has the
+ * focus, and the events would not say so.
+ */
+void
+terminal_keys_focus_out (void)
+{
+  terminal_keys_held = 0;
 }
 
 /**
