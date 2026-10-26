@@ -2928,6 +2928,14 @@ terminal_window_create_panes_label (TerminalWindow *window,
 
   g_object_set_data (G_OBJECT (panes), "panes-tab-label", label);
 
+  /* show the box and all its widgets */
+  gtk_widget_show_all (hbox);
+
+  /* respect the show/hide buttons option */
+  g_object_bind_property (G_OBJECT (window->priv->preferences), "misc-tab-close-buttons",
+                          G_OBJECT (button), "visible",
+                          G_BINDING_SYNC_CREATE);
+
   terminal_window_update_panes_label (window, panes);
 
   return hbox;
