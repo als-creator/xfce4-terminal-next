@@ -566,22 +566,14 @@ terminal_panes_screen_draw (GtkWidget     *widget,
   cairo_rectangle (cr, width - PANES_BORDER_MARGIN, 0, PANES_BORDER_MARGIN, height);
   cairo_fill (cr);
 
-  /* one thin line around every pane of a split */
+  /* one thin line around every pane of a split, the same for the focused and
+   * the unfocused pane: upstream has no pane marker, and the keyboard focus is
+   * already visible from the cursor. */
   color.alpha = 0.35;
   gdk_cairo_set_source_rgba (cr, &color);
   cairo_set_line_width (cr, 1.0);
   cairo_rectangle (cr, 0.5, 0.5, width - 1.0, height - 1.0);
   cairo_stroke (cr);
-
-  /* the focused pane gets a second line inside the first one: the two thin
-   * lines mark the pane that receives the keyboard */
-  if (panes->active == TERMINAL_SCREEN (widget))
-    {
-      color.alpha = 0.9;
-      gdk_cairo_set_source_rgba (cr, &color);
-      cairo_rectangle (cr, 2.5, 2.5, width - 5.0, height - 5.0);
-      cairo_stroke (cr);
-    }
 
   return FALSE;
 }
