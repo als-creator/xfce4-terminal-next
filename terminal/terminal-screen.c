@@ -3307,6 +3307,18 @@ terminal_screen_get_custom_bg_color (TerminalScreen *screen)
 
 
 
+void
+terminal_screen_get_background_color (TerminalScreen *screen,
+                                      GdkRGBA        *color)
+{
+  g_return_if_fail (TERMINAL_IS_SCREEN (screen));
+  g_return_if_fail (color != NULL);
+
+  *color = screen->background_color;
+}
+
+
+
 const gchar *
 terminal_screen_get_custom_title_color (TerminalScreen *screen)
 {

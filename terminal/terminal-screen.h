@@ -185,6 +185,10 @@ terminal_screen_get_custom_fg_color (TerminalScreen *screen);
 const gchar *
 terminal_screen_get_custom_bg_color (TerminalScreen *screen);
 
+void
+terminal_screen_get_background_color (TerminalScreen *screen,
+                                      GdkRGBA        *color);
+
 const gchar *
 terminal_screen_get_custom_title_color (TerminalScreen *screen);
 void

@@ -35,6 +35,7 @@
 static void terminal_panes_paned_position_half (GtkWidget *paned);
 static void terminal_panes_paned_set_fraction (GtkWidget *paned,
                                                gdouble    fraction);
+static void terminal_panes_update_pane_borders (TerminalPanes *panes);
 
 struct _TerminalPanes
 {
@@ -64,6 +65,12 @@ struct _TerminalPanes
  * become while doing so */
 #define PANES_MOVE_STEP 10
 #define PANES_MIN_PANE_SIZE 35
+
+/* space reserved around every pane of a split for the focus border. The border
+ * is drawn in this margin, so it never covers terminal cells; all panes of a
+ * tree use the same margin, which keeps the terminals from reflowing when the
+ * focus moves between them. */
+#define PANES_BORDER_MARGIN 3
 
 /* separates the layout of a saved tab from the directories of its panes; the
  * layout grammar has no character like it */
@@ -438,6 +445,9 @@ terminal_panes_normalize_after_screen_destroy (TerminalPanes *panes)
         gtk_widget_size_allocate (GTK_WIDGET (panes), &full);
       }
   }
+
+  /* the survivors may have been part of a split that just collapsed */
+  terminal_panes_update_pane_borders (panes);
 }
 
 
@@ -474,6 +484,102 @@ terminal_panes_screen_destroyed (GtkWidget *screen,
 
 
 
+/* The border color has to stay visible on the terminal background, which the
+ * GTK theme does not necessarily know about. Start from the background itself
+ * and shift it halfway towards the opposite end of the scale: a light line on
+ * a dark terminal and a dark one on a light terminal, whatever the palette. */
+static void
+terminal_panes_get_border_color (TerminalScreen *screen,
+                                 GdkRGBA        *color)
+{
+  gdouble luminance, target;
+
+  terminal_screen_get_background_color (screen, color);
+
+  luminance = 0.299 * color->red + 0.587 * color->green + 0.114 * color->blue;
+  target = (luminance > 0.5) ? 0.0 : 1.0;
+
+  color->red = color->red * 0.5 + target * 0.5;
+  color->green = color->green * 0.5 + target * 0.5;
+  color->blue = color->blue * 0.5 + target * 0.5;
+  color->alpha = 1.0;
+}
+
+
+
+static gboolean
+terminal_panes_screen_draw (GtkWidget     *widget,
+                            cairo_t       *cr,
+                            TerminalPanes *panes)
+{
+  GdkRGBA color;
+  gint width, height;
+
+  /* a single pane fills the whole tab and must look like upstream */
+  if (terminal_panes_get_n_screens (panes) < 2)
+    return FALSE;
+
+  width = gtk_widget_get_allocated_width (widget);
+  height = gtk_widget_get_allocated_height (widget);
+
+  if (width <= 2 * PANES_BORDER_MARGIN || height <= 2 * PANES_BORDER_MARGIN)
+    return FALSE;
+
+  terminal_panes_get_border_color (TERMINAL_SCREEN (widget), &color);
+
+  /* one thin line around every pane of a split */
+  color.alpha = 0.35;
+  gdk_cairo_set_source_rgba (cr, &color);
+  cairo_set_line_width (cr, 1.0);
+  cairo_rectangle (cr, 0.5, 0.5, width - 1.0, height - 1.0);
+  cairo_stroke (cr);
+
+  /* the focused pane gets a second line inside the first one: the two thin
+   * lines mark the pane that receives the keyboard */
+  if (panes->active == TERMINAL_SCREEN (widget))
+    {
+      color.alpha = 0.9;
+      gdk_cairo_set_source_rgba (cr, &color);
+      cairo_rectangle (cr, 2.5, 2.5, width - 5.0, height - 5.0);
+      cairo_stroke (cr);
+    }
+
+  return FALSE;
+}
+
+
+
+/* Several panes in a tab get a border each; a single pane gets none, so a tab
+ * without splits keeps the upstream look. Called whenever a pane is added,
+ * removed or focused. */
+static void
+terminal_panes_update_pane_borders (TerminalPanes *panes)
+{
+  GSList *screens, *lp;
+  gint margin;
+
+  if (gtk_widget_in_destruction (GTK_WIDGET (panes)))
+    return;
+
+  screens = terminal_panes_get_screens (panes);
+  margin = (g_slist_length (screens) > 1) ? PANES_BORDER_MARGIN : 0;
+
+  for (lp = screens; lp != NULL; lp = lp->next)
+    {
+      GtkWidget *screen = GTK_WIDGET (lp->data);
+
+      gtk_widget_set_margin_start (screen, margin);
+      gtk_widget_set_margin_end (screen, margin);
+      gtk_widget_set_margin_top (screen, margin);
+      gtk_widget_set_margin_bottom (screen, margin);
+      gtk_widget_queue_draw (screen);
+    }
+
+  g_slist_free (screens);
+}
+
+
+
 static void
 terminal_panes_watch_screen (TerminalPanes *panes,
                              TerminalScreen *screen)
@@ -495,6 +601,8 @@ terminal_panes_watch_screen (TerminalPanes *panes,
                       G_CALLBACK (terminal_panes_terminal_focus_in), screen);
   g_signal_connect (G_OBJECT (screen), "focus-in-event",
                     G_CALLBACK (terminal_panes_screen_focus_in), panes);
+  g_signal_connect_after (G_OBJECT (screen), "draw",
+                          G_CALLBACK (terminal_panes_screen_draw), panes);
   g_signal_connect (G_OBJECT (screen), "notify::title",
                     G_CALLBACK (terminal_panes_screen_title_changed), panes);
 }
@@ -588,6 +696,7 @@ terminal_panes_new_with_screen (TerminalScreen *screen)
   gtk_widget_show (GTK_WIDGET (screen));
 
   terminal_panes_watch_screen (panes, screen);
+  terminal_panes_update_pane_borders (panes);
 
   return panes;
 }
@@ -664,6 +773,7 @@ terminal_panes_split_screen_at (TerminalPanes *panes,
   g_object_unref (screen);
 
   terminal_panes_watch_screen (panes, new_screen);
+  terminal_panes_update_pane_borders (panes);
 
   /* put the divider where the caller asked for */
   terminal_panes_paned_set_fraction (paned, fraction);
@@ -1216,6 +1326,9 @@ terminal_panes_remove_screen (TerminalPanes *panes,
       }
   }
 
+  /* a split may have just become a single pane: drop its border */
+  terminal_panes_update_pane_borders (panes);
+
   return TRUE;
 }
 
@@ -1257,6 +1370,9 @@ terminal_panes_set_active (TerminalPanes *panes,
   panes->active = screen;
 
   terminal_panes_emit_active_changed (panes, screen);
+
+  /* repaint the borders: the focus moved to another pane */
+  terminal_panes_update_pane_borders (panes);
 }
 
 
