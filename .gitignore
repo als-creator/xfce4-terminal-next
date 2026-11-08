@@ -32,3 +32,16 @@
 # весь маркдаун, кроме корневого README.md, в git не входит
 *.md
 !/README.md
+
+# служебные файлы: нужны только локально для разработки и стендов.
+# В репозиторий и в историю не входят — там только код, сборка, README и
+# лицензия.
+/tests/
+/TODO
+/HACKING
+/NEWS
+/THANKS
+/.gitlab-ci.yml
+/.clang-format
+/.cppcheck.cfg
+/.cppcheck-false-positives
