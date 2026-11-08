@@ -29,13 +29,14 @@ jobs:
             archlinux:base-devel \
             bash -euo pipefail -c "
               pacman -Syu --noconfirm --needed base-devel git meson ninja \
-                gtk3 libxfce4ui vte3 xfconf desktop-file-utils
+                glib2-devel gtk3 libxfce4ui vte3 xfconf desktop-file-utils
               useradd -m builder
               cp -a /repo /work
               rm -rf /work/.git
-              sed -i 's/^pkgver=.*/pkgver=${version}/' /work/packaging/PKGBUILD
+              cp /work/packaging/PKGBUILD /work/packaging/xfce4-terminal-next.install /work/
+              sed -i 's/^pkgver=.*/pkgver=${version}/' /work/PKGBUILD
               chown -R builder /work
-              su builder -c 'cd /work && makepkg -f --nodeps --noconfirm -p packaging/PKGBUILD'
+              su builder -c 'cd /work && makepkg -f --nodeps --noconfirm'
               cp /work/*.pkg.tar.zst /out/
             "
 
