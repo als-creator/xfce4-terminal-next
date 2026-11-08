@@ -1,0 +1,51 @@
+# Maintainer: als-creator
+#
+# Сборка форка из архива тега. Ставится рядом с системным xfce4-terminal:
+# свой бинарник, своё D-Bus-имя, свой пункт меню.
+pkgname=xfce4-terminal-next
+pkgver=1.2.0
+pkgrel=1
+pkgdesc="Xfce Terminal fork: split panes, drop-down panel, tmux, clipboard slots"
+arch=('x86_64')
+url="https://github.com/als-creator/xfce4-terminal-next"
+license=('GPL2')
+depends=('gtk3' 'libxfce4ui' 'vte3' 'xfconf')
+makedepends=('meson' 'ninja' 'pkgconf')
+options=('!strip' '!debug')
+install=xfce4-terminal-next.install
+source=("$pkgname-$pkgver.tar.gz::https://github.com/als-creator/xfce4-terminal-next/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+
+    # Уникальное D-Bus-имя: иначе бинарник проксирует вызовы запущенному
+    # системному терминалу вместо собственного запуска.
+    sed -i "s/terminal_version_dbus = '5'/terminal_version_dbus = '5Local'/" meson.build
+
+    meson setup build \
+        --prefix=/usr/local \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --buildtype=release \
+        -Ddoc=false
+    meson compile -C build
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+
+    DESTDIR="$pkgdir" meson install -C build
+
+    # бинарник не перекрывает /usr/bin/xfce4-terminal
+    mv "$pkgdir/usr/local/bin/xfce4-terminal" \
+       "$pkgdir/usr/local/bin/xfce4-terminal-next"
+    ln -sf xfce4-terminal-next "$pkgdir/usr/local/bin/xfce4-terminal"
+
+    # системные .desktop-файлы не ставим: свой пункт меню с уникальным именем
+    rm -f "$pkgdir/usr/local/share/applications/xfce4-terminal.desktop" \
+          "$pkgdir/usr/local/share/applications/xfce4-terminal-settings.desktop"
+
+    install -Dm644 packaging/xfce4-terminal-next.desktop \
+        "$pkgdir/usr/local/share/applications/xfce4-terminal-next.desktop"
+}

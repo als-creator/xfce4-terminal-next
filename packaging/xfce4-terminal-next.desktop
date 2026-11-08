@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Xfce4 Terminal Next
+GenericName=Terminal Emulator
+Comment=Terminal with split panes, drop-down panel and clipboard slots
+Exec=/usr/local/bin/xfce4-terminal-next %F
+Icon=org.xfce.terminal
+Type=Application
+Terminal=false
+Categories=System;TerminalEmulator;
+Keywords=shell;prompt;commandline;command;clipboard;slots;split;
+StartupNotify=true
