@@ -70,7 +70,7 @@ struct _TerminalPanes
  * is drawn in this margin, so it never covers terminal cells; all panes of a
  * tree use the same margin, which keeps the terminals from reflowing when the
  * focus moves between them. */
-#define PANES_BORDER_MARGIN 3
+#define PANES_BORDER_MARGIN 6
 
 /* separates the layout of a saved tab from the directories of its panes; the
  * layout grammar has no character like it */
@@ -507,6 +507,32 @@ terminal_panes_get_border_color (TerminalScreen *screen,
 
 
 
+/* The divider between two panes is only a thin drag handle: the pane borders
+ * are drawn by the screens themselves, so the theme's separator would add a
+ * second, heavy line between the panes. */
+static void
+terminal_panes_style_divider (GtkWidget *paned)
+{
+  static GtkCssProvider *provider = NULL;
+
+  if (G_UNLIKELY (provider == NULL))
+    {
+      provider = gtk_css_provider_new ();
+      gtk_css_provider_load_from_data (provider,
+                                       "paned > separator {\n"
+                                       "  min-width: 2px;\n"
+                                       "  min-height: 2px;\n"
+                                       "  background: transparent;\n"
+                                       "}\n", -1, NULL);
+    }
+
+  gtk_style_context_add_provider (gtk_widget_get_style_context (paned),
+                                  GTK_STYLE_PROVIDER (provider),
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+
+
 static gboolean
 terminal_panes_screen_draw (GtkWidget     *widget,
                             cairo_t       *cr,
@@ -728,6 +754,7 @@ terminal_panes_split_screen_at (TerminalPanes *panes,
   parent = gtk_widget_get_parent (GTK_WIDGET (screen));
 
   paned = gtk_paned_new (orientation);
+  terminal_panes_style_divider (paned);
 
   /* GTK refuses to reparent a widget that still has a parent, so detach the
    * screen from its current container first. Keep a reference across the

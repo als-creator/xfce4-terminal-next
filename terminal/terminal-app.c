@@ -690,6 +690,35 @@ parse_geometry (const char *string,
 
 
 
+/* Present the window. On X11 use the time of the last user interaction, so the
+ * focus stealing prevention of the window manager lets the window through. */
+static void
+terminal_app_present_window (GtkWindow *window)
+{
+#ifdef ENABLE_X11
+  if (GDK_IS_X11_DISPLAY (gtk_widget_get_display (GTK_WIDGET (window))))
+    gtk_window_present_with_time (window,
+                                  gdk_x11_display_get_user_time (gtk_widget_get_display (GTK_WIDGET (window))));
+  else
+#endif
+    gtk_window_present (window);
+}
+
+
+
+/* A present() request sent before the window manager has seen the map request
+ * is dropped, and the new window then stays behind the others. Present once
+ * more when the window is mapped. */
+static void
+terminal_app_present_on_map (GtkWidget *window,
+                             gpointer   user_data G_GNUC_UNUSED)
+{
+  g_signal_handlers_disconnect_by_func (window, terminal_app_present_on_map, NULL);
+  terminal_app_present_window (GTK_WINDOW (window));
+}
+
+
+
 static void
 terminal_app_new_window_with_terminal (TerminalWindow *existing,
                                        TerminalScreen *terminal,
@@ -749,6 +778,7 @@ terminal_app_new_window_with_terminal (TerminalWindow *existing,
     }
 
   gtk_widget_show (window);
+  terminal_app_present_window (GTK_WINDOW (window));
 }
 
 
@@ -1228,19 +1258,12 @@ terminal_app_open_window (TerminalApp *app,
                                            GTK_WINDOW (window), width, height);
 
       /* Show the window first: present() before the window has a surface is
-       * lost, and the window manager leaves the new window behind the others.
-       * The startup id, set above, is what lets the WM raise it. */
+       * lost. Present once directly and once when the window is mapped, which
+       * is when the window manager can act on it. */
+      g_signal_connect (window, "map",
+                        G_CALLBACK (terminal_app_present_on_map), NULL);
       gtk_widget_show (window);
-
-#ifdef ENABLE_X11
-      /* A timestamp of 0 loses against the focus stealing prevention of most
-       * window managers; the time of the last user interaction is accepted. */
-      if (GDK_IS_X11_DISPLAY (gtk_widget_get_display (window)))
-        gtk_window_present_with_time (GTK_WINDOW (window),
-                                      gdk_x11_display_get_user_time (gtk_widget_get_display (window)));
-      else
-#endif
-        gtk_window_present (GTK_WINDOW (window));
+      terminal_app_present_window (GTK_WINDOW (window));
     }
 }
 
