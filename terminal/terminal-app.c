@@ -35,6 +35,7 @@
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <gdk/gdkx.h>
 #endif
 
 #include <gdk/gdk.h>
@@ -1230,7 +1231,16 @@ terminal_app_open_window (TerminalApp *app,
        * lost, and the window manager leaves the new window behind the others.
        * The startup id, set above, is what lets the WM raise it. */
       gtk_widget_show (window);
-      gtk_window_present (GTK_WINDOW (window));
+
+#ifdef ENABLE_X11
+      /* A timestamp of 0 loses against the focus stealing prevention of most
+       * window managers; the time of the last user interaction is accepted. */
+      if (GDK_IS_X11_DISPLAY (gtk_widget_get_display (window)))
+        gtk_window_present_with_time (GTK_WINDOW (window),
+                                      gdk_x11_display_get_user_time (gtk_widget_get_display (window)));
+      else
+#endif
+        gtk_window_present (GTK_WINDOW (window));
     }
 }
 
