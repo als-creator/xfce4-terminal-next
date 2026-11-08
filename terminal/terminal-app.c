@@ -1226,8 +1226,11 @@ terminal_app_open_window (TerminalApp *app,
       terminal_screen_force_resize_window (terminal_window_get_active (TERMINAL_WINDOW (window)),
                                            GTK_WINDOW (window), width, height);
 
-      gtk_window_present (GTK_WINDOW (window));
+      /* Show the window first: present() before the window has a surface is
+       * lost, and the window manager leaves the new window behind the others.
+       * The startup id, set above, is what lets the WM raise it. */
       gtk_widget_show (window);
+      gtk_window_present (GTK_WINDOW (window));
     }
 }
 
