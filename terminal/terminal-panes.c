@@ -520,9 +520,11 @@ terminal_panes_style_divider (GtkWidget *paned)
       provider = gtk_css_provider_new ();
       gtk_css_provider_load_from_data (provider,
                                        "paned > separator {\n"
-                                       "  min-width: 2px;\n"
-                                       "  min-height: 2px;\n"
-                                       "  background: transparent;\n"
+                                       "  min-width: 1px;\n"
+                                       "  min-height: 1px;\n"
+                                       "  background: none;\n"
+                                       "  border: none;\n"
+                                       "  box-shadow: none;\n"
                                        "}\n", -1, NULL);
     }
 
@@ -538,7 +540,7 @@ terminal_panes_screen_draw (GtkWidget     *widget,
                             cairo_t       *cr,
                             TerminalPanes *panes)
 {
-  GdkRGBA color;
+  GdkRGBA color, background;
   gint width, height;
 
   /* a single pane fills the whole tab and must look like upstream */
@@ -552,6 +554,17 @@ terminal_panes_screen_draw (GtkWidget     *widget,
     return FALSE;
 
   terminal_panes_get_border_color (TERMINAL_SCREEN (widget), &color);
+
+  /* The inset belongs to the terminal: fill it with the terminal background,
+   * otherwise the gap between the border and the text shows the window colour
+   * of the GTK theme. */
+  terminal_screen_get_background_color (TERMINAL_SCREEN (widget), &background);
+  gdk_cairo_set_source_rgba (cr, &background);
+  cairo_rectangle (cr, 0, 0, width, PANES_BORDER_MARGIN);
+  cairo_rectangle (cr, 0, height - PANES_BORDER_MARGIN, width, PANES_BORDER_MARGIN);
+  cairo_rectangle (cr, 0, 0, PANES_BORDER_MARGIN, height);
+  cairo_rectangle (cr, width - PANES_BORDER_MARGIN, 0, PANES_BORDER_MARGIN, height);
+  cairo_fill (cr);
 
   /* one thin line around every pane of a split */
   color.alpha = 0.35;
@@ -593,11 +606,24 @@ terminal_panes_update_pane_borders (TerminalPanes *panes)
   for (lp = screens; lp != NULL; lp = lp->next)
     {
       GtkWidget *screen = GTK_WIDGET (lp->data);
+      GtkWidget *terminal = terminal_screen_get_terminal_widget (TERMINAL_SCREEN (screen));
 
-      gtk_widget_set_margin_start (screen, margin);
-      gtk_widget_set_margin_end (screen, margin);
-      gtk_widget_set_margin_top (screen, margin);
-      gtk_widget_set_margin_bottom (screen, margin);
+      /* the border is drawn by the screen, so the terminal is inset: the
+       * margin between the line and the text shows the terminal background,
+       * not the window (theme) colour */
+      gtk_widget_set_margin_start (screen, 0);
+      gtk_widget_set_margin_end (screen, 0);
+      gtk_widget_set_margin_top (screen, 0);
+      gtk_widget_set_margin_bottom (screen, 0);
+
+      if (terminal != NULL)
+        {
+          gtk_widget_set_margin_start (terminal, margin);
+          gtk_widget_set_margin_end (terminal, margin);
+          gtk_widget_set_margin_top (terminal, margin);
+          gtk_widget_set_margin_bottom (terminal, margin);
+        }
+
       gtk_widget_queue_draw (screen);
     }
 
